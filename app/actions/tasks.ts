@@ -511,6 +511,11 @@ export async function checkTask(input: {
     outcome,
   })
 
+  // Check is when evidence arrives, so the sub-goal's percentage moves here:
+  // the verdict counts as a share of its sub-goal until reabsorption turns it
+  // into a child node carrying the same score.
+  await rollupAncestors(userId, task.objectiveId)
+
   const [bot] = await db
     .select()
     .from(projectBots)
