@@ -110,11 +110,23 @@ export const projectBots = pgTable('project_bots', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
+// A conversation is with one agent. `agentKind` says which layer that agent sits
+// at: a department head (a project bot), one of its sub-agents (addressable
+// individually, e.g. the SEO Specialist under Marketing), or the orchestrator
+// itself. Sub-agent conversations can be scoped to a single sub-goal so the
+// sub-goal panel shows the work happening on that node.
 export const chatSessions = pgTable('chat_sessions', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
   projectId: text('projectId').notNull(),
-  botId: text('botId').notNull(),
+  // Null for the orchestrator, which is not a project bot.
+  botId: text('botId'),
+  agentKind: text('agentKind').notNull().default('department'),
+  // Set when agentKind is 'sub_agent'; scoped by its parent department.
+  subAgentKey: text('subAgentKey'),
+  parentSpecialistKey: text('parentSpecialistKey'),
+  // Set when the conversation belongs to one OKR node.
+  objectiveId: text('objectiveId'),
   title: text('title'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
@@ -151,7 +163,13 @@ export const objectives = pgTable('objectives', {
   userId: text('userId').notNull(),
   projectId: text('projectId').notNull(),
   parentObjectiveId: text('parentObjectiveId'),
+  // The department that owns the node.
   ownerBotId: text('ownerBotId'),
+  // The sub-agent that actually does the work, recorded when a department head
+  // reabsorbs a finished task and proposes the node. This is what makes a node
+  // read as "proposed · Marketing · SEO Specialist".
+  assigneeSubAgentKey: text('assigneeSubAgentKey'),
+  assigneeSubAgentTitle: text('assigneeSubAgentTitle'),
   title: text('title').notNull(),
   description: text('description'),
   kind: text('kind').notNull().default('sub_goal'),

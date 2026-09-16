@@ -322,12 +322,35 @@ export interface Handoff {
   payloadSchemaResolved: boolean
 }
 
+/**
+ * A sub-agent is the unit of execution inside a department. Its skills, tools
+ * and decision rights together form the job description its department head
+ * hands it when assigning work.
+ */
+export interface SubAgent {
+  key: string
+  title: string
+  parentSpecialistKey: string
+  parentDepartment: string
+  description: string
+  skills: string[]
+  tools: string[]
+  temperature: number | null
+  maxTokens: number | null
+  upstreamModel: string | null
+  decisionRights: DecisionRights
+  handoffs: Handoff[]
+  source: string
+  sha256: string
+}
+
 export interface Specialist {
   key: string
   department: string
   description: string
   skills: string[]
   tools: string[]
+  subAgents: SubAgent[]
   temperature: number | null
   maxTokens: number | null
   upstreamModel: string | null

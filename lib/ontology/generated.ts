@@ -110,12 +110,35 @@ export interface Handoff {
   payloadSchemaResolved: boolean
 }
 
+/**
+ * A sub-agent is the unit of execution inside a department. Its skills, tools
+ * and decision rights together form the job description its department head
+ * hands it when assigning work.
+ */
+export interface SubAgent {
+  key: string
+  title: string
+  parentSpecialistKey: string
+  parentDepartment: string
+  description: string
+  skills: string[]
+  tools: string[]
+  temperature: number | null
+  maxTokens: number | null
+  upstreamModel: string | null
+  decisionRights: DecisionRights
+  handoffs: Handoff[]
+  source: string
+  sha256: string
+}
+
 export interface Specialist {
   key: string
   department: string
   description: string
   skills: string[]
   tools: string[]
+  subAgents: SubAgent[]
   temperature: number | null
   maxTokens: number | null
   upstreamModel: string | null
@@ -227,7 +250,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/ai-intelligence/config.yaml",
-    "sha256": "701da2506901a69d"
+    "sha256": "701da2506901a69d",
+    "subAgents": []
   },
   {
     "key": "engineering-platform",
@@ -316,7 +340,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/engineering-platform/config.yaml",
-    "sha256": "2c5afda15ea46950"
+    "sha256": "2c5afda15ea46950",
+    "subAgents": []
   },
   {
     "key": "finance-accounting",
@@ -393,7 +418,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/finance-accounting/config.yaml",
-    "sha256": "fe64ffadf41800c0"
+    "sha256": "fe64ffadf41800c0",
+    "subAgents": []
   },
   {
     "key": "legal-compliance",
@@ -481,7 +507,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/legal-compliance/config.yaml",
-    "sha256": "cda06b1cab136096"
+    "sha256": "cda06b1cab136096",
+    "subAgents": []
   },
   {
     "key": "marketing-brand",
@@ -564,7 +591,912 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/marketing-brand/config.yaml",
-    "sha256": "356219b2655f4888"
+    "sha256": "356219b2655f4888",
+    "subAgents": [
+      {
+        "key": "aeo-specialist",
+        "title": "AEO Specialist",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "AI Engine Optimization, AEO/GEO, AI recommendation visibility, citation auditing",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "ai_citation_auditor",
+          "llm_visibility_tracker",
+          "schema_markup_optimizer",
+          "content_structure_analyzer",
+          "agent_discovery_validator"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "aeo_strategy",
+            "citation_optimization",
+            "llm_visibility",
+            "structured_data"
+          ],
+          "recommend": [
+            "content_architecture",
+            "technical_seo_changes"
+          ],
+          "consult": [
+            "content_creation",
+            "product_schema",
+            "engineering_implementation"
+          ],
+          "approve": [
+            "schema_deployment",
+            "llms_txt_updates",
+            "ai_crawling_rules"
+          ],
+          "execute": [
+            "citation_audit",
+            "visibility_tracking",
+            "schema_generation",
+            "content_optimization"
+          ],
+          "escalate": [
+            "citation_loss",
+            "hallucination_risk",
+            "algorithm_change",
+            "competitor_ai_advantage"
+          ],
+          "automate": [
+            "visibility_monitoring",
+            "citation_tracking",
+            "schema_validation",
+            "competitor_ai_watch"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "seo-specialist",
+            "trigger": "technical_seo_implementation",
+            "payloadSchema": "schemas/handoff-technical-seo.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "content-creator",
+            "trigger": "ai_optimized_content_structure",
+            "payloadSchema": "schemas/handoff-ai-content.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/aeo-specialist/config.yaml",
+        "sha256": "6b3c43ece9157abe"
+      },
+      {
+        "key": "agentic-search-optimizer",
+        "title": "Agentic Search Optimizer",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "WebMCP, agentic task completion, making sites usable by AI browsing agents",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "mcp_server_builder",
+          "agent_task_tester",
+          "api_discovery_optimizer",
+          "structured_data_enhancer",
+          "agent_crawlability_tester"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "mcp_architecture",
+            "agent_interfaces",
+            "task_completion_flows",
+            "tool_schemas"
+          ],
+          "recommend": [
+            "api_design",
+            "data_exposure_strategy"
+          ],
+          "consult": [
+            "engineering_api",
+            "product_features",
+            "security_boundaries"
+          ],
+          "approve": [
+            "mcp_deployment",
+            "tool_registry_updates",
+            "agent_permissions"
+          ],
+          "execute": [
+            "mcp_development",
+            "task_testing",
+            "schema_generation",
+            "integration_testing"
+          ],
+          "escalate": [
+            "security_vulnerability",
+            "data_exposure_risk",
+            "agent_misbehavior",
+            "rate_limiting_issues"
+          ],
+          "automate": [
+            "task_regression_testing",
+            "schema_validation",
+            "performance_monitoring",
+            "agent_health_checks"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "engineering-platform",
+            "trigger": "api_mcp_integration",
+            "payloadSchema": "schemas/handoff-api-mcp.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "aeo-specialist",
+            "trigger": "structured_data_alignment",
+            "payloadSchema": "schemas/handoff-structured-data.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/agentic-search-optimizer/config.yaml",
+        "sha256": "d3eaca457f2f6239"
+      },
+      {
+        "key": "brand-guardian",
+        "title": "Brand Guardian",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Brand identity, consistency, positioning, guidelines enforcement",
+        "skills": [
+          "deck-builder",
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "brand_auditor",
+          "guideline_checker",
+          "asset_validator",
+          "consistency_scorer",
+          "brand_asset_manager"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "brand_guidelines",
+            "visual_identity",
+            "voice_tone",
+            "asset_approval"
+          ],
+          "recommend": [
+            "brand_extensions",
+            "co_branding",
+            "partnership_alignments"
+          ],
+          "consult": [
+            "campaign_concepts",
+            "product_design",
+            "hiring_brand_impact"
+          ],
+          "approve": [
+            "external_assets",
+            "brand_applications",
+            "merchandise",
+            "swag"
+          ],
+          "execute": [
+            "guideline_updates",
+            "audit_reports",
+            "training_materials",
+            "asset_distribution"
+          ],
+          "escalate": [
+            "brand_infringement",
+            "major_inconsistency",
+            "rebrand_decision",
+            "crisis_brand_impact"
+          ],
+          "automate": [
+            "asset_tagging",
+            "usage_monitoring",
+            "compliance_scanning",
+            "version_control"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "content-creator",
+            "trigger": "brand_voice_guidance",
+            "payloadSchema": "schemas/handoff-brand-voice.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "pr-communications",
+            "trigger": "messaging_alignment",
+            "payloadSchema": "schemas/handoff-brand-messaging.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/brand-guardian/config.yaml",
+        "sha256": "8c11c0891ef97575"
+      },
+      {
+        "key": "carousel-growth",
+        "title": "Carousel Growth",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "TikTok/Instagram carousels, autonomous publishing, viral content",
+        "skills": [
+          "github-autodiscovery",
+          "deck-builder"
+        ],
+        "tools": [
+          "carousel_designer",
+          "trend_analyzer",
+          "auto_publisher",
+          "hook_writer",
+          "performance_tracker"
+        ],
+        "temperature": 0.5,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "carousel_concepts",
+            "hook_strategies",
+            "publishing_schedule",
+            "platform_optimization"
+          ],
+          "recommend": [
+            "content_themes",
+            "posting_frequency"
+          ],
+          "consult": [
+            "brand_guidelines",
+            "legal_compliance",
+            "product_messaging"
+          ],
+          "approve": [
+            "carousel_assets",
+            "publishing_calendar"
+          ],
+          "execute": [
+            "design_creation",
+            "copy_writing",
+            "scheduling",
+            "engagement_monitoring"
+          ],
+          "escalate": [
+            "platform_policy_violation",
+            "brand_safety_issue",
+            "viral_negative_feedback"
+          ],
+          "automate": [
+            "trend_detection",
+            "hook_generation",
+            "scheduling",
+            "cross_posting"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "content-creator",
+            "trigger": "long_form_content_needed",
+            "payloadSchema": "schemas/handoff-longform.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "video-optimizer",
+            "trigger": "carousel_to_video_adaptation",
+            "payloadSchema": "schemas/handoff-video-adaptation.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/carousel-growth/config.yaml",
+        "sha256": "702d0e95f56fde30"
+      },
+      {
+        "key": "content-creator",
+        "title": "Content Creator",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Multi-platform content, editorial calendars, copywriting, brand storytelling",
+        "skills": [
+          "deck-builder",
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "editorial_calendar",
+          "copy_optimizer",
+          "content_repurposer",
+          "brand_voice_checker",
+          "content_performance_analyzer"
+        ],
+        "temperature": 0.5,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "content_topics",
+            "editorial_calendar",
+            "brand_voice",
+            "content_formats"
+          ],
+          "recommend": [
+            "content_distribution",
+            "repurposing_strategy"
+          ],
+          "consult": [
+            "seo_keywords",
+            "paid_social_themes",
+            "email_nurture_flows"
+          ],
+          "approve": [
+            "published_content",
+            "content_calendar"
+          ],
+          "execute": [
+            "article_writing",
+            "social_copy",
+            "video_scripts",
+            "newsletter_content"
+          ],
+          "escalate": [
+            "brand_voice_violation",
+            "legal_review_needed",
+            "crisis_communication"
+          ],
+          "automate": [
+            "content_scheduling",
+            "performance_tracking",
+            "repurposing_workflows"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "seo-specialist",
+            "trigger": "content_optimization_needed",
+            "payloadSchema": "schemas/handoff-content-optimization.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "email-strategist",
+            "trigger": "newsletter_content_ready",
+            "payloadSchema": "schemas/handoff-newsletter.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/content-creator/config.yaml",
+        "sha256": "ad11b59da9953459"
+      },
+      {
+        "key": "email-strategist",
+        "title": "Email Strategist",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Lifecycle email, deliverability, automation, segmentation",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "email_builder",
+          "deliverability_monitor",
+          "segmentation_engine",
+          "automation_designer",
+          "ab_test_email"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "email_calendar",
+            "segmentation_rules",
+            "automation_flows",
+            "template_design"
+          ],
+          "recommend": [
+            "send_frequency",
+            "list_growth_tactics"
+          ],
+          "consult": [
+            "brand_voice",
+            "product_updates",
+            "legal_compliance"
+          ],
+          "approve": [
+            "email_sends",
+            "automation_activation"
+          ],
+          "execute": [
+            "campaign_creation",
+            "flow_building",
+            "list_hygiene",
+            "performance_analysis"
+          ],
+          "escalate": [
+            "deliverability_crisis",
+            "spam_complaints",
+            "gdpr_violation",
+            "unsubscribe_spike"
+          ],
+          "automate": [
+            "welcome_series",
+            "abandoned_cart",
+            "re_engagement",
+            "birthday_flows"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "content-creator",
+            "trigger": "newsletter_content_needed",
+            "payloadSchema": "schemas/handoff-newsletter.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "paid-social-specialist",
+            "trigger": "email_capture_audience",
+            "payloadSchema": "schemas/handoff-email-capture.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/email-strategist/config.yaml",
+        "sha256": "17c03a72253f60b6"
+      },
+      {
+        "key": "growth-hacker",
+        "title": "Growth Hacker",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Rapid user acquisition, viral loops, experiments, conversion optimization",
+        "skills": [
+          "github-autodiscovery",
+          "multi-agent-orchestration"
+        ],
+        "tools": [
+          "experiment_designer",
+          "funnel_analyzer",
+          "viral_coefficient_calculator",
+          "cohort_analyzer",
+          "ab_test_framework"
+        ],
+        "temperature": 0.4,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "experiment_roadmap",
+            "growth_channels",
+            "activation_flows",
+            "retention_loops"
+          ],
+          "recommend": [
+            "budget_allocation",
+            "channel_prioritization"
+          ],
+          "consult": [
+            "brand_constraints",
+            "legal_compliance",
+            "engineering_feasibility"
+          ],
+          "approve": [
+            "experiment_launch",
+            "winning_variant_rollout"
+          ],
+          "execute": [
+            "experiment_setup",
+            "variant_creation",
+            "data_collection",
+            "analysis"
+          ],
+          "escalate": [
+            "experiment_harm",
+            "statistical_significance_dispute",
+            "resource_conflict"
+          ],
+          "automate": [
+            "experiment_monitoring",
+            "winner_detection",
+            "rollout_automation"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "paid-social-specialist",
+            "trigger": "winning_ad_concept",
+            "payloadSchema": "schemas/handoff-winning-concept.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "content-creator",
+            "trigger": "viral_content_template",
+            "payloadSchema": "schemas/handoff-viral-template.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/growth-hacker/config.yaml",
+        "sha256": "b9735625073f1496"
+      },
+      {
+        "key": "paid-social-specialist",
+        "title": "Paid Social Specialist",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Meta, LinkedIn, TikTok paid social campaigns, creative strategy, audience targeting",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "audience_builder",
+          "creative_analyzer",
+          "budget_optimizer",
+          "ab_test_designer",
+          "platform_api_client"
+        ],
+        "temperature": 0.4,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "campaign_structure",
+            "audience_segmentation",
+            "creative_concepts",
+            "bid_strategy"
+          ],
+          "recommend": [
+            "budget_allocation",
+            "platform_mix"
+          ],
+          "consult": [
+            "brand_guidelines",
+            "seo_keyword_alignment",
+            "email_retargeting"
+          ],
+          "approve": [
+            "creative_assets",
+            "campaign_launch"
+          ],
+          "execute": [
+            "campaign_setup",
+            "ad_creation",
+            "pixel_implementation",
+            "performance_monitoring"
+          ],
+          "escalate": [
+            "account_ban",
+            "spend_anomaly",
+            "creative_rejection",
+            "policy_violation"
+          ],
+          "automate": [
+            "budget_pacing",
+            "creative_rotation",
+            "audience_expansion",
+            "reporting"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "seo-specialist",
+            "trigger": "high_intent_keywords",
+            "payloadSchema": "schemas/handoff-keyword-intent.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "email-strategist",
+            "trigger": "retargeting_audience_ready",
+            "payloadSchema": "schemas/handoff-retargeting.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/paid-social-specialist/config.yaml",
+        "sha256": "88d5a1a3bd0eb7e2"
+      },
+      {
+        "key": "pr-communications",
+        "title": "PR Communications",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "PR, media relations, crisis communications, thought leadership",
+        "skills": [
+          "deck-builder",
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "media_list_builder",
+          "press_release_writer",
+          "crisis_monitor",
+          "thought_leadership_drafts",
+          "coverage_tracker"
+        ],
+        "temperature": 0.4,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "media_strategy",
+            "messaging_framework",
+            "spokesperson_prep",
+            "crisis_response"
+          ],
+          "recommend": [
+            "story_angles",
+            "media_targets"
+          ],
+          "consult": [
+            "legal_approval",
+            "product_timeline",
+            "executive_availability"
+          ],
+          "approve": [
+            "press_releases",
+            "media_statements",
+            "crisis_communications"
+          ],
+          "execute": [
+            "media_outreach",
+            "press_release_distribution",
+            "interview_coordination",
+            "monitoring"
+          ],
+          "escalate": [
+            "active_crisis",
+            "negative_coverage_spike",
+            "legal_hold",
+            "executive_misstatement"
+          ],
+          "automate": [
+            "coverage_alerts",
+            "media_list_updates",
+            "clipping_reports",
+            "sentiment_tracking"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "content-creator",
+            "trigger": "thought_leadership_topic",
+            "payloadSchema": "schemas/handoff-thought-leadership.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "brand-guardian",
+            "trigger": "brand_messaging_review",
+            "payloadSchema": "schemas/handoff-brand-messaging.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/pr-communications/config.yaml",
+        "sha256": "f86de14184ae415b"
+      },
+      {
+        "key": "seo-specialist",
+        "title": "SEO Specialist",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Technical SEO, content strategy, link building, keyword research",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "keyword_research",
+          "site_audit",
+          "backlink_analysis",
+          "content_gap_analysis",
+          "serp_tracker"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "keyword_strategy",
+            "technical_seo_fixes",
+            "content_optimization"
+          ],
+          "recommend": [
+            "content_calendar",
+            "link_building_targets"
+          ],
+          "consult": [
+            "paid_search_coordination",
+            "social_content_alignment"
+          ],
+          "approve": [],
+          "execute": [
+            "on_page_optimization",
+            "schema_markup",
+            "meta_optimization"
+          ],
+          "escalate": [
+            "algorithm_penalty",
+            "major_ranking_drop",
+            "manual_action"
+          ],
+          "automate": [
+            "rank_tracking",
+            "competitor_monitoring",
+            "technical_audits"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "paid-social-specialist",
+            "trigger": "keyword_intent_overlap",
+            "payloadSchema": "schemas/handoff-keyword-intent.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "content-creator",
+            "trigger": "content_brief_ready",
+            "payloadSchema": "schemas/handoff-content-brief.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/seo-specialist/config.yaml",
+        "sha256": "5ad21a7f209e3d33"
+      },
+      {
+        "key": "video-optimizer",
+        "title": "Video Optimizer",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "YouTube algorithm strategy, chaptering, thumbnail concepts, video SEO",
+        "skills": [
+          "deck-builder",
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "youtube_optimizer",
+          "thumbnail_designer",
+          "chapter_generator",
+          "video_seo_analyzer",
+          "retention_analyzer"
+        ],
+        "temperature": 0.4,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "video_strategy",
+            "thumbnail_concepts",
+            "chapter_structure",
+            "optimization_tactics"
+          ],
+          "recommend": [
+            "content_topics",
+            "series_planning",
+            "collaboration_targets"
+          ],
+          "consult": [
+            "brand_guidelines",
+            "product_launches",
+            "legal_clearance"
+          ],
+          "approve": [
+            "video_publish",
+            "thumbnail_final",
+            "metadata_final"
+          ],
+          "execute": [
+            "optimization_implementation",
+            "thumbnail_creation",
+            "chapter_writing",
+            "metadata_optimization"
+          ],
+          "escalate": [
+            "copyright_strike",
+            "algorithm_penalty",
+            "brand_safety_violation",
+            "monetization_issue"
+          ],
+          "automate": [
+            "thumbnail_ab_testing",
+            "chapter_generation",
+            "metadata_updates",
+            "performance_reporting"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "visual-storyteller",
+            "trigger": "video_narrative_structure",
+            "payloadSchema": "schemas/handoff-video-narrative.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "carousel-growth",
+            "trigger": "short_form_adaptation",
+            "payloadSchema": "schemas/handoff-shortform.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/video-optimizer/config.yaml",
+        "sha256": "3c04946af7df9a19"
+      },
+      {
+        "key": "visual-storyteller",
+        "title": "Visual Storyteller",
+        "parentSpecialistKey": "marketing-brand",
+        "parentDepartment": "Marketing",
+        "description": "Visual narratives, multimedia content, brand storytelling",
+        "skills": [
+          "deck-builder",
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "storyboard_creator",
+          "visual_asset_creator",
+          "narrative_arc_designer",
+          "multimedia_editor",
+          "brand_story_framework"
+        ],
+        "temperature": 0.5,
+        "maxTokens": 4000,
+        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "decisionRights": {
+          "own": [
+            "visual_narratives",
+            "story_angles",
+            "multimedia_formats",
+            "brand_story_arc"
+          ],
+          "recommend": [
+            "content_series",
+            "campaign_themes"
+          ],
+          "consult": [
+            "brand_guidelines",
+            "product_features",
+            "audience_insights"
+          ],
+          "approve": [
+            "visual_assets",
+            "video_concepts",
+            "campaign_visuals"
+          ],
+          "execute": [
+            "storyboard_creation",
+            "asset_production",
+            "editing",
+            "publishing_coordination"
+          ],
+          "escalate": [
+            "creative_block",
+            "budget_constraint",
+            "legal_review",
+            "technical_limitation"
+          ],
+          "automate": [
+            "asset_organization",
+            "version_tracking",
+            "format_adaptation",
+            "distribution_prep"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "carousel-growth",
+            "trigger": "carousel_story_format",
+            "payloadSchema": "schemas/handoff-carousel-story.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "video-optimizer",
+            "trigger": "video_story_adaptation",
+            "payloadSchema": "schemas/handoff-video-story.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/marketing-brand/sub-agents/visual-storyteller/config.yaml",
+        "sha256": "1f4c396a03f1e1aa"
+      }
+    ]
   },
   {
     "key": "operations-ops",
@@ -648,7 +1580,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/operations-ops/config.yaml",
-    "sha256": "c7686885ef290e91"
+    "sha256": "c7686885ef290e91",
+    "subAgents": []
   },
   {
     "key": "people-hr",
@@ -739,7 +1672,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/people-hr/config.yaml",
-    "sha256": "21245578a7b68db4"
+    "sha256": "21245578a7b68db4",
+    "subAgents": []
   },
   {
     "key": "sales-outbound",
@@ -824,7 +1758,8 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/sales-outbound/config.yaml",
-    "sha256": "077bbc8e6fd77a42"
+    "sha256": "077bbc8e6fd77a42",
+    "subAgents": []
   }
 ]
 
