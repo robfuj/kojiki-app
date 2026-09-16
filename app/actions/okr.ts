@@ -1,21 +1,16 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireUserId } from '@/lib/session'
 import { db } from '@/lib/db'
 import { objectives, projectBots, projects } from '@/lib/db/schema'
 import { resolveModelForUser } from '@/lib/ai'
 import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
 import { and, asc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { generateText } from 'ai'
 import { z } from 'zod'
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 export type ObjectiveRow = typeof objectives.$inferSelect
 

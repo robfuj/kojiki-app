@@ -2,11 +2,10 @@
 
 import { generateText } from 'ai'
 import { and, asc, desc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { resolveModelForTask, resolveModelForUser } from '@/lib/ai'
-import { auth } from '@/lib/auth'
+import { requireUserId } from '@/lib/session'
 import { estimateTaskCost, estimateTokens, priceOf } from '@/lib/cost'
 import { db } from '@/lib/db'
 import {
@@ -52,11 +51,7 @@ import { appendSentinelEntry } from '@/lib/sentinel'
  * survived into the OKR tree, naming the sub-agent that did the work.
  */
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 async function assertProjectOwnership(userId: string, projectId: string) {
   const [project] = await db

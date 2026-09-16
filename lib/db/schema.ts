@@ -518,5 +518,8 @@ export const userPreferences = pgTable('user_preferences', {
   userId: text('userId').primaryKey(),
   // Key into ACCENTS in lib/accents.ts. Unknown keys fall back to the default.
   accentKey: text('accentKey').notNull().default('seal'),
+  // BCP-47 tag constrained to LOCALES in lib/i18n/locales.ts. Unknown values are
+  // resolved to the default on read, so a retired language cannot break a render.
+  locale: text('locale').notNull().default('en'),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })

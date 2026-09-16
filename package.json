@@ -12,7 +12,8 @@
     "db:migrate-orientation": "node scripts/migrate-orientation.mjs",
     "db:migrate-execution": "node scripts/migrate-execution.mjs",
     "db:migrate-model-routing": "node scripts/migrate-model-routing.mjs",
-    "db:migrate-documents": "node scripts/migrate-documents.mjs"
+    "db:migrate-documents": "node scripts/migrate-documents.mjs",
+    "db:migrate-locale": "node scripts/migrate-locale.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.54",

@@ -2,7 +2,9 @@
 
 import { deleteProject } from '@/app/actions/projects'
 import type { ProjectRow } from '@/app/actions/projects'
+import { useLocale } from '@/components/i18n/locale-provider'
 import { ProjectIntake } from '@/components/intake/project-intake'
+import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -20,6 +22,7 @@ export function ProjectsRail({
   onSelect,
   onCreated,
 }: ProjectsRailProps) {
+  const { t } = useLocale()
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -36,13 +39,13 @@ export function ProjectsRail({
   return (
     <>
       <section
-        aria-label="Projects"
+        aria-label={t.projects.label}
         className="shrink-0 border-b border-border bg-sidebar/60"
       >
         <div className="flex items-stretch gap-2 overflow-x-auto px-5 py-3">
           <div className="flex shrink-0 flex-col justify-center pr-1">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Projects
+              {t.projects.label}
             </p>
             <p className="font-mono text-[11px] text-muted-foreground">
               {projects.length}
@@ -76,7 +79,7 @@ export function ProjectsRail({
                     {project.name}
                   </span>
                   <span className="mt-1 truncate text-xs text-muted-foreground">
-                    {project.objective ?? 'no objective set'}
+                    {project.objective ?? t.projects.noObjective}
                   </span>
                 </button>
 
@@ -84,7 +87,9 @@ export function ProjectsRail({
                   type="button"
                   onClick={() => remove(project.id)}
                   disabled={busy}
-                  aria-label={`Delete ${project.name}`}
+                  aria-label={format(t.projects.deleteAria, {
+                    name: project.name,
+                  })}
                   className="absolute -top-1.5 -right-1.5 hidden rounded-full border border-border bg-card p-1.5 text-muted-foreground transition-colors hover:border-destructive hover:text-destructive group-hover:block"
                 >
                   <Trash2 className="size-3.5" aria-hidden="true" />
@@ -102,7 +107,7 @@ export function ProjectsRail({
             className="flex shrink-0 items-center gap-2 rounded-xl border border-dashed border-border px-4 text-sm text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <Plus className="size-4" aria-hidden="true" />
-            New project
+            {t.projects.newProject}
           </button>
         </div>
       </section>

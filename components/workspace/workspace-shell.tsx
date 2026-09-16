@@ -1,6 +1,8 @@
 'use client'
 
 import { getProjectWorkspace } from '@/app/actions/projects'
+import { LanguageSelector } from '@/components/i18n/language-selector'
+import { useLocale } from '@/components/i18n/locale-provider'
 import { ChatModule, type ChatFocus } from '@/components/workspace/chat-module'
 import { OkrTree } from '@/components/workspace/okr-tree'
 import { ProjectsRail } from '@/components/workspace/projects-rail'
@@ -9,6 +11,7 @@ import { SettingsPanel } from '@/components/workspace/settings-panel'
 import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
+import { format } from '@/lib/i18n'
 import { Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -28,6 +31,7 @@ export function WorkspaceShell({
   userName,
   accentKey,
 }: WorkspaceShellProps) {
+  const { t } = useLocale()
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<string | null>(
     projects[0]?.id ?? null,
@@ -69,31 +73,39 @@ export function WorkspaceShell({
 
         <dl className="flex min-w-0 items-center gap-4 text-sm">
           <div className="flex shrink-0 items-baseline gap-1.5">
-            <dt className="text-muted-foreground">User</dt>
+            <dt className="text-muted-foreground">{t.workspace.userLabel}</dt>
             <dd className="font-medium text-foreground">{orientation.userName}</dd>
           </div>
           <div className="hidden min-w-0 items-baseline gap-1.5 md:flex">
-            <dt className="shrink-0 text-muted-foreground">Industry</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t.workspace.industryLabel}
+            </dt>
             <dd className="truncate text-foreground">{orientation.industry}</dd>
           </div>
           <div className="hidden min-w-0 items-baseline gap-1.5 xl:flex">
-            <dt className="shrink-0 text-muted-foreground">Goal</dt>
+            <dt className="shrink-0 text-muted-foreground">
+              {t.workspace.goalLabel}
+            </dt>
             <dd className="truncate text-foreground">{orientation.goal}</dd>
           </div>
         </dl>
 
         <div className="ml-auto flex items-center gap-3">
+          <LanguageSelector />
+
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <Settings className="size-3.5" aria-hidden="true" />
-            Settings
+            {t.workspace.settings}
           </button>
 
           <p className="hidden items-center gap-2 text-sm text-muted-foreground lg:flex">
-            {userName ? `Signed in as ${userName}` : 'Orientation complete'}
+            {userName
+              ? format(t.workspace.signedInAs, { name: userName })
+              : t.workspace.orientationComplete}
             {userName && (
               <>
                 <span aria-hidden="true">·</span>
@@ -159,7 +171,7 @@ export function WorkspaceShell({
           ) : (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Open a project to load its department agents.
+                {t.workspace.sidebarEmpty}
               </p>
             </div>
           )}
@@ -178,6 +190,8 @@ export function WorkspaceShell({
 }
 
 function EmptyWorkspace({ hasProjects }: { hasProjects: boolean }) {
+  const { t } = useLocale()
+
   return (
     <div className="flex h-full items-center justify-center p-10">
       <div className="max-w-md text-center">
@@ -185,12 +199,14 @@ function EmptyWorkspace({ hasProjects }: { hasProjects: boolean }) {
           目
         </p>
         <h2 className="mt-6 font-serif text-2xl text-balance text-foreground">
-          {hasProjects ? 'No project selected' : 'No projects yet'}
+          {hasProjects
+            ? t.workspace.noneSelectedTitle
+            : t.workspace.noneYetTitle}
         </h2>
         <p className="mt-3 text-base leading-relaxed text-pretty text-muted-foreground">
           {hasProjects
-            ? 'Choose a project from the rail above to load its OKR tree and department agents.'
-            : 'Create a project from the rail above. The orchestrator researches the goal, asks what it needs to know, and chooses the department agents the work requires.'}
+            ? t.workspace.noneSelectedBody
+            : t.workspace.noneYetBody}
         </p>
       </div>
     </div>

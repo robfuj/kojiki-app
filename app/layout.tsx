@@ -1,3 +1,6 @@
+import { getLocale } from '@/app/actions/settings'
+import { LocaleProvider } from '@/components/i18n/locale-provider'
+import { LOCALE_META } from '@/lib/i18n/locales'
 import { Analytics } from '@vercel/analytics/next'
 import { Geist, Geist_Mono, Zen_Old_Mincho } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
@@ -52,17 +55,24 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Resolved here rather than per page so the `lang` attribute is correct on every
+  // route, including sign-in, where a reader who cannot understand the interface
+  // most needs the language control to work.
+  const locale = await getLocale()
+
   return (
     <html
-      lang="en"
+      lang={LOCALE_META[locale].htmlLang}
       className={`bg-background ${geistSans.variable} ${geistMono.variable} ${mincho.variable}`}
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   )
 }

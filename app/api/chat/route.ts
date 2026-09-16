@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { getSessionUser } from '@/lib/session'
 import { resolveModelForUser } from '@/lib/ai'
 import { db } from '@/lib/db'
 import {
@@ -10,6 +10,8 @@ import {
   subAgentTasks,
 } from '@/lib/db/schema'
 import { documentsForContext } from '@/app/actions/documents'
+import { getLocale } from '@/app/actions/settings'
+import type { Locale } from '@/lib/i18n/locales'
 import type { SuccessCriterion } from '@/lib/kaizen'
 import type { ResearchBrief } from '@/lib/orchestrator'
 import {
@@ -28,7 +30,6 @@ import {
 } from '@/lib/workspace-context'
 import { convertToModelMessages, streamText, type UIMessage } from 'ai'
 import { and, desc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 
 export const maxDuration = 60
 
@@ -44,6 +45,7 @@ interface ResolvePromptInput {
   orientationAnswers: OrientationAnswers | null
   research: ResearchBrief | null
   documents: PromptDocument[]
+  locale: Locale
 }
 
 /**
@@ -55,8 +57,15 @@ interface ResolvePromptInput {
  * agent that does not exist, which the caller turns into a 404.
  */
 async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | null> {
-  const { chatSession, project, userId, orientationAnswers, research, documents } =
-    input
+  const {
+    chatSession,
+    project,
+    userId,
+    orientationAnswers,
+    research,
+    documents,
+    locale,
+  } = input
 
   if (chatSession.agentKind === 'orchestrator' || !chatSession.botId) {
     const [okrSummary, pendingGates, recentSignals, activeTasks] = await Promise.all([
@@ -77,6 +86,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
         recentSignals: [recentSignals, activeTasks].filter(Boolean).join('\n\n') || null,
       },
       documents,
+      locale,
     )
   }
 
@@ -108,6 +118,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
       research,
       task,
       documents,
+      locale,
     )
   }
 
@@ -122,6 +133,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
     project.objective,
     research,
     documents,
+    locale,
   )
 }
 
@@ -162,11 +174,11 @@ async function activeTaskFor(
 }
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) {
+  const user = await getSessionUser()
+  if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const userId = session.user.id
+  const userId = user.id
 
   let body: ChatRequestBody
   try {
@@ -251,6 +263,10 @@ export async function POST(request: Request) {
   // row; a sub-agent borrows its parent department's bot but gets its own prompt
   // built from the ontology, so the user can talk to the SEO Specialist directly
   // rather than only through the Marketing head.
+  // Agent replies follow the reader's language, so the prompt builders need the
+  // stored preference rather than anything the client claims.
+  const locale = await getLocale()
+
   const system = await resolveSystemPrompt({
     chatSession,
     project,
@@ -258,6 +274,7 @@ export async function POST(request: Request) {
     orientationAnswers,
     research,
     documents,
+    locale,
   })
 
   if (!system) {

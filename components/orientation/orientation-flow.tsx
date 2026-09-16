@@ -1,6 +1,8 @@
 'use client'
 
 import { completeOrientation } from '@/app/actions/orientation'
+import { LanguageSelector } from '@/components/i18n/language-selector'
+import { useLocale } from '@/components/i18n/locale-provider'
 import {
   IntakeProgress,
   IntakeScreen,
@@ -64,6 +66,7 @@ const PROVIDER_KEY = 'providers'
 const TOTAL = SCREENS.length + 1
 
 export function OrientationFlow({ userName }: { userName: string | null }) {
+  const { t } = useLocale()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<IntakeDirection>('forward')
@@ -73,6 +76,12 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
   const onProviderStep = step === SCREENS.length
   const screen = onProviderStep ? null : SCREENS[step]
+
+  // The ontology owns field names and requiredness; the sentences a reader sees
+  // come from the dictionary so they follow the chosen language.
+  const screenCopy = screen
+    ? t.orientationScreens[screen.key as keyof typeof t.orientationScreens]
+    : null
 
   // Orientation cannot complete with a hole in it: the orchestrator's research and
   // specialist selection are driven by these answers, so an empty goal would
@@ -106,7 +115,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
     }
     if (!screen) return
     if (screen.field.required && !answers[screen.field.name]?.trim().length) {
-      setError('This answer is required — the orchestrator cannot work without it.')
+      setError(t.orientation.requiredError)
       return
     }
     goTo(step + 1)
@@ -114,7 +123,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
   async function finish() {
     if (missingIndex >= 0) {
-      setError('Answer every required question before completing orientation.')
+      setError(t.orientation.incompleteError)
       goTo(missingIndex)
       return
     }
@@ -135,28 +144,35 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
       await completeOrientation(payload)
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save orientation')
+      setError(err instanceof Error ? err.message : t.orientation.saveError)
       setSubmitting(false)
     }
   }
 
   return (
     <main className="min-h-screen bg-background">
-      <IntakeProgress value={(step + 1) / TOTAL} label="Orientation progress" />
+      <IntakeProgress
+        value={(step + 1) / TOTAL}
+        label={t.orientation.progressLabel}
+      />
 
       <IntakeScreen
         screenKey={onProviderStep ? PROVIDER_KEY : screen!.key}
         direction={direction}
-        eyebrow={onProviderStep ? 'Providers' : screen!.eyebrow}
+        eyebrow={onProviderStep ? t.orientation.providersEyebrow : screenCopy!.eyebrow}
         prompt={
-          onProviderStep ? 'Which provider runs the work?' : screen!.prompt
+          onProviderStep ? t.orientation.providersPrompt : screenCopy!.prompt
         }
-        why={
+        why={onProviderStep ? t.orientation.providersWhy : screenCopy!.why}
+        field={
           onProviderStep
-            ? 'Each department head proposes a model per task and you approve it before anything runs, so nothing spends money you did not agree to. Connecting a provider is what makes that choice real — skip it and everything runs on the free tier instead.'
-            : screen!.why
+            ? undefined
+            : {
+                ...screen!.field,
+                label: screenCopy!.label,
+                placeholder: screenCopy!.placeholder,
+              }
         }
-        field={onProviderStep ? undefined : screen!.field}
         value={onProviderStep ? '' : (answers[screen!.field.name] ?? '')}
         onChange={
           onProviderStep
@@ -165,17 +181,19 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
         }
         onNext={advance}
         onBack={step > 0 ? () => goTo(step - 1) : undefined}
-        nextLabel={onProviderStep ? 'Complete orientation' : 'Continue'}
+        nextLabel={
+          onProviderStep ? t.orientation.completeSubmit : t.common.continue
+        }
         isFinal={onProviderStep}
         error={error}
         busy={submitting}
         busyNote={
           <>
-            Researching{' '}
+            {t.orientation.researchingLead}
             <span className="font-medium text-foreground">
-              {answers.industry || 'your industry'}
-            </span>{' '}
-            and selecting the specialists your goal needs. This takes a moment.
+              {answers.industry || t.orientation.industryFallback}
+            </span>
+            {t.orientation.researchingTail}
           </>
         }
         header={<OrientationHeader userName={userName} />}
@@ -183,20 +201,17 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
           onProviderStep ? (
             <div className="mt-10 max-w-xl rounded-2xl bg-muted px-5 py-4">
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
-                what happens next
+                {t.orientation.nextEyebrow}
               </p>
               <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-                The orchestrator researches your goal and industry on the live
-                web — market, competition, regulation, risk — then selects which
-                of the canonical specialists your goal actually needs. Only those
-                are instantiated, and every one of them sees the same research.
+                {t.orientation.nextBody}
               </p>
             </div>
           ) : undefined
         }
       >
         <div className="mt-10">
-          <ProviderConnect title="Connect a provider" />
+          <ProviderConnect title={t.orientation.connectTitle} />
         </div>
       </IntakeScreen>
     </main>
@@ -204,6 +219,8 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 }
 
 function OrientationHeader({ userName }: { userName: string | null }) {
+  const { t } = useLocale()
+
   return (
     <header className="surface-translucent sticky top-0 z-40 border-b border-border">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
@@ -213,8 +230,9 @@ function OrientationHeader({ userName }: { userName: string | null }) {
 
         <div className="flex items-center gap-4">
           <p className="hidden font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground sm:block">
-            Orientation Protocol
+            {t.orientation.protocol}
           </p>
+          <LanguageSelector />
           {userName && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="max-w-32 truncate text-foreground">

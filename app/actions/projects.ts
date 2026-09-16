@@ -1,6 +1,6 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireUserId } from '@/lib/session'
 import { db } from '@/lib/db'
 import {
   chatMessages,
@@ -11,14 +11,9 @@ import {
   projects,
 } from '@/lib/db/schema'
 import { and, desc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 export type ProjectRow = typeof projects.$inferSelect
 export type BotRow = typeof projectBots.$inferSelect

@@ -1,4 +1,9 @@
 import { documentsContext } from '@/lib/documents'
+import {
+  DEFAULT_LOCALE,
+  languageDirective,
+  type Locale,
+} from '@/lib/i18n/locales'
 import type { ResearchBrief } from '@/lib/orchestrator'
 import { subAgentJobDescription } from './brief'
 import { orientationContext, type OrientationAnswers } from './orientation'
@@ -43,6 +48,7 @@ export function buildSystemPrompt(
   projectObjective: string | null,
   research: ResearchBrief | null = null,
   documents: PromptDocument[] = [],
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const specialist = getSpecialist(bot.specialistKey)
 
@@ -112,6 +118,9 @@ export function buildSystemPrompt(
   const docs = documentsSection(documents)
   if (docs) sections.push(docs)
 
+  const directive = languageDirective(locale)
+  if (directive) sections.push(directive)
+
   sections.push(
     'Be concrete and brief. Prefer a clear recommendation with its reasoning over hedging. Use markdown sparingly: short paragraphs, and lists only when they carry real structure.',
   )
@@ -163,6 +172,7 @@ export function buildSubAgentSystemPrompt(
   research: ResearchBrief | null = null,
   task: SubAgentTaskContext | null = null,
   documents: PromptDocument[] = [],
+  locale: Locale = DEFAULT_LOCALE,
 ): string | null {
   const sub = getSubAgent(parentSpecialistKey, subAgentKey)
   if (!sub) return null
@@ -207,6 +217,9 @@ export function buildSubAgentSystemPrompt(
   const docs = documentsSection(documents)
   if (docs) sections.push(docs)
 
+  const directive = languageDirective(locale)
+  if (directive) sections.push(directive)
+
   sections.push(STYLE_RULE)
 
   return sections.join('\n\n')
@@ -236,6 +249,7 @@ export function buildOrchestratorSystemPrompt(
   research: ResearchBrief | null,
   context: OrchestratorContext,
   documents: PromptDocument[] = [],
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   const sections: string[] = [
     `You are the orchestrator of the Kojiki ontology, operating inside the project "${projectName}". Department agents and their sub-agents do the work; you coordinate them, report on their progress, and surface the decisions that belong to the user.`,
@@ -275,6 +289,9 @@ export function buildOrchestratorSystemPrompt(
 
   const docs = documentsSection(documents)
   if (docs) sections.push(docs)
+
+  const directive = languageDirective(locale)
+  if (directive) sections.push(directive)
 
   sections.push(STYLE_RULE)
 

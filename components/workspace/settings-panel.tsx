@@ -1,10 +1,13 @@
 'use client'
 
 import { deleteDocument, uploadDocument } from '@/app/actions/documents'
-import { AccentPicker } from '@/components/settings/accent-picker'
+import { LanguageSelector } from '@/components/i18n/language-selector'
+import { useLocale } from '@/components/i18n/locale-provider'
 import { ProviderConnect } from '@/components/providers/provider-connect'
+import { AccentPicker } from '@/components/settings/accent-picker'
 import { DocumentLibrary } from '@/components/workspace/document-attach'
 import { SUPPORTED_MIME_LABEL } from '@/lib/documents'
+import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { FileUp, Loader2, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -29,6 +32,8 @@ export function SettingsPanel({
   projectId: string | null
   onClose: () => void
 }) {
+  const { t } = useLocale()
+
   // Escape closes it, which is what an overlay owes the user.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -48,44 +53,52 @@ export function SettingsPanel({
       >
         <header className="surface-translucent sticky top-0 z-10 flex items-center gap-3 border-b border-border px-6 py-4">
           <h2 id="settings-title" className="text-xl font-semibold text-foreground">
-            Settings
+            {t.settings.title}
           </h2>
           <p className="hidden text-xs text-muted-foreground sm:block">
-            providers · appearance · files
+            {t.settings.summary}
           </p>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close settings"
+            aria-label={t.settings.closeAria}
             className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <X className="size-3.5" aria-hidden="true" />
-            Close
+            {t.common.close}
           </button>
         </header>
 
         <div className="divide-y divide-border">
           <SettingsSection
             id="providers"
-            title="Model providers"
-            description="Which provider runs the agents, and what it costs to run them."
+            title={t.settings.providersTitle}
+            description={t.settings.providersDescription}
           >
-            <ProviderConnect title="Connected providers" />
+            <ProviderConnect title={t.settings.connectedProviders} />
           </SettingsSection>
 
           <SettingsSection
             id="appearance"
-            title="Appearance"
-            description="The accent colour. The only part of the palette you change."
+            title={t.settings.appearanceTitle}
+            description={t.settings.appearanceDescription}
           >
             <AccentPicker currentKey={accentKey} />
           </SettingsSection>
 
           <SettingsSection
+            id="language"
+            title={t.settings.languageTitle}
+            description={t.settings.languageDescription}
+          >
+            <LanguageSelector />
+          </SettingsSection>
+
+          <SettingsSection
             id="files"
-            title="Files"
-            description="Documents the agents read as context. Anything here informs every agent, not just the one you are messaging."
+            title={t.settings.filesTitle}
+            description={t.settings.filesDescription}
           >
             <FilesSection projectId={projectId} />
           </SettingsSection>
@@ -158,6 +171,7 @@ function FileUpload({
   projectId: string | null
   onUploaded: () => void
 }) {
+  const { t } = useLocale()
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -176,11 +190,16 @@ function FileUpload({
     try {
       const saved = await uploadDocument({ file, projectId })
       setNotice(
-        `${saved.name} is now context for ${saved.projectId ? 'this project' : 'all your projects'}.`,
+        format(
+          saved.projectId
+            ? t.settings.uploadedProject
+            : t.settings.uploadedAll,
+          { name: saved.name },
+        ),
       )
       onUploaded()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not read that file')
+      setError(err instanceof Error ? err.message : t.settings.readError)
     } finally {
       setUploading(false)
     }
@@ -210,13 +229,13 @@ function FileUpload({
           ) : (
             <FileUp className="size-4" aria-hidden="true" />
           )}
-          {uploading ? 'Reading…' : 'Add a file'}
+          {uploading ? t.settings.readingFile : t.settings.addFile}
         </button>
 
         <p className="font-mono text-[11px] text-muted-foreground">
           {SUPPORTED_MIME_LABEL}
           <span aria-hidden="true"> · </span>
-          {projectId ? 'scoped to this project' : 'available to all projects'}
+          {projectId ? t.settings.scopedProject : t.settings.scopedAll}
         </p>
       </div>
 
