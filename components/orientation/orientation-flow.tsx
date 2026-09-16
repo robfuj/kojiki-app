@@ -2,6 +2,7 @@
 
 import { completeOrientation } from '@/app/actions/orientation'
 import { Button } from '@/components/ui/button'
+import { SignOutButton } from '@/components/sign-out-button'
 import { cn } from '@/lib/utils'
 import {
   FUNCTION_LINES,
@@ -153,11 +154,13 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
             })}
           </ol>
 
-          {userName && (
-            <p className="mt-8 border-t border-border/70 pt-4 text-xs text-muted-foreground">
-              Signed in as <span className="text-foreground">{userName}</span>
-            </p>
-          )}
+      {userName && (
+        <p className="mt-8 flex items-center gap-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
+          Signed in as <span className="text-foreground">{userName}</span>
+          <span aria-hidden="true">·</span>
+          <SignOutButton />
+        </p>
+      )}
         </aside>
 
         <section className="flex flex-col justify-center py-10 lg:py-0">

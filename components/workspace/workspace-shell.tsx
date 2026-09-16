@@ -4,6 +4,7 @@ import { getProjectWorkspace } from '@/app/actions/projects'
 import { ChatModule } from '@/components/workspace/chat-module'
 import { OkrTree } from '@/components/workspace/okr-tree'
 import { ProjectsRail } from '@/components/workspace/projects-rail'
+import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
 import { FUNCTION_LINES } from '@/lib/ontology/orientation'
@@ -73,9 +74,15 @@ export function WorkspaceShell({
           </div>
         </dl>
 
-        <p className="ml-auto hidden text-xs text-muted-foreground md:block">
-          {userName ? `Signed in as ${userName}` : 'Orientation complete'}
-        </p>
+  <p className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
+    {userName ? `Signed in as ${userName}` : 'Orientation complete'}
+    {userName && (
+      <>
+        <span aria-hidden="true">·</span>
+        <SignOutButton />
+      </>
+    )}
+  </p>
       </header>
 
       <ProjectsRail
