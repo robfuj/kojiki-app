@@ -12,9 +12,6 @@
  * external connector such as Google Drive later without changing the row shape.
  */
 
-import { PDFParse } from 'pdf-parse'
-import mammoth from 'mammoth'
-
 /** Hard ceiling on what one document may contribute to a prompt. */
 export const MAX_DOCUMENT_CHARS = 200_000
 
@@ -72,6 +69,12 @@ export async function parseDocument(input: {
   let raw: string
 
   if (PDF_TYPES.has(mimeType)) {
+    // Imported here, not at module scope. pdf-parse pulls in pdfjs-dist, which
+    // probes for browser canvas APIs while it evaluates; a static import drags
+    // that probe into every server bundle reaching this module — including the
+    // prompt helpers below, which never parse anything — and the failed probe
+    // takes the whole route down. Loading on demand keeps it off that graph.
+    const { PDFParse } = await import('pdf-parse')
     const parser = new PDFParse({ data: new Uint8Array(buffer) })
     try {
       const result = await parser.getText()
@@ -81,6 +84,7 @@ export async function parseDocument(input: {
       await parser.destroy()
     }
   } else if (DOCX_TYPES.has(mimeType)) {
+    const mammoth = (await import('mammoth')).default
     // extractRawText rather than convertToHtml: the agents want the words, and
     // HTML markup would spend prompt budget on tags.
     const result = await mammoth.extractRawText({ buffer })
