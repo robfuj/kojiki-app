@@ -47,6 +47,12 @@ export type SentinelEntryType =
   | 'escalation_raised'
   | 'gate_requested'
   | 'gate_decided'
+  // MODEL ROUTING — sealing the proposal, the authorisation and the spend means
+  // the record shows who chose the model, who approved it, and what it actually
+  // cost. An agent cannot later claim it was authorised for a model it was not.
+  | 'model_proposed'
+  | 'model_approved'
+  | 'cost_recorded'
 
 /** Deterministic JSON: sorted keys at every depth, so a hash is reproducible. */
 export function canonicalJson(value: unknown): string {

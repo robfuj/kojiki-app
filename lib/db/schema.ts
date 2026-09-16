@@ -1,5 +1,6 @@
 import {
   boolean,
+  doublePrecision,
   integer,
   jsonb,
   pgTable,
@@ -230,12 +231,80 @@ export const subAgentTasks = pgTable('sub_agent_tasks', {
   escalationId: text('escalationId'),
   gateRequestId: text('gateRequestId'),
 
+  // MODEL ROUTING — the head proposes which model should run the task and why,
+  // together with what it expects to cost. Nothing runs until the user approves,
+  // because the choice spends the user's money and a cheaper model may quietly
+  // degrade the work.
+  proposedModelId: text('proposedModelId'),
+  proposedModelLabel: text('proposedModelLabel'),
+  proposedProvider: text('proposedProvider'),
+  modelRationale: text('modelRationale'),
+  estimatedInputTokens: integer('estimatedInputTokens'),
+  estimatedOutputTokens: integer('estimatedOutputTokens'),
+  estimatedCostUsd: doublePrecision('estimatedCostUsd'),
+
+  // The user's decision. Kept separate from the proposal so the record shows what
+  // was asked for and what was actually authorised, which are not always the same.
+  approvedModelId: text('approvedModelId'),
+  approvedModelLabel: text('approvedModelLabel'),
+  approvedProvider: text('approvedProvider'),
+  modelApprovedAt: timestamp('modelApprovedAt'),
+
+  // Actual consumption, read from the provider's own usage figures after the run
+  // rather than estimated, so the running total is real spend.
+  actualInputTokens: integer('actualInputTokens'),
+  actualOutputTokens: integer('actualOutputTokens'),
+  actualCostUsd: doublePrecision('actualCostUsd'),
+  modelUsedId: text('modelUsedId'),
+
   // Set once the head has folded the result back into the OKR tree.
   reabsorbedAt: timestamp('reabsorbedAt'),
   proposedObjectiveId: text('proposedObjectiveId'),
   position: integer('position').notNull().default(0),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})
+
+// The user's provider connections, captured during Orientation and editable later.
+// One row per provider; `isDefault` marks the one used when a task does not name
+// a provider. The key is encrypted at rest (see lib/secrets.ts) and is never
+// returned to the client in any form other than a last-four mask.
+export const providerConnections = pgTable(
+  'provider_connections',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    // openrouter | anthropic | openai
+    provider: text('provider').notNull(),
+    encryptedKey: text('encryptedKey').notNull(),
+    isDefault: boolean('isDefault').notNull().default(false),
+    // Set once a key has been used successfully, so a bad key is visible.
+    lastVerifiedAt: timestamp('lastVerifiedAt'),
+    lastError: text('lastError'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  // One connection per provider per user; connecting twice replaces rather than
+  // duplicates, so there is never ambiguity about which key is in use.
+  (table) => [uniqueIndex('provider_connections_user_provider_idx').on(table.userId, table.provider)],
+)
+
+// A cached snapshot of the live provider catalogs. Model IDs and prices drift, so
+// this is a cache with a fetch timestamp rather than a source of truth: the
+// provider's own API is authoritative and this table is refreshed from it.
+export const modelCatalog = pgTable('model_catalog', {
+  // `${provider}:${modelId}` — unique across providers.
+  id: text('id').primaryKey(),
+  provider: text('provider').notNull(),
+  modelId: text('modelId').notNull(),
+  label: text('label').notNull(),
+  contextLength: integer('contextLength'),
+  // USD per million tokens, as published by the provider.
+  inputPricePer1m: doublePrecision('inputPricePer1m').notNull().default(0),
+  outputPricePer1m: doublePrecision('outputPricePer1m').notNull().default(0),
+  modality: text('modality'),
+  isFree: boolean('isFree').notNull().default(false),
+  fetchedAt: timestamp('fetchedAt').notNull().defaultNow(),
 })
 
 // KAIZEN — Act. A causal trace of one attempt: what was hypothesised, what was
