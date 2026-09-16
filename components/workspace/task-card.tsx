@@ -1,6 +1,8 @@
 'use client'
 
+import { getCatalogOptions } from '@/app/actions/providers'
 import {
+  approveTaskModel,
   checkTask,
   escalateTask,
   reabsorbTask,
@@ -16,11 +18,13 @@ import {
   type ErrorClass,
   type ValidationResult,
 } from '@/lib/agent-labels'
+import { formatUsd } from '@/lib/cost'
 import type { Guardrail, GuardrailBreach, SuccessCriterion } from '@/lib/kaizen'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   CheckCircle2,
+  Coins,
   GitBranch,
   Lightbulb,
   MessageSquare,
@@ -29,6 +33,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
+import useSWR from 'swr'
 
 /**
  * One sub-agent task, rendered as the Kaizen cycle it actually went through.
@@ -236,6 +241,17 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
           )}
         </section>
 
+        {/* The head proposed a model; nothing runs until the user authorises it. */}
+        {task.status === 'proposed' && (
+          <ModelApproval
+            task={task}
+            busy={busy}
+            onApprove={(modelId) =>
+              run(() => approveTaskModel({ taskId: task.id, modelId }))
+            }
+          />
+        )}
+
         {/* DO — what the sub-agent reported. */}
         {task.resultSummary && (
           <section className="border-t border-border pt-3">
@@ -249,6 +265,32 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
               <p className="mt-2 flex items-start gap-1.5 text-xs text-seal">
                 <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
                 Blocked by: {result.blockedBy}
+              </p>
+            )}
+
+            {(task.actualCostUsd !== null || task.estimatedCostUsd !== null) && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
+                <Coins className="size-3 shrink-0 text-seal" aria-hidden="true" />
+                {task.actualCostUsd !== null ? (
+                  <>
+                    <span className="text-foreground">
+                      {formatUsd(task.actualCostUsd)} actual
+                    </span>
+                    {task.estimatedCostUsd !== null && (
+                      <span>vs {formatUsd(task.estimatedCostUsd)} estimated</span>
+                    )}
+                    {task.actualInputTokens !== null &&
+                      task.actualOutputTokens !== null && (
+                        <span>
+                          {task.actualInputTokens.toLocaleString()} in /{' '}
+                          {task.actualOutputTokens.toLocaleString()} out
+                        </span>
+                      )}
+                  </>
+                ) : (
+                  <span>estimated {formatUsd(task.estimatedCostUsd)}</span>
+                )}
+                {task.modelUsedId && <span>· {task.modelUsedId}</span>}
               </p>
             )}
           </section>
@@ -557,5 +599,128 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
         </button>
       </div>
     </div>
+  )
+}
+
+interface ModelApprovalProps {
+  task: TaskRow
+  busy: boolean
+  onApprove: (modelId: string | null) => Promise<void>
+}
+
+/**
+ * The head proposed a model; the user authorises it.
+ *
+ * This is the point where spending becomes consented to. The estimate is shown
+ * above the button rather than revealed afterwards, and the user can substitute a
+ * different model — an approval of a number only means something if the number is
+ * visible and the choice is genuinely theirs.
+ */
+function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
+  const [choosing, setChoosing] = useState(false)
+  const [modelId, setModelId] = useState('')
+
+  // The catalog is fetched only once the user asks to substitute. It is the
+  // largest payload this panel can pull, and most tasks are approved as proposed.
+  const { data: options } = useSWR(
+    choosing ? 'catalog-options' : null,
+    getCatalogOptions,
+    { revalidateOnFocus: false },
+  )
+
+  return (
+    <section className="rounded-md border border-seal/40 bg-seal-soft p-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+        Model · proposed by {task.parentSpecialistKey}, awaiting your approval
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="text-sm text-foreground">
+          {task.proposedModelLabel ?? task.proposedModelId}
+        </span>
+        {task.proposedModelLabel && task.proposedModelId && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {task.proposedModelId}
+          </span>
+        )}
+        {task.estimatedCostUsd !== null && (
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-foreground">
+            <Coins className="size-3 text-seal" aria-hidden="true" />
+            ~{formatUsd(task.estimatedCostUsd)}
+          </span>
+        )}
+      </div>
+
+      {task.modelRationale && (
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          {task.modelRationale}
+        </p>
+      )}
+
+      {task.estimatedInputTokens !== null && task.estimatedOutputTokens !== null && (
+        <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">
+          estimated {task.estimatedInputTokens.toLocaleString()} tokens in /{' '}
+          {task.estimatedOutputTokens.toLocaleString()} out
+        </p>
+      )}
+
+      {choosing && (
+        <div className="mt-2.5">
+          <label
+            htmlFor={`model-${task.id}`}
+            className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+          >
+            Run it on a different model
+          </label>
+          <select
+            id={`model-${task.id}`}
+            value={modelId}
+            onChange={(event) => setModelId(event.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+          >
+            {options === undefined ? (
+              <option value="">Loading catalog…</option>
+            ) : (
+              <option value="">Keep the proposed model</option>
+            )}
+            {(options ?? []).map((option) => (
+              <option key={option.modelId} value={option.modelId}>
+                {option.label} — ${option.inputPricePer1m.toFixed(2)}/1M in, $
+                {option.outputPricePer1m.toFixed(2)}/1M out
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onApprove(modelId || null)}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-sm bg-seal px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <CheckCircle2 className="size-3" aria-hidden="true" />
+          {busy
+            ? 'Working…'
+            : modelId
+              ? 'Approve this model'
+              : 'Approve and allow spend'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setChoosing((v) => !v)}
+          className="rounded-sm border border-border bg-background px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+        >
+          {choosing ? 'Keep the proposal' : 'Choose a different model'}
+        </button>
+      </div>
+
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        Nothing runs until you approve. A task cannot be dispatched on a model you
+        did not authorise.
+      </p>
+    </section>
   )
 }

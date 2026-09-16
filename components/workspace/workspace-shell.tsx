@@ -5,9 +5,11 @@ import { ChatModule, type ChatFocus } from '@/components/workspace/chat-module'
 import { OkrTree } from '@/components/workspace/okr-tree'
 import { ProjectsRail } from '@/components/workspace/projects-rail'
 import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
+import { SettingsPanel } from '@/components/workspace/settings-panel'
 import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
+import { Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import useSWR from 'swr'
@@ -35,6 +37,7 @@ export function WorkspaceShell({
   const [chatFocus, setChatFocus] = useState<ChatFocus | null>({
     kind: 'orchestrator',
   })
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // A newly created project arrives through router.refresh(); follow it if the
   // current selection no longer exists.
@@ -78,15 +81,26 @@ export function WorkspaceShell({
           </div>
         </dl>
 
-  <p className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
-    {userName ? `Signed in as ${userName}` : 'Orientation complete'}
-    {userName && (
-      <>
-        <span aria-hidden="true">·</span>
-        <SignOutButton />
-      </>
-    )}
-  </p>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+          >
+            <Settings className="size-3" aria-hidden="true" />
+            Providers
+          </button>
+
+          <p className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
+            {userName ? `Signed in as ${userName}` : 'Orientation complete'}
+            {userName && (
+              <>
+                <span aria-hidden="true">·</span>
+                <SignOutButton />
+              </>
+            )}
+          </p>
+        </div>
       </header>
 
       <ProjectsRail
@@ -150,6 +164,8 @@ export function WorkspaceShell({
           )}
         </aside>
       </div>
+
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

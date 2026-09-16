@@ -5,8 +5,9 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { resolveModel } from '@/lib/ai'
+import { resolveModelForTask, resolveModelForUser } from '@/lib/ai'
 import { auth } from '@/lib/auth'
+import { estimateTaskCost, estimateTokens, priceOf } from '@/lib/cost'
 import { db } from '@/lib/db'
 import {
   gateRequests,
@@ -24,6 +25,12 @@ import {
   type SuccessCriterion,
 } from '@/lib/kaizen'
 import { propagateSignal, signalsForObjective } from '@/lib/mycelium'
+import {
+  findCatalogEntry,
+  getDefaultProvider,
+  recordProviderResult,
+  shortlistModels,
+} from '@/lib/providers'
 import {
   decideGate,
   escalate,
@@ -147,6 +154,16 @@ const assignmentSchema = z.object({
         .max(90)
         .optional()
         .describe('Days to wait before measuring, when the metric needs time to accrue'),
+      modelId: z
+        .string()
+        .optional()
+        .describe(
+          'Model to run this task, exactly as listed in the available models. Omit only when no catalog was given.',
+        ),
+      modelRationale: z
+        .string()
+        .optional()
+        .describe('One sentence on what about this task drove the model choice'),
     }),
   ),
 })
@@ -202,11 +219,26 @@ export async function assignSubAgents(input: {
     )
     .join('\n')
 
+  // The head picks a model per task from a priced shortlist. It proposes; the user
+  // authorises. Nothing spends money until that approval exists, so the task is
+  // created as `proposed` rather than `dispatched`.
+  const shortlist = await shortlistModels()
+  const headRoute = await resolveModelForUser(userId)
+  const modelText =
+    shortlist.length > 0
+      ? shortlist
+          .map(
+            (entry) =>
+              `- ${entry.modelId}: $${entry.inputPricePer1m.toFixed(2)}/1M input, $${entry.outputPricePer1m.toFixed(2)}/1M output${entry.isFree ? ' (free tier)' : ''}`,
+          )
+          .join('\n')
+      : '- No priced catalog is available. Omit modelId and the free tier will run the task.'
+
   // generateObject sends a JSON-schema response format, which free-tier Gateway
   // providers reject. A required tool call carries the same schema through the
   // universally supported `tools` parameter instead.
   const { toolCalls } = await generateText({
-    model: resolveModel(),
+    model: headRoute.model,
     tools: {
       dispatchSubAgents: {
         description:
@@ -233,6 +265,12 @@ export async function assignSubAgents(input: {
       '- Weights express relative importance; they need not sum to anything in particular.',
       '- Add a guardrail only where there is a real constraint worth failing the attempt over, such as budget, latency, or compliance exposure.',
       '- Set measurementWindowDays only when the metric genuinely needs time to accrue.',
+      '',
+      'Available models — the user must approve your choice before anything runs:',
+      modelText,
+      '',
+      '- Pick the cheapest model that can genuinely do the task. Routine drafting and data gathering do not need a frontier model; judgement-heavy or high-stakes work does.',
+      '- modelRationale is one sentence naming what about this task drove the choice.',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -274,6 +312,30 @@ export async function assignSubAgents(input: {
     const criteria = assignment.successCriteria as SuccessCriterion[]
     const guardrails = assignment.guardrails as Guardrail[]
 
+    // The head's choice, validated against the shortlist it was given. A model
+    // outside the list has no price we trust, so the cheapest listed option stands
+    // in for estimation and the substitution is recorded rather than accepted
+    // silently — the user approves a number, and that number has to mean something.
+    const proposed =
+      shortlist.find((entry) => entry.modelId === assignment.modelId) ?? shortlist[0] ?? null
+    const substituted =
+      Boolean(assignment.modelId) && proposed !== null && proposed.modelId !== assignment.modelId
+    const estimate = proposed
+      ? estimateTaskCost(
+          { briefTokens: estimateTokens(brief), criterionCount: criteria.length },
+          proposed,
+        )
+      : null
+    const rationale =
+      [
+        assignment.modelRationale ?? null,
+        substituted && proposed
+          ? `The head named ${assignment.modelId}, which is not in the priced catalog, so ${proposed.modelId} was substituted for estimation.`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' ') || null
+
     // Dispatch is the moment a node is brought in, so the signal is sealed as a
     // sub-agent engagement rather than as generic traffic.
     await propagateSignal({
@@ -311,13 +373,44 @@ export async function assignSubAgents(input: {
         title: assignment.title.trim(),
         brief,
         skills: sub.skills,
-        status: 'dispatched',
+        // A task with a proposed model waits for the user. One without — because no
+        // catalog was reachable — goes straight to dispatched and runs on the free
+        // tier, which costs nothing and needs no key.
+        status: proposed ? 'proposed' : 'dispatched',
         successCriteria: criteria,
         guardrails,
         measurementWindowDays: assignment.measurementWindowDays ?? null,
+        proposedModelId: proposed?.modelId ?? null,
+        proposedModelLabel: proposed?.label ?? null,
+        proposedProvider: proposed?.provider ?? null,
+        modelRationale: rationale,
+        estimatedInputTokens: estimate?.inputTokens ?? null,
+        estimatedOutputTokens: estimate?.outputTokens ?? null,
+        estimatedCostUsd: estimate?.costUsd ?? null,
         position: existing.length + index,
       })
       .returning()
+
+    if (proposed) {
+      await appendSentinelEntry({
+        userId,
+        projectId: input.projectId,
+        entryType: 'model_proposed',
+        subjectKey: `${bot.specialistKey}/${sub.key}`,
+        subjectTitle: sub.title,
+        signer: bot.specialistKey,
+        objectiveId: objective.id,
+        payload: {
+          taskId,
+          title: assignment.title.trim(),
+          modelId: proposed.modelId,
+          rationale,
+          estimatedInputTokens: estimate?.inputTokens ?? null,
+          estimatedOutputTokens: estimate?.outputTokens ?? null,
+          estimatedCostUsd: estimate?.costUsd ?? null,
+        },
+      })
+    }
 
     created.push(task)
   }
@@ -329,6 +422,75 @@ export async function assignSubAgents(input: {
 
   revalidatePath('/')
   return created
+}
+
+/**
+ * The user's authorisation to spend.
+ *
+ * The head proposes a model; this is where a human accepts or replaces it. The task
+ * stays `proposed` — and therefore cannot run — until this happens. Sealing the
+ * decision means the record shows which model was authorised, so an agent cannot
+ * later claim it was approved for something it was not.
+ */
+export async function approveTaskModel(input: {
+  taskId: string
+  modelId?: string | null
+}): Promise<TaskRow> {
+  const userId = await getUserId()
+
+  const [task] = await db
+    .select()
+    .from(subAgentTasks)
+    .where(and(eq(subAgentTasks.id, input.taskId), eq(subAgentTasks.userId, userId)))
+    .limit(1)
+  if (!task) throw new Error('Task not found')
+  if (task.status !== 'proposed') {
+    throw new Error('This task is not waiting for model approval')
+  }
+
+  // The user may accept the head's proposal or substitute a different model.
+  const modelId = input.modelId?.trim() || task.proposedModelId
+  if (!modelId) throw new Error('No model was proposed for this task')
+
+  const entry = await findCatalogEntry(modelId)
+  // Routing follows the user's default provider. The resolver strips the vendor
+  // prefix when a direct API is used, so an OpenRouter-style ID works either way.
+  const provider = (await getDefaultProvider(userId)) ?? 'openrouter'
+
+  const [updated] = await db
+    .update(subAgentTasks)
+    .set({
+      approvedModelId: modelId,
+      approvedModelLabel: entry?.label ?? modelId,
+      approvedProvider: provider,
+      modelApprovedAt: new Date(),
+      status: 'dispatched',
+      updatedAt: new Date(),
+    })
+    .where(and(eq(subAgentTasks.id, task.id), eq(subAgentTasks.userId, userId)))
+    .returning()
+
+  await appendSentinelEntry({
+    userId,
+    projectId: task.projectId,
+    entryType: 'model_approved',
+    subjectKey: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+    subjectTitle: task.subAgentTitle,
+    // Signed as the user: this is a human authorisation, not an agent action.
+    signer: `user:${userId}`,
+    objectiveId: task.objectiveId,
+    payload: {
+      taskId: task.id,
+      proposedModelId: task.proposedModelId,
+      approvedModelId: modelId,
+      provider,
+      substitutedByUser: modelId !== task.proposedModelId,
+      estimatedCostUsd: task.estimatedCostUsd,
+    },
+  })
+
+  revalidatePath('/')
+  return updated
 }
 
 const reportSchema = z.object({
@@ -372,6 +534,20 @@ export async function runTask(input: { taskId: string }): Promise<TaskRow> {
     )
   }
 
+  // The head proposed a model; only the user can authorise spending on it. Running
+  // an unapproved task would spend money nobody agreed to.
+  if (task.status === 'proposed') {
+    throw new Error(
+      'This task is waiting for your model approval. Approve a model before running it.',
+    )
+  }
+
+  const route = await resolveModelForTask({
+    userId,
+    approvedProvider: task.approvedProvider,
+    approvedModelId: task.approvedModelId,
+  })
+
   const [objective] = await db
     .select()
     .from(objectives)
@@ -392,8 +568,8 @@ export async function runTask(input: { taskId: string }): Promise<TaskRow> {
           .join('\n')
       : '- No criteria were recorded; report what you can measure.'
 
-  const { toolCalls } = await generateText({
-    model: resolveModel(),
+  const { toolCalls, usage } = await generateText({
+    model: route.model,
     // The brief IS the system prompt: what the user reads in the UI is exactly
     // what the agent was told.
     system: task.brief,
@@ -424,6 +600,17 @@ export async function runTask(input: { taskId: string }): Promise<TaskRow> {
   if (!report) throw new Error('The sub-agent returned no report')
   const parsed = reportSchema.parse(report.input)
 
+  // Actual spend, from the provider's own token counts rather than the estimate. A
+  // model with no catalog entry has no published price, so cost stays null instead
+  // of being reported as zero — unknown and free are different facts.
+  const usedEntry = await findCatalogEntry(route.modelId)
+  const inputTokens = usage?.inputTokens ?? null
+  const outputTokens = usage?.outputTokens ?? null
+  const actualCostUsd =
+    usedEntry && inputTokens !== null && outputTokens !== null
+      ? priceOf(inputTokens, outputTokens, usedEntry)
+      : null
+
   await db
     .update(subAgentTasks)
     .set({
@@ -435,9 +622,37 @@ export async function runTask(input: { taskId: string }): Promise<TaskRow> {
         learningCase: parsed.learningCase ?? null,
       },
       progress: parsed.progress,
+      modelUsedId: route.modelId,
+      actualInputTokens: inputTokens,
+      actualOutputTokens: outputTokens,
+      actualCostUsd,
       updatedAt: new Date(),
     })
     .where(and(eq(subAgentTasks.id, task.id), eq(subAgentTasks.userId, userId)))
+
+  if (route.provider !== 'ai-gateway') {
+    await recordProviderResult({ userId, provider: route.provider })
+  }
+
+  await appendSentinelEntry({
+    userId,
+    projectId: task.projectId,
+    entryType: 'cost_recorded',
+    subjectKey: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+    subjectTitle: task.subAgentTitle,
+    signer: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+    objectiveId: task.objectiveId,
+    payload: {
+      taskId: task.id,
+      modelId: route.modelId,
+      provider: route.provider,
+      inputTokens,
+      outputTokens,
+      costUsd: actualCostUsd,
+      estimatedCostUsd: task.estimatedCostUsd,
+      fallbackReason: route.fallbackReason ?? null,
+    },
+  })
 
   await propagateSignal({
     userId,

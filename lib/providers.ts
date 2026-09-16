@@ -1,7 +1,24 @@
 import { db } from '@/lib/db'
 import { modelCatalog, providerConnections } from '@/lib/db/schema'
+import {
+  PROVIDERS,
+  PROVIDER_IDS,
+  type ConnectionView,
+  type ProviderId,
+} from '@/lib/provider-meta'
 import { decryptSecret, encryptSecret, maskSecret } from '@/lib/secrets'
 import { and, asc, eq } from 'drizzle-orm'
+
+// Re-exported so server-side consumers keep one import path. Client components
+// import `@/lib/provider-meta` directly: this module pulls in the database client
+// and the secret cipher, neither of which can be bundled for the browser.
+export {
+  PROVIDERS,
+  PROVIDER_IDS,
+  type ConnectionView,
+  type ProviderConfig,
+  type ProviderId,
+} from '@/lib/provider-meta'
 
 /**
  * Provider connections and the model catalog.
@@ -20,40 +37,6 @@ import { and, asc, eq } from 'drizzle-orm'
  * rather than maintaining three price tables that would each go stale.
  */
 
-export type ProviderId = 'openrouter' | 'anthropic' | 'openai'
-
-export const PROVIDER_IDS: readonly ProviderId[] = ['openrouter', 'anthropic', 'openai']
-
-interface ProviderConfig {
-  label: string
-  /** What the key looks like, so a pasted value can be sanity-checked. */
-  keyPrefix: string
-  keyDocsUrl: string
-  blurb: string
-}
-
-export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
-  openrouter: {
-    label: 'OpenRouter',
-    keyPrefix: 'sk-or-',
-    keyDocsUrl: 'https://openrouter.ai/settings/keys',
-    blurb:
-      'One key reaches hundreds of models across providers, including a free tier. The cheapest way to experiment.',
-  },
-  anthropic: {
-    label: 'Anthropic',
-    keyPrefix: 'sk-ant-',
-    keyDocsUrl: 'https://console.anthropic.com/settings/keys',
-    blurb: 'Direct to Claude. Use this when you already hold Anthropic credits.',
-  },
-  openai: {
-    label: 'OpenAI',
-    keyPrefix: 'sk-',
-    keyDocsUrl: 'https://platform.openai.com/api-keys',
-    blurb: 'Direct to GPT. Use this when you already hold OpenAI credits.',
-  },
-}
-
 export interface CatalogEntry {
   id: string
   provider: ProviderId
@@ -64,16 +47,6 @@ export interface CatalogEntry {
   outputPricePer1m: number
   modality: string | null
   isFree: boolean
-}
-
-/** The connection as the client may see it: no key, only a mask. */
-export interface ConnectionView {
-  provider: ProviderId
-  label: string
-  maskedKey: string
-  isDefault: boolean
-  lastVerifiedAt: Date | null
-  lastError: string | null
 }
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
@@ -376,7 +349,6 @@ export async function refreshCatalog(): Promise<number> {
     if (!Number.isFinite(inputPrice) || !Number.isFinite(outputPrice)) continue
     if (inputPrice < 0 || outputPrice < 0) continue
 
-    const provider = providerForModelId(model.id)
     const entry = {
       id: `openrouter:${model.id}`,
       provider: 'openrouter' as const,
@@ -402,16 +374,65 @@ export async function refreshCatalog(): Promise<number> {
 }
 
 /**
- * Which direct provider serves a given OpenRouter model ID.
+ * Which direct provider could serve a given OpenRouter model ID.
  *
  * OpenRouter namespaces IDs as `vendor/model`, and for Anthropic and OpenAI that
- * vendor segment is exactly the model ID the direct API expects, so the same
- * catalog row can price a call made through either route.
+ * vendor segment is exactly the model ID the direct API expects. So a model the
+ * head proposes through OpenRouter can also be routed direct when the user holds
+ * that provider's key; the resolver strips the prefix when it does.
  */
-function providerForModelId(modelId: string): ProviderId {
+export function vendorOfModelId(modelId: string): ProviderId | null {
   if (modelId.startsWith('anthropic/')) return 'anthropic'
   if (modelId.startsWith('openai/')) return 'openai'
-  return 'openrouter'
+  return null
+}
+
+/**
+ * The shortlist a department head chooses from.
+ *
+ * The full catalog is hundreds of models: too many to put in a prompt and too many
+ * to reason over. This picks a spread across price tiers so the head's choice is a
+ * real trade-off between cost and capability rather than a pick from an
+ * undifferentiated list. Preferred IDs drift out of the catalog over time, so a
+ * price-sorted spread fills any gaps.
+ */
+const SHORTLIST_PREFERENCES: readonly string[] = [
+  'meta-llama/llama-3.3-70b-instruct',
+  'deepseek/deepseek-chat-v3.1',
+  'google/gemini-2.5-flash',
+  'anthropic/claude-3.5-haiku',
+  'anthropic/claude-sonnet-4.5',
+]
+
+const SHORTLIST_SIZE = 6
+
+export async function shortlistModels(): Promise<CatalogEntry[]> {
+  const catalog = await getCatalog()
+  if (catalog.length === 0) return []
+
+  const chosen: CatalogEntry[] = []
+  for (const modelId of SHORTLIST_PREFERENCES) {
+    const entry = catalog.find((candidate) => candidate.modelId === modelId)
+    if (entry) chosen.push(entry)
+  }
+
+  if (chosen.length >= SHORTLIST_SIZE - 1) return chosen.slice(0, SHORTLIST_SIZE)
+
+  // Fill from the cheapest usable models, skipping anything already chosen. A
+  // model with a tiny context window cannot carry these prompts, so it is not a
+  // candidate however cheap it is.
+  const fillers = catalog
+    .filter(
+      (candidate) =>
+        !chosen.some((entry) => entry.id === candidate.id) &&
+        (candidate.contextLength ?? 0) >= 32_000,
+    )
+    .sort(
+      (a, b) =>
+        a.inputPricePer1m + a.outputPricePer1m - (b.inputPricePer1m + b.outputPricePer1m),
+    )
+
+  return [...chosen, ...fillers].slice(0, SHORTLIST_SIZE)
 }
 
 /**
