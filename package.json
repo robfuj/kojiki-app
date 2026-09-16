@@ -8,7 +8,8 @@
     "build": "node scripts/generate-ontology.mjs --check && next build",
     "start": "next start",
     "ontology:generate": "node scripts/generate-ontology.mjs",
-    "ontology:check": "node scripts/generate-ontology.mjs --check"
+    "ontology:check": "node scripts/generate-ontology.mjs --check",
+    "db:migrate-orientation": "node scripts/migrate-orientation.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.49",

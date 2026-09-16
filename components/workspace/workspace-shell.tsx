@@ -7,7 +7,6 @@ import { ProjectsRail } from '@/components/workspace/projects-rail'
 import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
-import { FUNCTION_LINES } from '@/lib/ontology/orientation'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import useSWR from 'swr'
@@ -41,10 +40,6 @@ export function WorkspaceShell({
     { revalidateOnFocus: false },
   )
 
-  const functionLine =
-    FUNCTION_LINES.find((line) => line.value === orientation.functionLine)?.label ??
-    orientation.functionLine
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <header className="flex shrink-0 items-center gap-4 border-b border-border bg-card px-5 py-3">
@@ -55,22 +50,22 @@ export function WorkspaceShell({
 
         <div className="mx-2 h-6 w-px bg-border" aria-hidden="true" />
 
-        <dl className="flex items-center gap-5 font-mono text-xs">
-          <div className="flex items-center gap-1.5">
-            <dt className="uppercase tracking-wide text-muted-foreground/70">agent</dt>
-            <dd className="text-foreground">{orientation.agentName}</dd>
+        <dl className="flex min-w-0 items-center gap-5 font-mono text-xs">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <dt className="uppercase tracking-wide text-muted-foreground/70">user</dt>
+            <dd className="text-foreground">{orientation.userName}</dd>
           </div>
-          <div className="hidden items-center gap-1.5 sm:flex">
-            <dt className="uppercase tracking-wide text-muted-foreground/70">line</dt>
-            <dd className="text-foreground">{functionLine}</dd>
+          <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
+            <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
+              industry
+            </dt>
+            <dd className="truncate text-foreground">{orientation.industry}</dd>
           </div>
-          <div className="hidden items-center gap-1.5 lg:flex">
-            <dt className="uppercase tracking-wide text-muted-foreground/70">field</dt>
-            <dd className="text-foreground">{orientation.industry ?? '—'}</dd>
-          </div>
-          <div className="hidden items-center gap-1.5 lg:flex">
-            <dt className="uppercase tracking-wide text-muted-foreground/70">jurisdiction</dt>
-            <dd className="text-foreground">{orientation.country ?? '—'}</dd>
+          <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
+            <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
+              goal
+            </dt>
+            <dd className="truncate text-foreground">{orientation.goal}</dd>
           </div>
         </dl>
 
@@ -139,7 +134,7 @@ function EmptyWorkspace({ hasProjects }: { hasProjects: boolean }) {
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {hasProjects
             ? 'Choose a project from the rail above to load its OKR tree and department agents.'
-            : 'Create a project from the rail above. The Orientation Protocol answers decide which department agents are instantiated, and in what handoff order.'}
+            : 'Create a project from the rail above. The orchestrator already selected which department agents your goal needs, and in what handoff order.'}
         </p>
       </div>
     </div>

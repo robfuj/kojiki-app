@@ -57,20 +57,30 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updatedAt').defaultNow(),
 })
 
+// The Orientation Protocol is about the user, not about an organizational
+// function. The user says who they are, what they are trying to accomplish, and
+// what industry they are in. The orchestrator then researches that goal and
+// industry and decides which canonical specialists the goal actually needs —
+// the roster is a consequence of the goal, not something the human declares.
 export const orientationProfiles = pgTable('orientation_profiles', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
-  agentName: text('agentName').notNull(),
-  functionLine: text('functionLine').notNull(),
-  industry: text('industry'),
-  sector: text('sector'),
-  country: text('country'),
-  region: text('region'),
-  regulatoryRegime: text('regulatoryRegime'),
+  // How the department agents address the user.
+  userName: text('userName').notNull(),
+  // What the user is trying to accomplish. Drives orchestrator research and
+  // roster selection.
+  goal: text('goal').notNull(),
+  industry: text('industry').notNull(),
+  // Optional context that sharpens the orchestrator's research.
+  jurisdiction: text('jurisdiction'),
   geography: text('geography'),
   businessModel: text('businessModel'),
-  groupId: text('groupId'),
-  siblingAgents: jsonb('siblingAgents').notNull().default([]),
+  // Orchestrator output.
+  researchBrief: jsonb('researchBrief'),
+  researchMethod: text('researchMethod'),
+  rosterRationale: text('rosterRationale'),
+  rosterKeys: jsonb('rosterKeys').notNull().default([]),
+  researchedAt: timestamp('researchedAt'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   completedAt: timestamp('completedAt'),
 })

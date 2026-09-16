@@ -1,14 +1,13 @@
 'use client'
 
 import { completeOrientation } from '@/app/actions/orientation'
-import { Button } from '@/components/ui/button'
 import { SignOutButton } from '@/components/sign-out-button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import {
-  FUNCTION_LINES,
   ORIENTATION_QUESTIONS,
   type OrientationAnswers,
 } from '@/lib/ontology/orientation'
+import { cn } from '@/lib/utils'
 import { ArrowRight, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -16,20 +15,13 @@ import { useState } from 'react'
 type Answers = Record<string, string>
 
 const EMPTY: Answers = {
-  agentName: '',
-  functionLine: '',
+  userName: '',
+  goal: '',
   industry: '',
-  sector: '',
-  country: '',
-  region: '',
-  regulatoryRegime: '',
+  jurisdiction: '',
   geography: '',
   businessModel: '',
-  groupId: '',
 }
-
-const functionLineLabel = (value: string) =>
-  FUNCTION_LINES.find((line) => line.value === value)?.label ?? value
 
 export function OrientationFlow({ userName }: { userName: string | null }) {
   const router = useRouter()
@@ -53,7 +45,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
   function advance() {
     if (!currentQuestionComplete) {
-      setError('Answer the required fields before continuing.')
+      setError('Answer the required field before continuing.')
       return
     }
     setError(null)
@@ -62,7 +54,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
   async function finish() {
     if (!currentQuestionComplete) {
-      setError('Answer the required fields before continuing.')
+      setError('Answer the required field before continuing.')
       return
     }
 
@@ -71,16 +63,12 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
     try {
       const payload: OrientationAnswers = {
-        agentName: answers.agentName.trim(),
-        functionLine: answers.functionLine,
-        industry: answers.industry.trim() || null,
-        sector: answers.sector.trim() || null,
-        country: answers.country.trim() || null,
-        region: answers.region.trim() || null,
-        regulatoryRegime: answers.regulatoryRegime.trim() || null,
+        userName: answers.userName.trim(),
+        goal: answers.goal.trim(),
+        industry: answers.industry.trim(),
+        jurisdiction: answers.jurisdiction.trim() || null,
         geography: answers.geography.trim() || null,
         businessModel: answers.businessModel.trim() || null,
-        groupId: answers.groupId.trim() || null,
       }
 
       await completeOrientation(payload)
@@ -102,9 +90,10 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
             Orientation Protocol
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Before any decision work, the agent must orient: establish identity,
-            learn the operating context, and discover sibling agents so the
-            organization&apos;s functions can coordinate.
+            The department agents work for you, so orientation is about you: who
+            you are, what you are trying to accomplish, and what industry you are
+            in. The orchestrator then researches your goal and decides which
+            specialists it needs.
           </p>
 
           <ol className="mt-8 space-y-1">
@@ -120,23 +109,30 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
                   <button
                     type="button"
                     onClick={() => index <= step && setStep(index)}
-                    disabled={index > step}
+                    disabled={index > step || submitting}
                     aria-current={state === 'active' ? 'step' : undefined}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors',
                       state === 'active' && 'bg-sumi-soft text-foreground',
                       state === 'done' &&
                         'text-muted-foreground hover:bg-muted hover:text-foreground',
-                      state === 'pending' && 'cursor-default text-muted-foreground/50',
+                      state === 'pending' &&
+                        'cursor-default text-muted-foreground/50',
                     )}
                   >
                     <span
                       className={cn(
-                        'flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-mono',
-                        state === 'active' && 'border-sumi bg-sumi text-primary-foreground',
-                        state === 'done' && done && 'border-seal bg-seal text-accent-foreground',
-                        state === 'done' && !done && 'border-border text-muted-foreground',
-                        state === 'pending' && 'border-border/60 text-muted-foreground/50',
+                        'flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-[10px]',
+                        state === 'active' &&
+                          'border-sumi bg-sumi text-primary-foreground',
+                        state === 'done' &&
+                          done &&
+                          'border-seal bg-seal text-accent-foreground',
+                        state === 'done' &&
+                          !done &&
+                          'border-border text-muted-foreground',
+                        state === 'pending' &&
+                          'border-border/60 text-muted-foreground/50',
                       )}
                     >
                       {state === 'done' && done ? (
@@ -154,13 +150,13 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
             })}
           </ol>
 
-      {userName && (
-        <p className="mt-8 flex items-center gap-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
-          Signed in as <span className="text-foreground">{userName}</span>
-          <span aria-hidden="true">·</span>
-          <SignOutButton />
-        </p>
-      )}
+          {userName && (
+            <p className="mt-8 flex items-center gap-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
+              Signed in as <span className="text-foreground">{userName}</span>
+              <span aria-hidden="true">·</span>
+              <SignOutButton />
+            </p>
+          )}
         </aside>
 
         <section className="flex flex-col justify-center py-10 lg:py-0">
@@ -171,6 +167,9 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
             <h2 className="mt-4 text-balance font-serif text-3xl leading-snug text-foreground">
               {question.prompt}
             </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {question.why}
+            </p>
 
             <div className="mt-8 space-y-5">
               {question.fields.map((field) => {
@@ -195,29 +194,31 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
                       )}
                     </label>
 
-                    {field.kind === 'select' ? (
-                      <select
+                    {field.kind === 'textarea' ? (
+                      <textarea
                         id={id}
                         value={value}
-                        onChange={(event) => setField(field.name, event.target.value)}
-                        className="mt-2 w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/25"
-                      >
-                        <option value="">Select a function line</option>
-                        {FUNCTION_LINES.map((line) => (
-                          <option key={line.value} value={line.value}>
-                            {line.label} — {line.description}
-                          </option>
-                        ))}
-                      </select>
+                        rows={4}
+                        placeholder={field.placeholder}
+                        onChange={(event) =>
+                          setField(field.name, event.target.value)
+                        }
+                        className="mt-2 w-full resize-y rounded-md border border-input bg-card px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/25"
+                      />
                     ) : (
                       <input
                         id={id}
                         type="text"
                         value={value}
                         placeholder={field.placeholder}
-                        onChange={(event) => setField(field.name, event.target.value)}
+                        onChange={(event) =>
+                          setField(field.name, event.target.value)
+                        }
                         onKeyDown={(event) => {
-                          if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                          if (
+                            event.key === 'Enter' &&
+                            !event.nativeEvent.isComposing
+                          ) {
                             event.preventDefault()
                             isLast ? finish() : advance()
                           }
@@ -230,20 +231,20 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
               })}
             </div>
 
-            <dl className="mt-8 space-y-2 border-t border-border/70 pt-5 font-mono text-xs text-muted-foreground">
-              <div className="flex gap-2">
-                <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
-                  captures
-                </dt>
-                <dd className="text-foreground">{question.captures.join(', ')}</dd>
+            {isLast && (
+              <div className="mt-8 rounded-md border border-border bg-card px-4 py-3.5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+                  what happens next
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  The orchestrator researches your goal and industry on the live
+                  web — market, competition, regulation, risk — then selects
+                  which of the eight canonical specialists your goal actually
+                  needs. Only those are instantiated, and every one of them sees
+                  the same research.
+                </p>
               </div>
-              <div className="flex gap-2">
-                <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
-                  flows to
-                </dt>
-                <dd className="text-foreground">{question.flowsTo}</dd>
-              </div>
-            </dl>
+            )}
 
             {error && (
               <p role="alert" className="mt-5 text-sm text-destructive">
@@ -265,7 +266,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
 
               {isLast ? (
                 <Button type="button" onClick={finish} disabled={submitting}>
-                  {submitting ? 'Orienting…' : 'Complete orientation'}
+                  {submitting ? 'Orchestrating…' : 'Complete orientation'}
                 </Button>
               ) : (
                 <Button type="button" onClick={advance}>
@@ -279,18 +280,17 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
               </span>
             </div>
 
-            {answers.functionLine && (
-              <p className="mt-6 rounded-md border border-border bg-card px-3 py-2.5 text-xs text-muted-foreground">
-                Registering as{' '}
-                <span className="font-medium text-foreground">
-                  {answers.agentName || 'unnamed agent'}
+            {submitting && (
+              <p
+                role="status"
+                className="mt-6 rounded-md border border-border bg-sumi-soft px-3 py-2.5 text-xs leading-relaxed text-muted-foreground"
+              >
+                Researching{' '}
+                <span className="text-foreground">
+                  {answers.industry || 'your industry'}
                 </span>{' '}
-                on the{' '}
-                <span className="font-medium text-foreground">
-                  {functionLineLabel(answers.functionLine)}
-                </span>{' '}
-                line. Projects will instantiate this department first, then its
-                handoff targets.
+                and selecting the specialists your goal needs. This takes a
+                moment.
               </p>
             )}
           </div>

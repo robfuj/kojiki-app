@@ -1,111 +1,116 @@
 /**
- * The Orientation Protocol, transcribed from
- * engine/kojiki_core/prompts/orientation.md in robfuj/kojiki-ontology.
+ * The Orientation Protocol.
  *
- * "Before any decision work, the agent must orient: establish identity, learn
- * the operating context, and discover sibling agents so the organization's
- * functions can coordinate."
- *
- * This runs on first contact, before the workspace opens.
+ * Upstream (engine/kojiki_core/prompts/orientation.md) frames orientation as an
+ * agent establishing its own identity on a function line. In this product the
+ * human is the user and the functions are the sibling agents, so the protocol
+ * asks about the user: their name, their goal, and their industry. The
+ * orchestrator then researches that goal and industry and selects which
+ * canonical specialists the goal needs — the roster follows from the goal
+ * rather than from a function the human declares.
  */
 
 import { SPECIALISTS, type Specialist } from './specialists'
 import { SYNAPSIS_STAGES } from './synapsis'
 
+export interface OrientationField {
+  name: string
+  label: string
+  kind: 'text' | 'textarea'
+  placeholder?: string
+  required?: boolean
+}
+
 export interface OrientationQuestion {
   id: string
   label: string
   prompt: string
-  captures: string[]
-  flowsTo: string
+  /** Why the agents need this answer — shown beside the question. */
+  why: string
   fields: OrientationField[]
 }
-
-export interface OrientationField {
-  name: string
-  label: string
-  kind: 'text' | 'select'
-  placeholder?: string
-  options?: string[]
-  required?: boolean
-}
-
-/** The organizational function lines a registering agent can represent (Q1). */
-export const FUNCTION_LINES = SPECIALISTS.map((s) => ({
-  value: s.key,
-  label: s.department,
-  description: s.description,
-}))
 
 export const ORIENTATION_QUESTIONS: OrientationQuestion[] = [
   {
     id: 'q1',
     label: 'Q1 — Identity',
-    prompt: 'What should I call you, and which organizational function do you represent?',
-    captures: ['agent_name', 'function_line'],
-    flowsTo: 'decision-rights/ (owner/role), ontology/functions.md',
+    prompt: 'What should the agents call you?',
+    why: 'Every department agent addresses you by this name and attributes its recommendations to you.',
     fields: [
-      { name: 'agentName', label: 'Agent name', kind: 'text', placeholder: 'e.g. Rei', required: true },
-      { name: 'functionLine', label: 'Function line', kind: 'select', options: FUNCTION_LINES.map((f) => f.value), required: true },
+      {
+        name: 'userName',
+        label: 'Your name',
+        kind: 'text',
+        placeholder: 'e.g. Rei',
+        required: true,
+      },
     ],
   },
   {
     id: 'q2',
-    label: 'Q2 — Field',
-    prompt: 'What industry or sector is the organization in?',
-    captures: ['industry', 'sector'],
-    flowsTo: "triggers the agent's research team: market/competitive/regulatory scan of the field",
+    label: 'Q2 — Goal',
+    prompt: 'What are you trying to accomplish?',
+    why: 'The orchestrator reads this goal to research the field and to decide which specialists it needs. The roster follows from the goal.',
     fields: [
-      { name: 'industry', label: 'Industry', kind: 'text', placeholder: 'e.g. Financial services', required: true },
-      { name: 'sector', label: 'Sector', kind: 'text', placeholder: 'e.g. Payments infrastructure' },
+      {
+        name: 'goal',
+        label: 'Your goal',
+        kind: 'textarea',
+        placeholder: 'e.g. Double APAC freight revenue by the end of FY27 without adding headcount',
+        required: true,
+      },
     ],
   },
   {
     id: 'q3',
-    label: 'Q3 — Jurisdiction',
-    prompt: 'What jurisdiction(s) apply — which country, region/state, and regulatory regime?',
-    captures: ['country', 'region', 'regulatory_regime'],
-    flowsTo: 'Legal/Compliance research; any decision with legal exposure; ontology/ (geography axis)',
+    label: 'Q3 — Industry',
+    prompt: 'What industry are you in?',
+    why: 'The orchestrator researches this industry — market, competitors, regulation — before any sibling answers you.',
     fields: [
-      { name: 'country', label: 'Country', kind: 'text', placeholder: 'e.g. Japan', required: true },
-      { name: 'region', label: 'Region / state', kind: 'text', placeholder: 'e.g. Kanto' },
-      { name: 'regulatoryRegime', label: 'Regulatory regime', kind: 'text', placeholder: 'e.g. FSA / APPI' },
+      {
+        name: 'industry',
+        label: 'Industry',
+        kind: 'text',
+        placeholder: 'e.g. Logistics and freight forwarding',
+        required: true,
+      },
     ],
   },
   {
     id: 'q4',
-    label: 'Q4 — Operating context',
-    prompt: 'What geography do you operate in, and what is the business model?',
-    captures: ['geography', 'business_model'],
-    flowsTo: 'ontology/ (adaptation axes, S20); scopes the canonical ontology to the real org',
+    label: 'Q4 — Context',
+    prompt: 'Anything else the orchestrator should know? All of this is optional.',
+    why: 'Sharper research and better specialist selection. Skip anything that does not apply.',
     fields: [
-      { name: 'geography', label: 'Geography', kind: 'text', placeholder: 'e.g. JP domestic, expanding APAC' },
-      { name: 'businessModel', label: 'Business model', kind: 'text', placeholder: 'e.g. B2B SaaS, usage-based' },
-    ],
-  },
-  {
-    id: 'q5',
-    label: 'Q5 — Siblings',
-    prompt: 'Are other agents from this same group already running? Register me so we can hand off.',
-    captures: ['group_id', 'sibling_agents'],
-    flowsTo: 'handoffs/ (Cross-Functional Handoff Standard, S11); enables agent-to-agent messaging',
-    fields: [
-      { name: 'groupId', label: 'Group ID', kind: 'text', placeholder: 'e.g. kojiki-core' },
+      {
+        name: 'jurisdiction',
+        label: 'Jurisdiction',
+        kind: 'text',
+        placeholder: 'e.g. Japan, expanding into Singapore',
+      },
+      {
+        name: 'geography',
+        label: 'Geography',
+        kind: 'text',
+        placeholder: 'e.g. JP domestic today, APAC next',
+      },
+      {
+        name: 'businessModel',
+        label: 'Business model',
+        kind: 'text',
+        placeholder: 'e.g. B2B, asset-light forwarding',
+      },
     ],
   },
 ]
 
 export interface OrientationAnswers {
-  agentName: string
-  functionLine: string
-  industry?: string | null
-  sector?: string | null
-  country?: string | null
-  region?: string | null
-  regulatoryRegime?: string | null
+  userName: string
+  goal: string
+  industry: string
+  jurisdiction?: string | null
   geography?: string | null
   businessModel?: string | null
-  groupId?: string | null
 }
 
 export interface DerivedBot {
@@ -121,28 +126,43 @@ export interface DerivedBot {
 }
 
 /**
- * Derives a project's bot roster from the Orientation Protocol answers.
+ * Builds the roster from the specialist keys the orchestrator selected for this
+ * goal. Only those specialists are instantiated — a goal that needs no legal
+ * exposure gets no Legal agent.
  *
- * The registering agent's function line (Q1) becomes the primary bot and is
- * placed first. Departments it hands off to come next, so the side rail reads
- * in routing order. The remaining functions follow, keeping the whole org
- * addressable per the Cross-Functional Handoff Standard.
+ * Ordering follows the handoff graph: the orchestrator's first pick leads, then
+ * the selected specialists it hands off to, then the remainder. The side rail
+ * therefore reads in routing order.
  */
-export function deriveRoster(orientation: OrientationAnswers): DerivedBot[] {
-  const primary = SPECIALISTS.find((s) => s.key === orientation.functionLine)
-  const handoffOrder = primary?.handoffs.map((h) => h.target) ?? []
+export function deriveRoster(selectedKeys: string[]): DerivedBot[] {
+  const selected = selectedKeys
+    .map((key) => SPECIALISTS.find((s) => s.key === key))
+    .filter((s): s is Specialist => Boolean(s))
+
+  if (selected.length === 0) return []
+
+  const lead = selected[0]
+  const handoffOrder = lead.handoffs.map((h) => h.target)
 
   const ordered = [
-    ...(primary ? [primary] : []),
+    lead,
     ...handoffOrder
-      .map((key) => SPECIALISTS.find((s) => s.key === key))
-      .filter((s): s is Specialist => Boolean(s)),
-    ...SPECIALISTS.filter(
-      (s) => s.key !== primary?.key && !handoffOrder.includes(s.key),
+      .map((key) => selected.find((s) => s.key === key))
+      .filter((s): s is Specialist => s !== undefined && s.key !== lead.key),
+    ...selected.filter(
+      (s) => s.key !== lead.key && !handoffOrder.includes(s.key),
     ),
   ]
 
-  return ordered.map((specialist, position) => ({
+  // The handoff pass can repeat a specialist already placed; keep first occurrence.
+  const seen = new Set<string>()
+  const unique = ordered.filter((s) => {
+    if (seen.has(s.key)) return false
+    seen.add(s.key)
+    return true
+  })
+
+  return unique.map((specialist, position) => ({
     specialistKey: specialist.key,
     displayName: specialist.department,
     functionLine: specialist.key,
@@ -154,30 +174,26 @@ export function deriveRoster(orientation: OrientationAnswers): DerivedBot[] {
     })),
     synapsisStages: SYNAPSIS_STAGES.map((s) => s.key),
     position,
-    isPrimary: specialist.key === primary?.key,
+    isPrimary: specialist.key === lead.key,
   }))
 }
 
 /**
- * The orientation context injected into every bot's system prompt, so each
- * department reasons about the same real organization rather than a generic one.
+ * The user context injected into every agent's system prompt, so each sibling
+ * reasons about the same real person and the same real goal.
  */
 export function orientationContext(orientation: OrientationAnswers): string {
   const lines = [
-    `Registering agent: ${orientation.agentName}`,
-    `Function line: ${orientation.functionLine}`,
+    `User: ${orientation.userName}`,
+    `Goal: ${orientation.goal}`,
+    `Industry: ${orientation.industry}`,
   ]
-  if (orientation.industry) lines.push(`Industry: ${orientation.industry}`)
-  if (orientation.sector) lines.push(`Sector: ${orientation.sector}`)
-  if (orientation.country) lines.push(`Country: ${orientation.country}`)
-  if (orientation.region) lines.push(`Region: ${orientation.region}`)
-  if (orientation.regulatoryRegime) {
-    lines.push(`Regulatory regime: ${orientation.regulatoryRegime}`)
+  if (orientation.jurisdiction) {
+    lines.push(`Jurisdiction: ${orientation.jurisdiction}`)
   }
   if (orientation.geography) lines.push(`Geography: ${orientation.geography}`)
   if (orientation.businessModel) {
     lines.push(`Business model: ${orientation.businessModel}`)
   }
-  if (orientation.groupId) lines.push(`Group ID: ${orientation.groupId}`)
   return lines.join('\n')
 }

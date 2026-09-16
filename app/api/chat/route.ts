@@ -8,6 +8,7 @@ import {
   projectBots,
   projects,
 } from '@/lib/db/schema'
+import type { ResearchBrief } from '@/lib/orchestrator'
 import { buildSystemPrompt } from '@/lib/ontology/prompt'
 import { convertToModelMessages, streamText, type UIMessage } from 'ai'
 import { and, desc, eq } from 'drizzle-orm'
@@ -100,20 +101,17 @@ export async function POST(request: Request) {
     },
     orientation
       ? {
-          agentName: orientation.agentName,
-          functionLine: orientation.functionLine,
+          userName: orientation.userName,
+          goal: orientation.goal,
           industry: orientation.industry,
-          sector: orientation.sector,
-          country: orientation.country,
-          region: orientation.region,
-          regulatoryRegime: orientation.regulatoryRegime,
+          jurisdiction: orientation.jurisdiction,
           geography: orientation.geography,
           businessModel: orientation.businessModel,
-          groupId: orientation.groupId,
         }
       : null,
     project.name,
     project.objective,
+    (orientation?.researchBrief as ResearchBrief | null) ?? null,
   )
 
   const result = streamText({

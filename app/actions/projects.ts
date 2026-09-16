@@ -35,9 +35,9 @@ export async function listProjects(): Promise<ProjectRow[]> {
 }
 
 /**
- * Creates a project and instantiates its bot roster. The roster is derived from
- * the Orientation Protocol answers, so the side rail reflects the registering
- * agent's function line and its handoff graph.
+ * Creates a project and instantiates its bot roster. The roster is the set of
+ * specialists the orchestrator selected for the user's goal during orientation,
+ * ordered by the handoff graph so the side rail reads in routing order.
  */
 export async function createProject(input: {
   name: string
@@ -72,18 +72,19 @@ export async function createProject(input: {
     })
     .returning()
 
-  const roster = deriveRoster({
-    agentName: orientation.agentName,
-    functionLine: orientation.functionLine,
-    industry: orientation.industry,
-    sector: orientation.sector,
-    country: orientation.country,
-    region: orientation.region,
-    regulatoryRegime: orientation.regulatoryRegime,
-    geography: orientation.geography,
-    businessModel: orientation.businessModel,
-    groupId: orientation.groupId,
-  })
+  // The orchestrator selected these specialists for the user's goal during
+  // orientation. Only they are instantiated — the roster follows the goal.
+  const rosterKeys = Array.isArray(orientation.rosterKeys)
+    ? (orientation.rosterKeys as string[])
+    : []
+
+  if (rosterKeys.length === 0) {
+    throw new Error(
+      'No specialists were selected for your goal. Re-run the Orientation Protocol.',
+    )
+  }
+
+  const roster = deriveRoster(rosterKeys)
 
   await db.insert(projectBots).values(
     roster.map((bot) => ({

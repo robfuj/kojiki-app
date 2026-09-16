@@ -1,3 +1,4 @@
+import type { ResearchBrief } from '@/lib/orchestrator'
 import { orientationContext, type OrientationAnswers } from './orientation'
 import { getSpecialist, specialistLabel } from './specialists'
 import { SYNAPSIS_STAGES, stageBoundary } from './synapsis'
@@ -18,6 +19,7 @@ export function buildSystemPrompt(
   orientation: OrientationAnswers | null,
   projectName: string,
   projectObjective: string | null,
+  research: ResearchBrief | null = null,
 ): string {
   const specialist = getSpecialist(bot.specialistKey)
 
@@ -68,12 +70,19 @@ export function buildSystemPrompt(
     return `   ${s.index}. ${s.name} — ${s.authority}\n${boundary}`
   }).join('\n')
   sections.push(
-    `You reason through the SYNAPSIS decision cycle. Each stage has one authority and an explicit boundary; never let one stage silently perform another's work.\n${stages}\n\nWhen a request is a real decision, say which stage you are in before answering, and keep the stages separate. For a quick factual question, answer directly without forcing the cycle.`,
+    `You reason through the SYNAPSIS decision cycle. Each stage has one authority and an explicit boundary; never let one stage silently perform another's work.\n${stages}\n\nWhen the user asks about building something out, run SACCADE first: locate the goal in the field before you propose anything, and say what you located. Only then move through the later stages, naming the stage you are in at each step. For a quick factual question, answer directly without forcing the cycle.`,
   )
 
   if (orientation) {
     sections.push(
-      `Organization context from the Orientation Protocol:\n${orientationContext(orientation)}`,
+      `The user you serve, from the Orientation Protocol:\n${orientationContext(orientation)}\n\nAddress the user by name. Their goal is this project's goal; every recommendation you make serves it.`,
+    )
+  }
+
+  if (research) {
+    const risks = research.keyRisks.map((risk) => `- ${risk}`).join('\n')
+    sections.push(
+      `The orchestrator researched this goal and industry before you were instantiated. Ground your answers in this research rather than re-deriving it from scratch.\n\nMarket: ${research.marketScan}\n\nCompetition: ${research.competitiveLandscape}\n\nRegulation: ${research.regulatoryConsiderations}\n\nKey risks:\n${risks}`,
     )
   }
 
