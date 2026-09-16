@@ -123,20 +123,20 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
   return (
     <article
       className={cn(
-        'rounded-md border bg-card',
-        blocked ? 'border-seal/50' : verdict ? 'border-border' : 'border-border',
+        'rounded-2xl border bg-card shadow-soft',
+        blocked ? 'border-seal/50' : 'border-border',
       )}
     >
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3.5 py-2.5">
-        <h4 className="text-sm font-medium text-balance text-foreground">{task.title}</h4>
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
+        <h4 className="text-base font-medium text-balance text-foreground">{task.title}</h4>
 
-        <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
           {task.subAgentTitle}
         </span>
 
         <span
           className={cn(
-            'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+            'rounded-full px-2.5 py-0.5 text-xs font-medium',
             blocked
               ? 'bg-seal-soft text-seal'
               : task.status === 'reabsorbed'
@@ -150,11 +150,11 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {verdict && (
           <span
             className={cn(
-              'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+              'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
               VERDICT_TONE[verdict],
             )}
           >
-            {VerdictIcon && <VerdictIcon className="size-3" aria-hidden="true" />}
+            {VerdictIcon && <VerdictIcon className="size-3.5" aria-hidden="true" />}
             {VALIDATION_LABELS[verdict]} · {task.outcomeScore ?? 0}/100
           </span>
         )}
@@ -162,22 +162,22 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         <button
           type="button"
           onClick={() => onTalkToSubAgent(task)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
         >
-          <MessageSquare className="size-3" aria-hidden="true" />
+          <MessageSquare className="size-3.5" aria-hidden="true" />
           Talk to {task.subAgentTitle}
         </button>
       </div>
 
-      <div className="space-y-3.5 p-3.5">
+      <div className="space-y-4 p-4 sm:p-5">
         {/* PLAN — criteria fixed before the work started. */}
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             Plan · success criteria fixed before dispatch
           </p>
 
           {criteria.length === 0 ? (
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               No criteria were recorded, so there is nothing to check against.
             </p>
           ) : (
@@ -188,7 +188,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
                 return (
                   <li
                     key={criterion.metric}
-                    className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-[11px]"
+                    className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-xs"
                   >
                     <span className="text-foreground">{criterion.metric}</span>
                     <span className="text-muted-foreground/70">
@@ -214,13 +214,13 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
           )}
 
           {guardrails.length > 0 && (
-            <ul className="mt-2 space-y-1 border-t border-border pt-2">
+            <ul className="mt-2.5 space-y-1.5 border-t border-border pt-2.5">
               {guardrails.map((guardrail) => (
                 <li
                   key={guardrail.metric}
-                  className="flex items-baseline gap-2 font-mono text-[11px] text-muted-foreground"
+                  className="flex items-baseline gap-2 font-mono text-xs text-muted-foreground"
                 >
-                  <Scale className="size-3 shrink-0 text-seal" aria-hidden="true" />
+                  <Scale className="size-3.5 shrink-0 text-seal" aria-hidden="true" />
                   <span>
                     {guardrail.metric} {OPERATOR_LABEL[guardrail.operator]}{' '}
                     {guardrail.limit}
@@ -234,7 +234,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
           )}
 
           {task.measurementWindowDays !== null && (
-            <p className="mt-2 font-mono text-[10px] text-muted-foreground/60">
+            <p className="mt-2.5 font-mono text-[11px] text-muted-foreground">
               measurement window {task.measurementWindowDays} day
               {task.measurementWindowDays === 1 ? '' : 's'}
             </p>
@@ -254,23 +254,23 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
 
         {/* DO — what the sub-agent reported. */}
         {task.resultSummary && (
-          <section className="border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <section className="border-t border-border pt-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               Do · reported by {task.subAgentTitle}
             </p>
-            <p className="mt-1.5 text-xs leading-relaxed whitespace-pre-wrap text-foreground">
+            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
               {task.resultSummary}
             </p>
             {result.blockedBy && (
-              <p className="mt-2 flex items-start gap-1.5 text-xs text-seal">
-                <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+              <p className="mt-2.5 flex items-start gap-1.5 text-sm text-seal">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 Blocked by: {result.blockedBy}
               </p>
             )}
 
             {(task.actualCostUsd !== null || task.estimatedCostUsd !== null) && (
-              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
-                <Coins className="size-3 shrink-0 text-seal" aria-hidden="true" />
+              <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-muted-foreground">
+                <Coins className="size-3.5 shrink-0 text-seal" aria-hidden="true" />
                 {task.actualCostUsd !== null ? (
                   <>
                     <span className="text-foreground">
@@ -298,12 +298,12 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
 
         {/* CHECK — the mechanical comparison. */}
         {verdict && (
-          <section className="border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <section className="border-t border-border pt-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               Check · compared against the criteria above
             </p>
 
-            <p className="mt-1.5 text-xs leading-relaxed text-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-foreground">
               {VERDICT_EXPLANATION[verdict]} Scored {task.outcomeScore ?? 0}/100 by
               weight.
               {task.checkedAt && (
@@ -315,13 +315,13 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
             </p>
 
             {breaches.length > 0 && (
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-2.5 space-y-1.5">
                 {breaches.map((breach) => (
                   <li
                     key={breach.metric}
-                    className="flex items-start gap-1.5 text-xs text-destructive"
+                    className="flex items-start gap-1.5 text-sm text-destructive"
                   >
-                    <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                     <span>
                       Guardrail breached: {breach.metric} came in at {breach.actual},
                       beyond the limit of {breach.limit}
@@ -336,15 +336,15 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
 
         {/* ACT — the lesson, when the attempt produced one. */}
         {learningCase && (
-          <section className="border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <section className="border-t border-border pt-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               Act · lesson sealed for reuse
             </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-foreground">
               {learningCase}
             </p>
             {verdict === 'LEARNING' && (
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {LEARNING_EXPLANATION}
               </p>
             )}
@@ -352,21 +352,21 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         )}
 
         {blocked && (
-          <p className="flex items-start gap-1.5 rounded-md border border-seal/40 bg-seal-soft p-2.5 text-xs leading-relaxed text-seal">
-            <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+          <p className="flex items-start gap-1.5 rounded-xl border border-seal/40 bg-seal-soft p-3 text-sm leading-relaxed text-seal">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
             Held by an open governance gate. Nothing further happens to this task
             until you decide that gate.
           </p>
         )}
 
         {error && (
-          <p role="alert" className="text-xs text-destructive">
+          <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         )}
 
         {!blocked && (
-          <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
             {task.status === 'dispatched' && (
               <ActionButton
                 onClick={() => run(() => runTask({ taskId: task.id }))}
@@ -408,7 +408,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
             )}
 
             {task.reabsorbedAt && (
-              <p className="font-mono text-[10px] uppercase tracking-wide text-seal">
+              <p className="text-xs font-medium text-seal">
                 reabsorbed — proposed as a node under this sub-goal
               </p>
             )}
@@ -446,13 +446,13 @@ function ActionButton({ onClick, busy, icon: Icon, label, tone }: ActionButtonPr
       onClick={onClick}
       disabled={busy}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-opacity disabled:opacity-50',
+        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-opacity disabled:opacity-50',
         tone === 'primary'
           ? 'bg-sumi text-primary-foreground hover:opacity-90'
           : 'border border-seal/50 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
       )}
     >
-      <Icon className="size-3" aria-hidden="true" />
+      <Icon className="size-3.5" aria-hidden="true" />
       {busy ? 'Working…' : label}
     </button>
   )
@@ -485,21 +485,21 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
   const isGovernance = errorClass === 'model' || errorClass === 'meta'
 
   return (
-    <div className="rounded-md border border-seal/40 bg-background p-3">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+    <div className="rounded-xl border border-seal/40 bg-background p-4">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
         Neuraxis · escalate to the layer that can fix this
       </p>
 
-      <fieldset className="mt-2.5">
-        <legend className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+      <fieldset className="mt-3">
+        <legend className="text-xs font-medium text-muted-foreground">
           What actually went wrong
         </legend>
-        <div className="mt-1.5 space-y-1">
+        <div className="mt-2 space-y-1.5">
           {(Object.keys(ERROR_CLASS_LABELS) as ErrorClass[]).map((key) => (
             <label
               key={key}
               className={cn(
-                'flex cursor-pointer items-start gap-2 rounded-sm border px-2 py-1.5 transition-colors',
+                'flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2 transition-colors',
                 errorClass === key
                   ? 'border-seal/50 bg-seal-soft'
                   : 'border-border bg-card hover:border-sumi/40',
@@ -511,10 +511,10 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
                 value={key}
                 checked={errorClass === key}
                 onChange={() => setErrorClass(key)}
-                className="mt-0.5 size-3 accent-[var(--seal)]"
+                className="mt-0.5 size-3.5 accent-[var(--seal)]"
               />
               <span className="min-w-0 flex-1">
-                <span className="block font-mono text-[11px] text-foreground">
+                <span className="block text-sm font-medium text-foreground">
                   {ERROR_CLASS_LABELS[key]}
                 </span>
                 <span className="block text-xs leading-relaxed text-muted-foreground">
@@ -527,18 +527,18 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
       </fieldset>
 
       {isGovernance && (
-        <p className="mt-2.5 flex items-start gap-1.5 rounded-sm border border-seal/40 bg-seal-soft p-2 text-xs leading-relaxed text-seal">
-          <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+        <p className="mt-3 flex items-start gap-1.5 rounded-xl border border-seal/40 bg-seal-soft p-2.5 text-sm leading-relaxed text-seal">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           This reaches L3 or L4. It will open a governance gate and block the task
           until you decide it — no agent can approve a change to its own authority.
         </p>
       )}
 
       {needsRdefinition && (
-        <div className="mt-2.5">
+        <div className="mt-3">
           <label
             htmlFor="escalation-redefinition"
-            className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+            className="text-xs font-medium text-muted-foreground"
           >
             Redefinition — the corrected problem statement
           </label>
@@ -548,19 +548,19 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
             value={redefinition}
             onChange={(event) => setRedefinition(event.target.value)}
             placeholder="What the problem actually is, now that the old framing is known to be wrong"
-            className="mt-1 w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            className="mt-1.5 w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             The superseded statement is kept, not overwritten, so the reasoning
             stays auditable.
           </p>
         </div>
       )}
 
-      <div className="mt-2.5">
+      <div className="mt-3">
         <label
           htmlFor="escalation-reason"
-          className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+          className="text-xs font-medium text-muted-foreground"
         >
           Why (optional)
         </label>
@@ -569,11 +569,11 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="What made you classify it this way"
-          className="mt-1 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+          className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
         />
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="mt-4 flex items-center gap-2">
         <button
           type="button"
           onClick={() =>
@@ -584,16 +584,16 @@ function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
             })
           }
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-sm bg-seal px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          <GitBranch className="size-3" aria-hidden="true" />
+          <GitBranch className="size-3.5" aria-hidden="true" />
           {busy ? 'Escalating…' : 'Escalate'}
         </button>
 
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Cancel
         </button>
@@ -629,46 +629,46 @@ function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
   )
 
   return (
-    <section className="rounded-md border border-seal/40 bg-seal-soft p-3">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+    <section className="rounded-xl border border-seal/40 bg-seal-soft p-4">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
         Model · proposed by {task.parentSpecialistKey}, awaiting your approval
       </p>
 
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-sm text-foreground">
+      <div className="mt-2.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="text-sm font-medium text-foreground">
           {task.proposedModelLabel ?? task.proposedModelId}
         </span>
         {task.proposedModelLabel && task.proposedModelId && (
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {task.proposedModelId}
           </span>
         )}
         {task.estimatedCostUsd !== null && (
-          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-foreground">
-            <Coins className="size-3 text-seal" aria-hidden="true" />
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-xs text-foreground">
+            <Coins className="size-3.5 text-seal" aria-hidden="true" />
             ~{formatUsd(task.estimatedCostUsd)}
           </span>
         )}
       </div>
 
       {task.modelRationale && (
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {task.modelRationale}
         </p>
       )}
 
       {task.estimatedInputTokens !== null && task.estimatedOutputTokens !== null && (
-        <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">
+        <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
           estimated {task.estimatedInputTokens.toLocaleString()} tokens in /{' '}
           {task.estimatedOutputTokens.toLocaleString()} out
         </p>
       )}
 
       {choosing && (
-        <div className="mt-2.5">
+        <div className="mt-3">
           <label
             htmlFor={`model-${task.id}`}
-            className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+            className="text-xs font-medium text-muted-foreground"
           >
             Run it on a different model
           </label>
@@ -676,7 +676,7 @@ function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
             id={`model-${task.id}`}
             value={modelId}
             onChange={(event) => setModelId(event.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
           >
             {options === undefined ? (
               <option value="">Loading catalog…</option>
@@ -693,14 +693,14 @@ function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
         </div>
       )}
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => onApprove(modelId || null)}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-sm bg-seal px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          <CheckCircle2 className="size-3" aria-hidden="true" />
+          <CheckCircle2 className="size-3.5" aria-hidden="true" />
           {busy
             ? 'Working…'
             : modelId
@@ -711,13 +711,13 @@ function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
         <button
           type="button"
           onClick={() => setChoosing((v) => !v)}
-          className="rounded-sm border border-border bg-background px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+          className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
         >
           {choosing ? 'Keep the proposal' : 'Choose a different model'}
         </button>
       </div>
 
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
         Nothing runs until you approve. A task cannot be dispatched on a model you
         did not authorise.
       </p>

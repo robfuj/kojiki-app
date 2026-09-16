@@ -1,3 +1,4 @@
+import { documentsContext } from '@/lib/documents'
 import type { ResearchBrief } from '@/lib/orchestrator'
 import { subAgentJobDescription } from './brief'
 import { orientationContext, type OrientationAnswers } from './orientation'
@@ -8,6 +9,26 @@ interface BotRecord {
   specialistKey: string
   displayName: string
   mandate: string | null
+}
+
+export interface PromptDocument {
+  name: string
+  content: string
+}
+
+/**
+ * The user's documents, as prompt context.
+ *
+ * Injected into every agent rather than only the one the user is talking to,
+ * because a document is organisational context: a pricing sheet uploaded to chat
+ * should inform Finance's numbers and Legal's review alike. The instruction is
+ * explicit about precedence so a stale document does not silently override what
+ * the user just said.
+ */
+function documentsSection(documents: PromptDocument[]): string | null {
+  if (documents.length === 0) return null
+
+  return `The user has supplied these documents. Treat them as source material: quote from them, cite the file name when you rely on one, and prefer them over your own assumptions about this business. Where a document conflicts with something the user says in conversation, the user wins — say that you noticed the conflict.\n\n${documentsContext(documents)}`
 }
 
 /**
@@ -21,6 +42,7 @@ export function buildSystemPrompt(
   projectName: string,
   projectObjective: string | null,
   research: ResearchBrief | null = null,
+  documents: PromptDocument[] = [],
 ): string {
   const specialist = getSpecialist(bot.specialistKey)
 
@@ -87,6 +109,9 @@ export function buildSystemPrompt(
     )
   }
 
+  const docs = documentsSection(documents)
+  if (docs) sections.push(docs)
+
   sections.push(
     'Be concrete and brief. Prefer a clear recommendation with its reasoning over hedging. Use markdown sparingly: short paragraphs, and lists only when they carry real structure.',
   )
@@ -137,6 +162,7 @@ export function buildSubAgentSystemPrompt(
   projectObjective: string | null,
   research: ResearchBrief | null = null,
   task: SubAgentTaskContext | null = null,
+  documents: PromptDocument[] = [],
 ): string | null {
   const sub = getSubAgent(parentSpecialistKey, subAgentKey)
   if (!sub) return null
@@ -178,6 +204,9 @@ export function buildSubAgentSystemPrompt(
     sections.push(researchSection(research))
   }
 
+  const docs = documentsSection(documents)
+  if (docs) sections.push(docs)
+
   sections.push(STYLE_RULE)
 
   return sections.join('\n\n')
@@ -206,6 +235,7 @@ export function buildOrchestratorSystemPrompt(
   projectObjective: string | null,
   research: ResearchBrief | null,
   context: OrchestratorContext,
+  documents: PromptDocument[] = [],
 ): string {
   const sections: string[] = [
     `You are the orchestrator of the Kojiki ontology, operating inside the project "${projectName}". Department agents and their sub-agents do the work; you coordinate them, report on their progress, and surface the decisions that belong to the user.`,
@@ -242,6 +272,9 @@ export function buildOrchestratorSystemPrompt(
   if (research) {
     sections.push(researchSection(research))
   }
+
+  const docs = documentsSection(documents)
+  if (docs) sections.push(docs)
 
   sections.push(STYLE_RULE)
 

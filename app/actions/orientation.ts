@@ -61,7 +61,7 @@ export async function completeOrientation(
   const userId = await getUserId()
   const normalized = normalize(answers)
 
-  const orchestrated = await runOrchestrator(normalized)
+  const orchestrated = await runOrchestrator(normalized, userId)
 
   const [row] = await db
     .insert(orientationProfiles)
@@ -97,7 +97,7 @@ export async function updateOrientation(
   const userId = await getUserId()
   const normalized = normalize(answers)
 
-  const orchestrated = await runOrchestrator(normalized)
+  const orchestrated = await runOrchestrator(normalized, userId)
 
   const [row] = await db
     .update(orientationProfiles)

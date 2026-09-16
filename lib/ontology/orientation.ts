@@ -19,6 +19,15 @@ export interface OrientationField {
   kind: 'text' | 'textarea'
   placeholder?: string
   required?: boolean
+  /**
+   * The question asked when this field gets its own screen.
+   *
+   * The flow shows one field per screen, so a question carrying several fields
+   * needs a prompt for each. When absent the field inherits its question's
+   * prompt, which is correct for the single-field questions.
+   */
+  screenPrompt?: string
+  screenWhy?: string
 }
 
 export interface OrientationQuestion {
@@ -87,18 +96,27 @@ export const ORIENTATION_QUESTIONS: OrientationQuestion[] = [
         label: 'Jurisdiction',
         kind: 'text',
         placeholder: 'e.g. Japan, expanding into Singapore',
+        screenPrompt: 'Where are you regulated?',
+        screenWhy:
+          'Legal and finance read this before they advise. A recommendation that is sound in one jurisdiction can be unlawful in another, so naming it stops the agents reasoning from the wrong default.',
       },
       {
         name: 'geography',
         label: 'Geography',
         kind: 'text',
         placeholder: 'e.g. JP domestic today, APAC next',
+        screenPrompt: 'Which markets are you in, and which come next?',
+        screenWhy:
+          'Growth and marketing scope their plans to the markets you actually serve, and to the one you are entering, rather than proposing a global strategy you cannot staff.',
       },
       {
         name: 'businessModel',
         label: 'Business model',
         kind: 'text',
         placeholder: 'e.g. B2B, asset-light forwarding',
+        screenPrompt: 'How does the business make money?',
+        screenWhy:
+          'Finance and strategy reason about margin, unit economics and capital from this. An asset-light forwarder and an asset-heavy carrier get very different advice from the same goal.',
       },
     ],
   },

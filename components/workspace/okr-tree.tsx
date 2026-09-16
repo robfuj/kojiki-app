@@ -55,8 +55,17 @@ export function OkrTree({ projectId, projectName, bots, onOpenSubGoal }: OkrTree
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <p className="font-mono text-xs text-muted-foreground">Loading OKR tree…</p>
+      <div className="mx-auto w-full max-w-4xl px-6 py-10">
+        <div className="space-y-3" aria-busy="true">
+          <p className="sr-only">Loading OKR tree</p>
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-2xl bg-muted"
+              aria-hidden="true"
+            />
+          ))}
+        </div>
       </div>
     )
   }
@@ -64,25 +73,28 @@ export function OkrTree({ projectId, projectName, bots, onOpenSubGoal }: OkrTree
   const roots = data ?? []
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8">
-      <div className="flex items-baseline justify-between gap-4">
+    <div className="mx-auto w-full max-w-4xl px-6 py-10">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
             OKR tree
           </p>
-          <h2 className="mt-1 font-serif text-2xl text-foreground">{projectName}</h2>
+          <h2 className="mt-2 font-serif text-3xl leading-tight text-balance text-foreground">
+            {projectName}
+          </h2>
         </div>
-        <p className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+
+        <p className="text-sm text-muted-foreground">
           overall goal → sub-goals → department completion
         </p>
-      </div>
+      </header>
 
       {roots.length === 0 ? (
-        <p className="mt-8 rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        <p className="mt-8 rounded-2xl border border-dashed border-border px-6 py-10 text-center text-sm leading-relaxed text-muted-foreground">
           No goals yet. Create the Overall Goal to root the tree.
         </p>
       ) : (
-        <div className="mt-7">
+        <div className="mt-8">
           {roots.map((node) => (
             <ObjectiveNode
               key={node.id}
@@ -190,18 +202,20 @@ function ObjectiveNode({
     <div className={cn(node.depth > 0 && 'ml-4 border-l border-border pl-4 sm:ml-6 sm:pl-5')}>
       <article
         className={cn(
-          'group rounded-md border bg-card transition-colors',
-          isRoot ? 'border-sumi/40 shadow-[inset_3px_0_0_0_var(--seal)]' : 'border-border',
+          'group rounded-2xl border bg-card transition-shadow',
+          isRoot
+            ? 'border-sumi/30 shadow-soft'
+            : 'border-border shadow-soft hover:shadow-elevated',
         )}
       >
-        <div className="flex items-start gap-3 p-3.5">
+        <div className="flex items-start gap-3 p-4 sm:p-5">
           {hasChildren ? (
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
               aria-label={expanded ? 'Collapse sub-goals' : 'Expand sub-goals'}
-              className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-1 shrink-0 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {expanded ? (
                 <ChevronDown className="size-4" aria-hidden="true" />
@@ -211,7 +225,7 @@ function ObjectiveNode({
             </button>
           ) : (
             <span
-              className="mt-1.5 size-1.5 shrink-0 rounded-full bg-border"
+              className="mt-2.5 size-1.5 shrink-0 rounded-full bg-border"
               aria-hidden="true"
             />
           )}
@@ -219,7 +233,7 @@ function ObjectiveNode({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               {isRoot ? (
-                <h3 className="font-serif text-lg text-balance text-foreground">
+                <h3 className="font-serif text-xl leading-snug text-balance text-foreground">
                   {node.title}
                 </h3>
               ) : (
@@ -228,7 +242,7 @@ function ObjectiveNode({
                 <button
                   type="button"
                   onClick={() => onOpenSubGoal(node.id)}
-                  className="text-left text-sm font-medium text-balance text-foreground underline-offset-4 transition-colors hover:text-seal hover:underline"
+                  className="text-left text-base font-medium text-balance text-foreground underline-offset-4 transition-colors hover:text-seal hover:underline"
                 >
                   {node.title}
                 </button>
@@ -236,7 +250,7 @@ function ObjectiveNode({
 
               <span
                 className={cn(
-                  'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
                   node.status === 'complete'
                     ? 'bg-seal-soft text-seal'
                     : node.status === 'in_progress'
@@ -248,7 +262,7 @@ function ObjectiveNode({
               </span>
 
               {owner && (
-                <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
                   {owner}
                 </span>
               )}
@@ -257,7 +271,7 @@ function ObjectiveNode({
                   reads as "proposed · Marketing · SEO Specialist" rather than as
                   an anonymous departmental claim. */}
               {node.assigneeSubAgentTitle && (
-                <span className="inline-flex items-center gap-1 rounded-sm border border-seal/40 bg-seal-soft px-1.5 py-0.5 font-mono text-[10px] text-seal">
+                <span className="inline-flex items-center gap-1 rounded-full border border-seal/40 bg-seal-soft px-2.5 py-0.5 text-xs font-medium text-seal">
                   <span aria-hidden="true">↳</span>
                   {node.assigneeSubAgentTitle}
                 </span>
@@ -265,12 +279,12 @@ function ObjectiveNode({
             </div>
 
             {node.description && (
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                 {node.description}
               </p>
             )}
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3">
               <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                 <div
                   className={cn(
@@ -308,37 +322,37 @@ function ObjectiveNode({
             </div>
 
             {hasChildren && (
-              <p className="mt-2 font-mono text-[10px] text-muted-foreground/60">
+              <p className="mt-2.5 text-xs text-muted-foreground">
                 rolled up from {node.children.length} sub-goal
                 {node.children.length === 1 ? '' : 's'}
               </p>
             )}
 
             {error && (
-              <p role="alert" className="mt-2 text-xs text-destructive">
+              <p role="alert" className="mt-2.5 text-sm text-destructive">
                 {error}
               </p>
             )}
 
-            <div className="mt-3 flex flex-wrap items-center gap-1.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+            <div className="mt-4 flex flex-wrap items-center gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
               {canAddChild && (
                 <>
                   <button
                     type="button"
                     onClick={decompose}
                     disabled={busy}
-                    className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-seal hover:text-seal disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-seal hover:text-seal disabled:opacity-50"
                   >
-                    <Sparkles className="size-3" aria-hidden="true" />
+                    <Sparkles className="size-3.5" aria-hidden="true" />
                     {busy ? 'Working…' : 'Agents decompose'}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setAdding((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
                   >
-                    <Plus className="size-3" aria-hidden="true" />
+                    <Plus className="size-3.5" aria-hidden="true" />
                     Sub-goal
                   </button>
                 </>
@@ -349,28 +363,32 @@ function ObjectiveNode({
                 onClick={remove}
                 disabled={busy}
                 aria-label={`Delete ${node.title}`}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
               >
-                <Trash2 className="size-3" aria-hidden="true" />
+                <Trash2 className="size-3.5" aria-hidden="true" />
                 Delete
               </button>
             </div>
 
             {adding && (
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-4 flex items-center gap-2">
                 <input
                   autoFocus
                   value={newTitle}
                   onChange={(event) => setNewTitle(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                    if (
+                      event.key === 'Enter' &&
+                      !event.nativeEvent.isComposing &&
+                      event.keyCode !== 229
+                    ) {
                       event.preventDefault()
                       addChild()
                     }
                     if (event.key === 'Escape') setAdding(false)
                   }}
                   placeholder="Sub-goal title"
-                  className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+                  className="min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
                 />
                 <Button size="sm" onClick={addChild} disabled={busy}>
                   Add
@@ -382,7 +400,7 @@ function ObjectiveNode({
       </article>
 
       {hasChildren && expanded && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-3 space-y-3">
           {node.children.map((child) => (
             <ObjectiveNode
               key={child.id}

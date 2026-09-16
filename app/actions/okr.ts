@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { objectives, projectBots, projects } from '@/lib/db/schema'
-import { resolveModel } from '@/lib/ai'
+import { resolveModelForUser } from '@/lib/ai'
 import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
 import { and, asc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
@@ -289,8 +289,10 @@ export async function populateSubGoals(input: {
   // generateObject sends a JSON-schema response format, which free-tier
   // Gateway providers reject. A required tool call carries the same schema
   // through the universally supported `tools` parameter instead.
+  const route = await resolveModelForUser(userId)
+
   const { toolCalls } = await generateText({
-    model: resolveModel(),
+    model: route.model,
     tools: {
       proposeSubGoals: {
         description:

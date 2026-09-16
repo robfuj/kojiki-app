@@ -8,6 +8,7 @@ import {
   type SessionRow,
 } from '@/app/actions/chat'
 import type { BotRow } from '@/app/actions/projects'
+import { DocumentAttach } from '@/components/workspace/document-attach'
 import { cn } from '@/lib/utils'
 import { SYNAPSIS_STAGES } from '@/lib/ontology/synapsis'
 import { useChat } from '@ai-sdk/react'
@@ -67,17 +68,19 @@ export function ChatModule({
           <button
             type="button"
             onClick={onClearFocus}
-            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="size-3" aria-hidden="true" />
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
             Back to agents
           </button>
 
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
             Sub-agent
           </p>
-          <p className="mt-1 text-sm font-medium text-foreground">{focus.subAgentTitle}</p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 text-base font-medium text-foreground">
+            {focus.subAgentTitle}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
             Working under the {focus.parentSpecialistKey.replace(/_/g, ' ')} head
             {focus.objectiveId ? ' on this sub-goal' : ''}. It answers from its own
             ontology entry — its skills, tools and decision rights — not from the
@@ -110,12 +113,10 @@ export function ChatModule({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             Agents
           </p>
-          <p className="truncate font-mono text-[10px] text-muted-foreground/60">
-            {projectName}
-          </p>
+          <p className="truncate text-xs text-muted-foreground">{projectName}</p>
         </div>
 
         <div
@@ -130,7 +131,7 @@ export function ChatModule({
             onClick={() => onClearFocus?.()}
             title="Coordinates the departments and reports the OKR tree back to you"
             className={cn(
-              'shrink-0 rounded-sm border px-2 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors',
+              'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
               orchestratorActive
                 ? 'border-seal bg-seal text-primary-foreground'
                 : 'border-seal/40 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
@@ -153,7 +154,7 @@ export function ChatModule({
                 }}
                 title={bot.mandate ?? undefined}
                 className={cn(
-                  'shrink-0 rounded-sm border px-2 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors',
+                  'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
                   active
                     ? 'border-sumi bg-sumi text-primary-foreground'
                     : 'border-border bg-card text-muted-foreground hover:border-sumi/40 hover:text-foreground',
@@ -171,7 +172,7 @@ export function ChatModule({
         </div>
 
         {orchestratorActive ? (
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Sits above the departments. It reads the OKR tree, the tasks in flight
             and any governance gate waiting on you, and reports what is actually
             happening. It does not do departmental work itself.
@@ -179,7 +180,7 @@ export function ChatModule({
         ) : (
           activeBot && (
             <>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {activeBot.mandate}
               </p>
 
@@ -187,10 +188,13 @@ export function ChatModule({
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
-                className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
+                className="mt-2.5 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ChevronDown
-                  className={cn('size-3 transition-transform', showDetails && 'rotate-180')}
+                  className={cn(
+                    'size-3.5 transition-transform',
+                    showDetails && 'rotate-180',
+                  )}
                   aria-hidden="true"
                 />
                 Decision rights &amp; handoffs
@@ -224,15 +228,17 @@ function BotDetails({ bot }: { bot: BotRow }) {
   const verbs = ['own', 'recommend', 'consult', 'approve', 'execute', 'escalate', 'automate']
 
   return (
-    <div className="mt-2.5 space-y-2.5 rounded-md border border-border bg-card p-3">
-      <dl className="space-y-1.5">
+    <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-4 shadow-soft">
+      <dl className="space-y-2">
         {verbs.map((verb) => {
           const items = rights[verb]
           if (!items || items.length === 0) return null
           return (
-            <div key={verb} className="flex gap-2 font-mono text-[10px]">
-              <dt className="w-20 shrink-0 uppercase tracking-wide text-seal">{verb}</dt>
-              <dd className="min-w-0 flex-1 text-muted-foreground">
+            <div key={verb} className="flex gap-3 text-xs">
+              <dt className="w-20 shrink-0 font-mono uppercase tracking-wide text-seal">
+                {verb}
+              </dt>
+              <dd className="min-w-0 flex-1 leading-relaxed text-muted-foreground">
                 {items.map((item) => item.replace(/_/g, ' ')).join(' · ')}
               </dd>
             </div>
@@ -241,26 +247,26 @@ function BotDetails({ bot }: { bot: BotRow }) {
       </dl>
 
       {handoffs.length > 0 && (
-        <div className="border-t border-border pt-2">
-          <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+        <div className="border-t border-border pt-3">
+          <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
             Hands off to
           </p>
-          <ul className="mt-1.5 space-y-1">
+          <ul className="mt-2 space-y-1.5">
             {handoffs.map((handoff) => (
-              <li key={handoff.target} className="font-mono text-[10px] text-muted-foreground">
-                <span className="text-foreground">{handoff.target}</span>
-                <span className="text-muted-foreground/60"> — {handoff.trigger}</span>
+              <li key={handoff.target} className="text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">{handoff.target}</span>
+                <span> — {handoff.trigger}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="border-t border-border pt-2">
-        <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+      <div className="border-t border-border pt-3">
+        <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
           SYNAPSIS cycle
         </p>
-        <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
           {SYNAPSIS_STAGES.map((stage) => stage.key).join(' → ')}
         </p>
       </div>
@@ -286,6 +292,7 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
       session={session ?? null}
       loading={loadingSession}
       agentName={botName}
+      projectId={projectId}
       emptyHint={`${botName} is oriented on this project and ready. Ask it to work a decision through the SYNAPSIS cycle, or to take a goal from the OKR tree.`}
     />
   )
@@ -303,6 +310,7 @@ function OrchestratorChat({ projectId }: { projectId: string }) {
       session={session ?? null}
       loading={isLoading}
       agentName="Orchestrator"
+      projectId={projectId}
       emptyHint="Ask what is happening across the OKR tree, which sub-agents are working, or what is waiting on your decision. The orchestrator reports recorded state — it does not do departmental work itself."
     />
   )
@@ -340,6 +348,7 @@ function SubAgentChat({
       session={session ?? null}
       loading={isLoading}
       agentName={focus.subAgentTitle}
+      projectId={projectId}
       emptyHint={`${focus.subAgentTitle} is here with its own skills, tools and decision rights. Ask it what it is doing, or push back on its report. Anything outside its decision rights goes back to its department head as a recommendation.`}
     />
   )
@@ -349,10 +358,17 @@ interface SessionChatProps {
   session: SessionRow | null
   loading: boolean
   agentName: string
+  projectId: string
   emptyHint: string
 }
 
-function SessionChat({ session, loading, agentName, emptyHint }: SessionChatProps) {
+function SessionChat({
+  session,
+  loading,
+  agentName,
+  projectId,
+  emptyHint,
+}: SessionChatProps) {
   const { data: stored, isLoading: loadingMessages } = useSWR(
     session ? ['messages', session.id] : null,
     () => getSessionMessages(session!.id),
@@ -381,6 +397,7 @@ function SessionChat({ session, loading, agentName, emptyHint }: SessionChatProp
       key={session.id}
       sessionId={session.id}
       agentName={agentName}
+      projectId={projectId}
       emptyHint={emptyHint}
       initialMessages={initialMessages}
     />
@@ -390,6 +407,7 @@ function SessionChat({ session, loading, agentName, emptyHint }: SessionChatProp
 interface ConversationProps {
   sessionId: string
   agentName: string
+  projectId: string
   emptyHint: string
   initialMessages: UIMessage[]
 }
@@ -397,6 +415,7 @@ interface ConversationProps {
 function Conversation({
   sessionId,
   agentName,
+  projectId,
   emptyHint,
   initialMessages,
 }: ConversationProps) {
@@ -443,7 +462,7 @@ function Conversation({
         aria-live="polite"
       >
         {messages.length === 0 && (
-          <p className="rounded-md border border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-relaxed text-muted-foreground">
             {emptyHint}
           </p>
         )}
@@ -453,21 +472,21 @@ function Conversation({
         ))}
 
         {status === 'submitted' && (
-          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             {agentName} is working
           </p>
         )}
 
         {error && (
-          <p role="alert" className="text-xs text-destructive">
+          <p role="alert" className="text-sm text-destructive">
             {error.message || 'The agent could not respond.'}
           </p>
         )}
       </div>
 
       <div className="shrink-0 border-t border-border bg-card p-3">
-        <div className="flex items-end gap-2 rounded-md border border-input bg-background p-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
+        <div className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <label htmlFor={composerId} className="sr-only">
             Message {agentName}
           </label>
@@ -495,14 +514,19 @@ function Conversation({
             onClick={submit}
             disabled={busy || !input.trim()}
             aria-label="Send message"
-            className="shrink-0 rounded-sm bg-sumi p-1.5 text-primary-foreground transition-opacity disabled:opacity-40"
+            className="shrink-0 rounded-full bg-sumi p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <ArrowUp className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <p className="mt-1.5 font-mono text-[10px] text-muted-foreground/60">
+        <p className="mt-2 text-xs text-muted-foreground">
           Enter to send · Shift + Enter for a new line
         </p>
+
+        {/* A file added here is context for every agent in the project, not an
+            attachment to this one message — so it lives below the composer and
+            persists across the conversation. */}
+        <DocumentAttach projectId={projectId} />
       </div>
     </>
   )
@@ -524,16 +548,16 @@ function MessageBubble({
   if (!text) return null
 
   return (
-    <div className={cn('flex flex-col gap-1', isUser && 'items-end')}>
-      <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
-        {isUser ? 'you' : agentName}
+    <div className={cn('flex flex-col gap-1.5', isUser && 'items-end')}>
+      <p className="px-1 text-xs font-medium text-muted-foreground">
+        {isUser ? 'You' : agentName}
       </p>
       <div
         className={cn(
-          'max-w-[92%] rounded-md border px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap',
+          'max-w-[92%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
           isUser
-            ? 'border-sumi/30 bg-sumi-soft text-foreground'
-            : 'border-border bg-card text-foreground',
+            ? 'rounded-br-md bg-sumi text-primary-foreground'
+            : 'rounded-bl-md border border-border bg-card text-foreground shadow-soft',
         )}
       >
         {text}

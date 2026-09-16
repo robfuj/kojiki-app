@@ -7,11 +7,9 @@ import {
   chatSessions,
   decisions,
   objectives,
-  orientationProfiles,
   projectBots,
   projects,
 } from '@/lib/db/schema'
-import { deriveRoster } from '@/lib/ontology/orientation'
 import { and, desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -32,95 +30,6 @@ export async function listProjects(): Promise<ProjectRow[]> {
     .from(projects)
     .where(eq(projects.userId, userId))
     .orderBy(desc(projects.createdAt))
-}
-
-/**
- * Creates a project and instantiates its bot roster. The roster is the set of
- * specialists the orchestrator selected for the user's goal during orientation,
- * ordered by the handoff graph so the side rail reads in routing order.
- */
-export async function createProject(input: {
-  name: string
-  objective?: string
-}): Promise<ProjectRow> {
-  const userId = await getUserId()
-
-  const name = input.name.trim()
-  if (!name) throw new Error('Project name is required')
-
-  const [orientation] = await db
-    .select()
-    .from(orientationProfiles)
-    .where(eq(orientationProfiles.userId, userId))
-    .orderBy(desc(orientationProfiles.createdAt))
-    .limit(1)
-
-  if (!orientation) {
-    throw new Error('Complete the Orientation Protocol before creating a project')
-  }
-
-  const projectId = crypto.randomUUID()
-
-  const [project] = await db
-    .insert(projects)
-    .values({
-      id: projectId,
-      userId,
-      name,
-      objective: input.objective?.trim() || null,
-      orientationId: orientation.id,
-    })
-    .returning()
-
-  // The orchestrator selected these specialists for the user's goal during
-  // orientation. Only they are instantiated — the roster follows the goal.
-  const rosterKeys = Array.isArray(orientation.rosterKeys)
-    ? (orientation.rosterKeys as string[])
-    : []
-
-  if (rosterKeys.length === 0) {
-    throw new Error(
-      'No specialists were selected for your goal. Re-run the Orientation Protocol.',
-    )
-  }
-
-  const roster = deriveRoster(rosterKeys)
-
-  await db.insert(projectBots).values(
-    roster.map((bot) => ({
-      id: crypto.randomUUID(),
-      userId,
-      projectId,
-      specialistKey: bot.specialistKey,
-      displayName: bot.displayName,
-      functionLine: bot.functionLine,
-      mandate: bot.mandate,
-      decisionRights: bot.decisionRights,
-      handoffTargets: bot.handoffTargets,
-      synapsisStages: bot.synapsisStages,
-      position: bot.position,
-    })),
-  )
-
-  // The OKR tree is rooted at the project's Overall Goal. Department agents
-  // populate sub-goals beneath it and roll their percentages up to this node.
-  await db.insert(objectives).values({
-    id: crypto.randomUUID(),
-    userId,
-    projectId,
-    parentObjectiveId: null,
-    ownerBotId: null,
-    title: input.objective?.trim() || name,
-    description: input.objective?.trim() ? name : null,
-    kind: 'overall_goal',
-    status: 'active',
-    progress: 0,
-    depth: 0,
-    position: 0,
-  })
-
-  revalidatePath('/')
-  return project
 }
 
 export interface ProjectWorkspace {

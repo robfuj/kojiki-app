@@ -21,9 +21,9 @@ const mincho = Zen_Old_Mincho({
 })
 
 export const metadata: Metadata = {
-  title: 'Kojiki — Ontology Workspace',
+  title: 'Kojiki — Agent Workspace',
   description:
-    'Operational interface for the Kojiki ontology: run the Orientation Protocol, open projects, work with department agents through the SYNAPSIS cycle, and track OKR trees.',
+    'Run the Orientation Protocol, open projects, and work with department agents through the SYNAPSIS cycle. Decompose goals into an OKR tree, dispatch sub-agents on the model you approve, and track verified results.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -47,8 +47,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafbfc' },
-    { media: '(prefers-color-scheme: dark)', color: '#262b36' },
+    { media: '(prefers-color-scheme: light)', color: '#FBFBFD' },
+    { media: '(prefers-color-scheme: dark)', color: '#1F1F21' },
   ],
 }
 

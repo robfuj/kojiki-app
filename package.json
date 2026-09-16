@@ -11,7 +11,8 @@
     "ontology:check": "node scripts/generate-ontology.mjs --check",
     "db:migrate-orientation": "node scripts/migrate-orientation.mjs",
     "db:migrate-execution": "node scripts/migrate-execution.mjs",
-    "db:migrate-model-routing": "node scripts/migrate-model-routing.mjs"
+    "db:migrate-model-routing": "node scripts/migrate-model-routing.mjs",
+    "db:migrate-documents": "node scripts/migrate-documents.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.54",
@@ -26,7 +27,9 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.16.0",
+    "mammoth": "^1.12.3",
     "next": "16.3.3",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.23.0",
     "react": "^19",
     "react-dom": "^19",

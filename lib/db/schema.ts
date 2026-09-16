@@ -94,6 +94,11 @@ export const projects = pgTable('projects', {
   objective: text('objective'),
   orientationId: text('orientationId'),
   status: text('status').notNull().default('active'),
+  // What the orchestrator found and asked when this project was created: the
+  // research brief, the clarifying questions and the user's answers, and why the
+  // roster was chosen. Agents read it so they plan against what the user actually
+  // said rather than against the goal sentence alone.
+  intakeContext: jsonb('intakeContext'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
@@ -479,4 +484,39 @@ export const myceliumSignals = pgTable('mycelium_signals', {
   // Sealed by Sentinel once the signal is wrapped in a provenance token.
   sentinelEntryId: text('sentinelEntryId'),
   firedAt: timestamp('firedAt').notNull().defaultNow(),
+})
+
+// Documents an agent may read as context.
+//
+// The extracted text is stored rather than the original bytes, because there is no
+// object store in this deployment and because the only thing an agent can do with
+// a document is read it. That keeps the database small and means nothing has to
+// expire or be garbage collected.
+//
+// `source` and `sourceRef` are the seam for external connectors: a Google Drive
+// import writes the same row with source 'google-drive' and the file ID in
+// sourceRef, so no query or UI has to change when that connector arrives.
+export const documents = pgTable('documents', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  // Null for a document that belongs to the user rather than to one project.
+  projectId: text('projectId'),
+  name: text('name').notNull(),
+  mimeType: text('mimeType').notNull(),
+  sizeBytes: integer('sizeBytes').notNull().default(0),
+  charCount: integer('charCount').notNull().default(0),
+  content: text('content').notNull(),
+  // upload | google-drive | dropbox | onedrive — only 'upload' is wired today.
+  source: text('source').notNull().default('upload'),
+  sourceRef: text('sourceRef'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// Per-user interface preferences. Kept in its own table rather than as columns on
+// the auth user row, because Better Auth owns that table's shape.
+export const userPreferences = pgTable('user_preferences', {
+  userId: text('userId').primaryKey(),
+  // Key into ACCENTS in lib/accents.ts. Unknown keys fall back to the default.
+  accentKey: text('accentKey').notNull().default('seal'),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })

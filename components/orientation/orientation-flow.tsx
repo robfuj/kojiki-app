@@ -1,17 +1,20 @@
 'use client'
 
 import { completeOrientation } from '@/app/actions/orientation'
+import {
+  IntakeProgress,
+  IntakeScreen,
+  type IntakeDirection,
+} from '@/components/intake/intake-screen'
 import { ProviderConnect } from '@/components/providers/provider-connect'
 import { SignOutButton } from '@/components/sign-out-button'
-import { Button } from '@/components/ui/button'
 import {
   ORIENTATION_QUESTIONS,
   type OrientationAnswers,
+  type OrientationField,
 } from '@/lib/ontology/orientation'
-import { cn } from '@/lib/utils'
-import { ArrowRight, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 type Answers = Record<string, string>
 
@@ -24,39 +27,65 @@ const EMPTY: Answers = {
   businessModel: '',
 }
 
+interface Screen {
+  key: string
+  eyebrow: string
+  prompt: string
+  why: string
+  field: OrientationField
+}
+
+/** The category name, taken from a label shaped like "Q1 — Identity". */
+function categoryOf(label: string): string {
+  const parts = label.split('—')
+  return (parts[1] ?? label).trim()
+}
+
+/**
+ * One field per screen.
+ *
+ * The protocol is defined as four questions, but the fourth carries three
+ * optional fields. Showing them together would put three inputs on one screen and
+ * break the single-question rhythm, so each field becomes its own screen and
+ * carries its own prompt. The ontology stays the source of truth for field names,
+ * placeholders and requiredness.
+ */
+const SCREENS: Screen[] = ORIENTATION_QUESTIONS.flatMap((question) =>
+  question.fields.map((field) => ({
+    key: field.name,
+    eyebrow: categoryOf(question.label),
+    prompt: field.screenPrompt ?? question.prompt,
+    why: field.screenWhy ?? question.why,
+    field,
+  })),
+)
+
+const PROVIDER_KEY = 'providers'
+const TOTAL = SCREENS.length + 1
+
 export function OrientationFlow({ userName }: { userName: string | null }) {
   const router = useRouter()
   const [step, setStep] = useState(0)
+  const [direction, setDirection] = useState<IntakeDirection>('forward')
   const [answers, setAnswers] = useState<Answers>(EMPTY)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // The provider step sits after the questions. It is infrastructure rather than
-  // orientation content, so it is not part of ORIENTATION_QUESTIONS — but it has to
-  // be settled before the agents can do paid work, which is why it is here rather
-  // than buried in settings where a first-run user would never find it.
-  const providerStep = ORIENTATION_QUESTIONS.length
-  const totalSteps = providerStep + 1
-  const onProviderStep = step === providerStep
-  const onLastQuestion = step === ORIENTATION_QUESTIONS.length - 1
-  const question = onProviderStep ? null : ORIENTATION_QUESTIONS[step]
-
-  const currentQuestionComplete =
-    question === null ||
-    question.fields.every((field) => {
-      if (!field.required) return true
-      return answers[field.name]?.trim().length > 0
-    })
+  const onProviderStep = step === SCREENS.length
+  const screen = onProviderStep ? null : SCREENS[step]
 
   // Orientation cannot complete with a hole in it: the orchestrator's research and
   // specialist selection are driven by these answers, so an empty goal would
-  // produce an empty organisation. The provider step is reachable only by walking
-  // through the questions, and finishing validates every required field rather
-  // than just the one on screen.
-  const allQuestionsComplete = ORIENTATION_QUESTIONS.every((item) =>
-    item.fields.every(
-      (field) => !field.required || answers[field.name]?.trim().length > 0,
-    ),
+  // produce an empty organisation. Finishing therefore validates every required
+  // field and returns to the first one that is missing, rather than trusting the
+  // screen the user happens to be on.
+  const missingIndex = useMemo(
+    () =>
+      SCREENS.findIndex(
+        (item) =>
+          item.field.required && !answers[item.field.name]?.trim().length,
+      ),
+    [answers],
   )
 
   function setField(name: string, value: string) {
@@ -64,25 +93,29 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
     setError(null)
   }
 
+  function goTo(next: number) {
+    setDirection(next > step ? 'forward' : 'back')
+    setStep(next)
+    setError(null)
+  }
+
   function advance() {
-    if (!currentQuestionComplete) {
-      setError('Answer the required field before continuing.')
+    if (onProviderStep) {
+      void finish()
       return
     }
-    setError(null)
-    if (!onProviderStep) setStep((s) => s + 1)
+    if (!screen) return
+    if (screen.field.required && !answers[screen.field.name]?.trim().length) {
+      setError('This answer is required — the orchestrator cannot work without it.')
+      return
+    }
+    goTo(step + 1)
   }
 
   async function finish() {
-    if (!allQuestionsComplete) {
+    if (missingIndex >= 0) {
       setError('Answer every required question before completing orientation.')
-      setStep(
-        ORIENTATION_QUESTIONS.findIndex((item) =>
-          item.fields.some(
-            (field) => field.required && !answers[field.name]?.trim(),
-          ),
-        ),
-      )
+      goTo(missingIndex)
       return
     }
 
@@ -108,274 +141,90 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
   }
 
   return (
-    <main className="kojiki-grid min-h-screen bg-background">
-      <div className="mx-auto grid min-h-screen w-full max-w-6xl gap-0 px-6 py-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12 lg:py-16">
-        <aside className="border-border/70 lg:border-r lg:pr-10">
-          <p className="font-serif text-4xl leading-none tracking-tight text-foreground">
-            古事記
-          </p>
-          <h1 className="mt-3 font-serif text-2xl text-foreground">
-            Orientation Protocol
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The department agents work for you, so orientation is about you: who
-            you are, what you are trying to accomplish, and what industry you are
-            in. The orchestrator then researches your goal and decides which
-            specialists it needs.
-          </p>
+    <main className="min-h-screen bg-background">
+      <IntakeProgress value={(step + 1) / TOTAL} label="Orientation progress" />
 
-          <ol className="mt-8 space-y-1">
-            {ORIENTATION_QUESTIONS.map((item, index) => {
-              const state =
-                index < step ? 'done' : index === step ? 'active' : 'pending'
-              const done = item.fields.every(
-                (field) => !field.required || answers[field.name]?.trim(),
-              )
-
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => index <= step && setStep(index)}
-                    disabled={index > step || submitting}
-                    aria-current={state === 'active' ? 'step' : undefined}
-                    className={cn(
-                      'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors',
-                      state === 'active' && 'bg-sumi-soft text-foreground',
-                      state === 'done' &&
-                        'text-muted-foreground hover:bg-muted hover:text-foreground',
-                      state === 'pending' &&
-                        'cursor-default text-muted-foreground/50',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-[10px]',
-                        state === 'active' &&
-                          'border-sumi bg-sumi text-primary-foreground',
-                        state === 'done' &&
-                          done &&
-                          'border-seal bg-seal text-accent-foreground',
-                        state === 'done' &&
-                          !done &&
-                          'border-border text-muted-foreground',
-                        state === 'pending' &&
-                          'border-border/60 text-muted-foreground/50',
-                      )}
-                    >
-                      {state === 'done' && done ? (
-                        <Check className="size-3" aria-hidden="true" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span className="font-mono text-xs uppercase tracking-wide">
-                      {item.label}
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-
-            <li>
-              <button
-                type="button"
-                onClick={() => setStep(providerStep)}
-                disabled={step < providerStep || submitting}
-                aria-current={onProviderStep ? 'step' : undefined}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors',
-                  onProviderStep
-                    ? 'bg-sumi-soft text-foreground'
-                    : 'cursor-default text-muted-foreground/50',
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-[10px]',
-                    onProviderStep
-                      ? 'border-sumi bg-sumi text-primary-foreground'
-                      : 'border-border/60 text-muted-foreground/50',
-                  )}
-                >
-                  {providerStep + 1}
-                </span>
-                <span className="font-mono text-xs uppercase tracking-wide">
-                  Providers
-                </span>
-              </button>
-            </li>
-          </ol>
-
-          {userName && (
-            <p className="mt-8 flex items-center gap-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
-              Signed in as <span className="text-foreground">{userName}</span>
-              <span aria-hidden="true">·</span>
-              <SignOutButton />
-            </p>
-          )}
-        </aside>
-
-        <section className="flex flex-col justify-center py-10 lg:py-0">
-          <div className="max-w-xl">
-            {question ? (
-              <>
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-seal">
-                  {question.label}
-                </p>
-                <h2 className="mt-4 text-balance font-serif text-3xl leading-snug text-foreground">
-                  {question.prompt}
-                </h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {question.why}
-                </p>
-
-                <div className="mt-8 space-y-5">
-                  {question.fields.map((field) => {
-                    const id = `orientation-${field.name}`
-                    const value = answers[field.name] ?? ''
-
-                    return (
-                      <div key={field.name}>
-                        <label
-                          htmlFor={id}
-                          className="flex items-baseline gap-2 text-sm font-medium text-foreground"
-                        >
-                          {field.label}
-                          {field.required ? (
-                            <span className="font-mono text-[10px] uppercase tracking-wide text-seal">
-                              required
-                            </span>
-                          ) : (
-                            <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/60">
-                              optional
-                            </span>
-                          )}
-                        </label>
-
-                        {field.kind === 'textarea' ? (
-                          <textarea
-                            id={id}
-                            value={value}
-                            rows={4}
-                            placeholder={field.placeholder}
-                            onChange={(event) =>
-                              setField(field.name, event.target.value)
-                            }
-                            className="mt-2 w-full resize-y rounded-md border border-input bg-card px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/25"
-                          />
-                        ) : (
-                          <input
-                            id={id}
-                            type="text"
-                            value={value}
-                            placeholder={field.placeholder}
-                            onChange={(event) =>
-                              setField(field.name, event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              if (
-                                event.key === 'Enter' &&
-                                !event.nativeEvent.isComposing
-                              ) {
-                                event.preventDefault()
-                                advance()
-                              }
-                            }}
-                            className="mt-2 w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/25"
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {onLastQuestion && (
-                  <div className="mt-8 rounded-md border border-border bg-card px-4 py-3.5">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
-                      what happens next
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      The orchestrator researches your goal and industry on the
-                      live web — market, competition, regulation, risk — then
-                      selects which of the eight canonical specialists your goal
-                      actually needs. Only those are instantiated, and every one
-                      of them sees the same research.
-                    </p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-seal">
-                  Providers
-                </p>
-                <h2 className="mt-4 text-balance font-serif text-3xl leading-snug text-foreground">
-                  Which provider runs the work?
-                </h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Each department head proposes a model per task and you approve it
-                  before anything runs, so nothing spends money you did not agree
-                  to. Connecting a provider is what makes that choice real — you
-                  can skip it and everything runs on the free tier instead.
-                </p>
-
-                <div className="mt-8">
-                  <ProviderConnect title="Connect a provider" />
-                </div>
-              </>
-            )}
-
-            {error && (
-              <p role="alert" className="mt-5 text-sm text-destructive">
-                {error}
+      <IntakeScreen
+        screenKey={onProviderStep ? PROVIDER_KEY : screen!.key}
+        direction={direction}
+        eyebrow={onProviderStep ? 'Providers' : screen!.eyebrow}
+        prompt={
+          onProviderStep ? 'Which provider runs the work?' : screen!.prompt
+        }
+        why={
+          onProviderStep
+            ? 'Each department head proposes a model per task and you approve it before anything runs, so nothing spends money you did not agree to. Connecting a provider is what makes that choice real — skip it and everything runs on the free tier instead.'
+            : screen!.why
+        }
+        field={onProviderStep ? undefined : screen!.field}
+        value={onProviderStep ? '' : (answers[screen!.field.name] ?? '')}
+        onChange={
+          onProviderStep
+            ? undefined
+            : (value) => setField(screen!.field.name, value)
+        }
+        onNext={advance}
+        onBack={step > 0 ? () => goTo(step - 1) : undefined}
+        nextLabel={onProviderStep ? 'Complete orientation' : 'Continue'}
+        isFinal={onProviderStep}
+        error={error}
+        busy={submitting}
+        busyNote={
+          <>
+            Researching{' '}
+            <span className="font-medium text-foreground">
+              {answers.industry || 'your industry'}
+            </span>{' '}
+            and selecting the specialists your goal needs. This takes a moment.
+          </>
+        }
+        header={<OrientationHeader userName={userName} />}
+        footnote={
+          onProviderStep ? (
+            <div className="mt-10 max-w-xl rounded-2xl bg-muted px-5 py-4">
+              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+                what happens next
               </p>
-            )}
-
-            <div className="mt-8 flex items-center gap-3">
-              {step > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep((s) => s - 1)}
-                  disabled={submitting}
-                >
-                  Back
-                </Button>
-              )}
-
-              {onProviderStep ? (
-                <Button type="button" onClick={finish} disabled={submitting}>
-                  {submitting ? 'Orchestrating…' : 'Complete orientation'}
-                </Button>
-              ) : (
-                <Button type="button" onClick={advance}>
-                  Continue
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </Button>
-              )}
-
-              <span className="ml-auto font-mono text-xs text-muted-foreground">
-                {step + 1} / {totalSteps}
-              </span>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                The orchestrator researches your goal and industry on the live
+                web — market, competition, regulation, risk — then selects which
+                of the canonical specialists your goal actually needs. Only those
+                are instantiated, and every one of them sees the same research.
+              </p>
             </div>
-
-            {submitting && (
-              <p
-                role="status"
-                className="mt-6 rounded-md border border-border bg-sumi-soft px-3 py-2.5 text-xs leading-relaxed text-muted-foreground"
-              >
-                Researching{' '}
-                <span className="text-foreground">
-                  {answers.industry || 'your industry'}
-                </span>{' '}
-                and selecting the specialists your goal needs. This takes a
-                moment.
-              </p>
-            )}
-          </div>
-        </section>
-      </div>
+          ) : undefined
+        }
+      >
+        <div className="mt-10">
+          <ProviderConnect title="Connect a provider" />
+        </div>
+      </IntakeScreen>
     </main>
+  )
+}
+
+function OrientationHeader({ userName }: { userName: string | null }) {
+  return (
+    <header className="surface-translucent sticky top-0 z-40 border-b border-border">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
+        <p className="font-serif text-2xl leading-none tracking-tight text-foreground">
+          古事記
+        </p>
+
+        <div className="flex items-center gap-4">
+          <p className="hidden font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground sm:block">
+            Orientation Protocol
+          </p>
+          {userName && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="max-w-32 truncate text-foreground">
+                {userName}
+              </span>
+              <SignOutButton />
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
   )
 }

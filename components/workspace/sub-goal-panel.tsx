@@ -83,30 +83,30 @@ export function SubGoalPanel({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-3" aria-hidden="true" />
+        <ArrowLeft className="size-3.5" aria-hidden="true" />
         Back to OKR tree
       </button>
 
-      <header className="mt-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+      <header className="mt-5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           Sub-goal · execution
         </p>
-        <h2 className="mt-1 font-serif text-2xl text-balance text-foreground">
+        <h2 className="mt-1.5 font-serif text-3xl text-balance text-foreground">
           {objective.title}
         </h2>
 
         {objective.description && (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {objective.description}
           </p>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <span
             className={cn(
-              'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+              'rounded-full px-2.5 py-0.5 text-xs font-medium',
               objective.status === 'complete'
                 ? 'bg-seal-soft text-seal'
                 : objective.status === 'in_progress'
@@ -118,17 +118,17 @@ export function SubGoalPanel({
           </span>
 
           {ownerBot && (
-            <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
               owned by {ownerBot.displayName}
             </span>
           )}
 
-          <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
             {objective.progress}%
           </span>
 
           {tasks.length > 0 && (
-            <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
               {tasks.length} task{tasks.length === 1 ? '' : 's'} · {reabsorbed} reabsorbed
             </span>
           )}
@@ -140,7 +140,7 @@ export function SubGoalPanel({
         <section className="mt-7" aria-labelledby="gates-heading">
           <h3
             id="gates-heading"
-            className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal"
+            className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal"
           >
             Governance gates · {pendingGates.length} awaiting your decision
           </h3>
@@ -156,7 +156,7 @@ export function SubGoalPanel({
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h3
             id="tasks-heading"
-            className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70"
+            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
           >
             Sub-agent tasks · Kaizen cycle
           </h3>
@@ -170,9 +170,9 @@ export function SubGoalPanel({
                 ? undefined
                 : 'This sub-goal has no owning department, so no head can dispatch work'
             }
-            className="inline-flex items-center gap-1.5 rounded-sm bg-sumi px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            <Users className="size-3" aria-hidden="true" />
+            <Users className="size-3.5" aria-hidden="true" />
             {busy
               ? 'Head is choosing…'
               : tasks.length > 0
@@ -181,21 +181,21 @@ export function SubGoalPanel({
           </button>
         </div>
 
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {ownerBot
             ? `${ownerBot.displayName} reads this sub-goal, picks whichever of its sub-agents the work needs, and commits to success criteria before dispatching. Because the criteria exist before the result does, reabsorption is a comparison rather than a judgement call.`
             : 'Assign an owning department to this sub-goal before work can be dispatched.'}
         </p>
 
         {error && (
-          <p role="alert" className="mt-3 text-xs text-destructive">
+          <p role="alert" className="mt-3 text-sm text-destructive">
             {error}
           </p>
         )}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
           {tasks.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               No sub-agents dispatched yet.
             </p>
           ) : (
@@ -223,11 +223,11 @@ export function SubGoalPanel({
       <section className="mt-8" aria-labelledby="mycelium-heading">
         <h3
           id="mycelium-heading"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70"
+          className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
         >
           Mycelium · agent to agent traffic
         </h3>
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Agents never address each other directly. Every dispatch, report and
           reabsorption is a signal through this substrate, sealed into SENTINEL as
           it goes.
@@ -241,7 +241,7 @@ export function SubGoalPanel({
         <section className="mt-8" aria-labelledby="decided-gates-heading">
           <h3
             id="decided-gates-heading"
-            className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70"
+            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
           >
             Decided gates
           </h3>

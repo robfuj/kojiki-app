@@ -18,12 +18,15 @@ interface WorkspaceShellProps {
   orientation: OrientationRecord
   projects: ProjectRow[]
   userName: string | null
+  /** The accent the server resolved for this user, so the picker shows the truth. */
+  accentKey: string
 }
 
 export function WorkspaceShell({
   orientation,
   projects,
   userName,
+  accentKey,
 }: WorkspaceShellProps) {
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -54,29 +57,27 @@ export function WorkspaceShell({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <header className="flex shrink-0 items-center gap-4 border-b border-border bg-card px-5 py-3">
-        <div className="flex items-baseline gap-3">
-          <span className="font-serif text-2xl leading-none text-foreground">古事記</span>
-          <span className="font-serif text-sm text-muted-foreground">Kojiki</span>
+      <header className="surface-translucent flex shrink-0 items-center gap-4 border-b border-border px-5 py-3">
+        <div className="flex items-baseline gap-2.5">
+          <span className="font-serif text-2xl leading-none tracking-tight text-foreground">
+            古事記
+          </span>
+          <span className="hidden text-sm text-muted-foreground sm:block">Kojiki</span>
         </div>
 
-        <div className="mx-2 h-6 w-px bg-border" aria-hidden="true" />
+        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
 
-        <dl className="flex min-w-0 items-center gap-5 font-mono text-xs">
-          <div className="flex shrink-0 items-center gap-1.5">
-            <dt className="uppercase tracking-wide text-muted-foreground/70">user</dt>
-            <dd className="text-foreground">{orientation.userName}</dd>
+        <dl className="flex min-w-0 items-center gap-4 text-sm">
+          <div className="flex shrink-0 items-baseline gap-1.5">
+            <dt className="text-muted-foreground">User</dt>
+            <dd className="font-medium text-foreground">{orientation.userName}</dd>
           </div>
-          <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
-            <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
-              industry
-            </dt>
+          <div className="hidden min-w-0 items-baseline gap-1.5 md:flex">
+            <dt className="shrink-0 text-muted-foreground">Industry</dt>
             <dd className="truncate text-foreground">{orientation.industry}</dd>
           </div>
-          <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
-            <dt className="shrink-0 uppercase tracking-wide text-muted-foreground/70">
-              goal
-            </dt>
+          <div className="hidden min-w-0 items-baseline gap-1.5 xl:flex">
+            <dt className="shrink-0 text-muted-foreground">Goal</dt>
             <dd className="truncate text-foreground">{orientation.goal}</dd>
           </div>
         </dl>
@@ -85,13 +86,13 @@ export function WorkspaceShell({
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <Settings className="size-3" aria-hidden="true" />
-            Providers
+            Settings
           </button>
 
-          <p className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
+          <p className="hidden items-center gap-2 text-sm text-muted-foreground lg:flex">
             {userName ? `Signed in as ${userName}` : 'Orientation complete'}
             {userName && (
               <>
@@ -165,7 +166,13 @@ export function WorkspaceShell({
         </aside>
       </div>
 
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsPanel
+          accentKey={accentKey}
+          projectId={activeId}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -174,14 +181,16 @@ function EmptyWorkspace({ hasProjects }: { hasProjects: boolean }) {
   return (
     <div className="flex h-full items-center justify-center p-10">
       <div className="max-w-md text-center">
-        <p className="font-serif text-5xl leading-none text-border">目</p>
-        <h2 className="mt-5 font-serif text-xl text-foreground">
+        <p className="font-serif text-6xl leading-none text-border" aria-hidden="true">
+          目
+        </p>
+        <h2 className="mt-6 font-serif text-2xl text-balance text-foreground">
           {hasProjects ? 'No project selected' : 'No projects yet'}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-3 text-base leading-relaxed text-pretty text-muted-foreground">
           {hasProjects
             ? 'Choose a project from the rail above to load its OKR tree and department agents.'
-            : 'Create a project from the rail above. The orchestrator already selected which department agents your goal needs, and in what handoff order.'}
+            : 'Create a project from the rail above. The orchestrator researches the goal, asks what it needs to know, and chooses the department agents the work requires.'}
         </p>
       </div>
     </div>

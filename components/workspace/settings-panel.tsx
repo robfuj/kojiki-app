@@ -1,18 +1,34 @@
 'use client'
 
+import { deleteDocument, uploadDocument } from '@/app/actions/documents'
+import { AccentPicker } from '@/components/settings/accent-picker'
 import { ProviderConnect } from '@/components/providers/provider-connect'
-import { X } from 'lucide-react'
-import { useEffect } from 'react'
+import { DocumentLibrary } from '@/components/workspace/document-attach'
+import { SUPPORTED_MIME_LABEL } from '@/lib/documents'
+import { cn } from '@/lib/utils'
+import { FileUp, Loader2, X } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 /**
  * Workspace settings, as an overlay rather than a route.
  *
- * Settings are a interruption of the work, not a destination, so the panel sits on
- * top of the workspace and closing it returns you to exactly where you were. The
- * only thing in it today is provider connection, which is the one decision that
- * changes what the agents are allowed to spend.
+ * Settings interrupt the work rather than being a destination, so the panel sits on
+ * top of the workspace and closing it returns you to exactly where you were.
+ *
+ * Three sections, in the order they matter: providers decide what the agents are
+ * allowed to spend, appearance decides how the workspace reads, and files decide
+ * what the agents know. Each is a decision the user makes rarely and wants to find
+ * again without hunting.
  */
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+export function SettingsPanel({
+  accentKey,
+  projectId,
+  onClose,
+}: {
+  accentKey: string
+  projectId: string | null
+  onClose: () => void
+}) {
   // Escape closes it, which is what an overlay owes the user.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -23,35 +39,197 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-sumi/40 p-4 sm:p-8">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-sumi/40 p-4 backdrop-blur-sm sm:p-8">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="w-full max-w-2xl rounded-md border border-border bg-background shadow-lg"
+        className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-background shadow-elevated"
       >
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <h2
-            id="settings-title"
-            className="font-serif text-lg text-foreground"
-          >
+        <header className="surface-translucent sticky top-0 z-10 flex items-center gap-3 border-b border-border px-6 py-4">
+          <h2 id="settings-title" className="font-serif text-xl text-foreground">
             Settings
           </h2>
+          <p className="hidden font-mono text-[11px] text-muted-foreground sm:block">
+            providers · appearance · files
+          </p>
+
           <button
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-sm border border-border bg-card px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <X className="size-3" aria-hidden="true" />
             Close
           </button>
         </header>
 
-        <div className="space-y-4 p-4">
-          <ProviderConnect />
+        <div className="divide-y divide-border">
+          <SettingsSection
+            id="providers"
+            title="Model providers"
+            description="Which provider runs the agents, and what it costs to run them."
+          >
+            <ProviderConnect title="Connected providers" />
+          </SettingsSection>
+
+          <SettingsSection
+            id="appearance"
+            title="Appearance"
+            description="The accent colour. The only part of the palette you change."
+          >
+            <AccentPicker currentKey={accentKey} />
+          </SettingsSection>
+
+          <SettingsSection
+            id="files"
+            title="Files"
+            description="Documents the agents read as context. Anything here informs every agent, not just the one you are messaging."
+          >
+            <FilesSection projectId={projectId} />
+          </SettingsSection>
         </div>
       </div>
+    </div>
+  )
+}
+
+function SettingsSection({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="px-6 py-6">
+      <h3
+        id={`${id}-title`}
+        className="font-serif text-lg text-foreground"
+      >
+        {title}
+      </h3>
+      <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+
+      <div className="mt-5">{children}</div>
+    </section>
+  )
+}
+
+/**
+ * Upload and library together, so an upload can refresh the list.
+ *
+ * They are one component rather than two because the list has to refetch when the
+ * upload succeeds, and the only honest way to do that is to own both.
+ */
+function FilesSection({ projectId }: { projectId: string | null }) {
+  const [version, setVersion] = useState(0)
+
+  return (
+    <div className="space-y-4">
+      <FileUpload projectId={projectId} onUploaded={() => setVersion((v) => v + 1)} />
+      <DocumentLibrary
+        projectId={projectId}
+        onDelete={deleteDocument}
+        refreshKey={version}
+      />
+    </div>
+  )
+}
+
+/**
+ * Upload from settings.
+ *
+ * The composer also uploads, but scoped to the conversation's project. Here the
+ * scope is explicit and the user can see which one they chose, because a document
+ * added from settings outlives any single conversation.
+ */
+function FileUpload({
+  projectId,
+  onUploaded,
+}: {
+  projectId: string | null
+  onUploaded: () => void
+}) {
+  const inputId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setUploading(true)
+    setError(null)
+    setNotice(null)
+
+    try {
+      const saved = await uploadDocument({ file, projectId })
+      setNotice(
+        `${saved.name} is now context for ${saved.projectId ? 'this project' : 'all your projects'}.`,
+      )
+      onUploaded()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read that file')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="file"
+          className="sr-only"
+          onChange={onFile}
+        />
+
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-full bg-sumi px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-40',
+          )}
+        >
+          {uploading ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <FileUp className="size-4" aria-hidden="true" />
+          )}
+          {uploading ? 'Reading…' : 'Add a file'}
+        </button>
+
+        <p className="font-mono text-[11px] text-muted-foreground">
+          {SUPPORTED_MIME_LABEL}
+          <span aria-hidden="true"> · </span>
+          {projectId ? 'scoped to this project' : 'available to all projects'}
+        </p>
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="mt-3 text-sm text-seal">
+          {notice}
+        </p>
+      )}
     </div>
   )
 }

@@ -172,17 +172,3 @@ export async function resolveModelForUser(
 function isProviderId(value: string): value is ProviderId {
   return value === 'openrouter' || value === 'anthropic' || value === 'openai'
 }
-
-/**
- * The keyless fallback, for contexts with no authenticated user.
- *
- * Kept because a few call sites run outside a request scope. Anything user-facing
- * should use resolveModelForUser or resolveModelForTask instead.
- */
-export function resolveModel(): LanguageModel {
-  return GATEWAY_MODEL as unknown as LanguageModel
-}
-
-export function activeProviderLabel(): string {
-  return `ai-gateway · ${GATEWAY_MODEL}`
-}

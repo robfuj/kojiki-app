@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth'
-import { resolveModel } from '@/lib/ai'
+import { resolveModelForUser } from '@/lib/ai'
 import { db } from '@/lib/db'
 import {
   chatMessages,
@@ -9,12 +9,14 @@ import {
   projects,
   subAgentTasks,
 } from '@/lib/db/schema'
+import { documentsForContext } from '@/app/actions/documents'
 import type { SuccessCriterion } from '@/lib/kaizen'
 import type { ResearchBrief } from '@/lib/orchestrator'
 import {
   buildOrchestratorSystemPrompt,
   buildSubAgentSystemPrompt,
   buildSystemPrompt,
+  type PromptDocument,
   type SubAgentTaskContext,
 } from '@/lib/ontology/prompt'
 import type { OrientationAnswers } from '@/lib/ontology/orientation'
@@ -41,6 +43,7 @@ interface ResolvePromptInput {
   userId: string
   orientationAnswers: OrientationAnswers | null
   research: ResearchBrief | null
+  documents: PromptDocument[]
 }
 
 /**
@@ -52,7 +55,8 @@ interface ResolvePromptInput {
  * agent that does not exist, which the caller turns into a 404.
  */
 async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | null> {
-  const { chatSession, project, userId, orientationAnswers, research } = input
+  const { chatSession, project, userId, orientationAnswers, research, documents } =
+    input
 
   if (chatSession.agentKind === 'orchestrator' || !chatSession.botId) {
     const [okrSummary, pendingGates, recentSignals, activeTasks] = await Promise.all([
@@ -72,6 +76,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
         pendingGates,
         recentSignals: [recentSignals, activeTasks].filter(Boolean).join('\n\n') || null,
       },
+      documents,
     )
   }
 
@@ -102,6 +107,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
       project.objective,
       research,
       task,
+      documents,
     )
   }
 
@@ -115,6 +121,7 @@ async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | 
     project.name,
     project.objective,
     research,
+    documents,
   )
 }
 
@@ -227,6 +234,19 @@ export async function POST(request: Request) {
     : null
   const research = (orientation?.researchBrief as ResearchBrief | null) ?? null
 
+  // Documents are organisational context, not per-agent context: a pricing sheet
+  // uploaded in chat should inform Finance's numbers and Legal's review alike.
+  // A failure here must not break the conversation, so it degrades to no documents.
+  let documents: PromptDocument[] = []
+  try {
+    documents = await documentsForContext(project.id)
+  } catch (error) {
+    console.log(
+      '[v0] chat continuing without document context:',
+      error instanceof Error ? error.message : String(error),
+    )
+  }
+
   // A conversation is with one agent at one layer. The orchestrator has no bot
   // row; a sub-agent borrows its parent department's bot but gets its own prompt
   // built from the ontology, so the user can talk to the SEO Specialist directly
@@ -237,14 +257,17 @@ export async function POST(request: Request) {
     userId,
     orientationAnswers,
     research,
+    documents,
   })
 
   if (!system) {
     return Response.json({ error: 'Agent not found' }, { status: 404 })
   }
 
+  const route = await resolveModelForUser(userId)
+
   const result = streamText({
-    model: resolveModel(),
+    model: route.model,
     system,
     messages: await convertToModelMessages(messages),
   })
