@@ -7,9 +7,23 @@ import {
   orientationProfiles,
   projectBots,
   projects,
+  subAgentTasks,
 } from '@/lib/db/schema'
+import type { SuccessCriterion } from '@/lib/kaizen'
 import type { ResearchBrief } from '@/lib/orchestrator'
-import { buildSystemPrompt } from '@/lib/ontology/prompt'
+import {
+  buildOrchestratorSystemPrompt,
+  buildSubAgentSystemPrompt,
+  buildSystemPrompt,
+  type SubAgentTaskContext,
+} from '@/lib/ontology/prompt'
+import type { OrientationAnswers } from '@/lib/ontology/orientation'
+import {
+  summarizeActiveTasks,
+  summarizeOkrTree,
+  summarizePendingGates,
+  summarizeRecentSignals,
+} from '@/lib/workspace-context'
 import { convertToModelMessages, streamText, type UIMessage } from 'ai'
 import { and, desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
@@ -19,6 +33,125 @@ export const maxDuration = 60
 interface ChatRequestBody {
   messages: UIMessage[]
   sessionId: string
+}
+
+interface ResolvePromptInput {
+  chatSession: typeof chatSessions.$inferSelect
+  project: typeof projects.$inferSelect
+  userId: string
+  orientationAnswers: OrientationAnswers | null
+  research: ResearchBrief | null
+}
+
+/**
+ * Picks the system prompt for whichever agent this session belongs to.
+ *
+ * Three layers, three prompts. The orchestrator coordinates and reports; a
+ * department head owns a mandate and routes handoffs; a sub-agent executes
+ * within its parent's mandate. Returning null means the session points at an
+ * agent that does not exist, which the caller turns into a 404.
+ */
+async function resolveSystemPrompt(input: ResolvePromptInput): Promise<string | null> {
+  const { chatSession, project, userId, orientationAnswers, research } = input
+
+  if (chatSession.agentKind === 'orchestrator' || !chatSession.botId) {
+    const [okrSummary, pendingGates, recentSignals, activeTasks] = await Promise.all([
+      summarizeOkrTree(project.id, userId),
+      summarizePendingGates(project.id, userId),
+      summarizeRecentSignals(project.id, userId),
+      summarizeActiveTasks(project.id, userId),
+    ])
+
+    return buildOrchestratorSystemPrompt(
+      orientationAnswers,
+      project.name,
+      project.objective,
+      research,
+      {
+        okrSummary,
+        pendingGates,
+        recentSignals: [recentSignals, activeTasks].filter(Boolean).join('\n\n') || null,
+      },
+    )
+  }
+
+  const [bot] = await db
+    .select()
+    .from(projectBots)
+    .where(and(eq(projectBots.id, chatSession.botId), eq(projectBots.userId, userId)))
+    .limit(1)
+
+  if (!bot) return null
+
+  if (
+    chatSession.agentKind === 'sub_agent' &&
+    chatSession.subAgentKey &&
+    chatSession.parentSpecialistKey
+  ) {
+    // When the conversation is scoped to one sub-goal, hand the sub-agent the
+    // task it is actually working on so it answers about that work specifically.
+    const task = chatSession.objectiveId
+      ? await activeTaskFor(chatSession.objectiveId, chatSession.subAgentKey, userId)
+      : null
+
+    return buildSubAgentSystemPrompt(
+      chatSession.parentSpecialistKey,
+      chatSession.subAgentKey,
+      orientationAnswers,
+      project.name,
+      project.objective,
+      research,
+      task,
+    )
+  }
+
+  return buildSystemPrompt(
+    {
+      specialistKey: bot.specialistKey,
+      displayName: bot.displayName,
+      mandate: bot.mandate,
+    },
+    orientationAnswers,
+    project.name,
+    project.objective,
+    research,
+  )
+}
+
+/** The task a sub-agent is currently running under a given sub-goal, if any. */
+async function activeTaskFor(
+  objectiveId: string,
+  subAgentKey: string,
+  userId: string,
+): Promise<SubAgentTaskContext | null> {
+  const [task] = await db
+    .select({
+      title: subAgentTasks.title,
+      brief: subAgentTasks.brief,
+      successCriteria: subAgentTasks.successCriteria,
+    })
+    .from(subAgentTasks)
+    .where(
+      and(
+        eq(subAgentTasks.objectiveId, objectiveId),
+        eq(subAgentTasks.subAgentKey, subAgentKey),
+        eq(subAgentTasks.userId, userId),
+      ),
+    )
+    .orderBy(desc(subAgentTasks.updatedAt))
+    .limit(1)
+
+  if (!task) return null
+
+  const criteria = task.successCriteria as SuccessCriterion[]
+  const rendered =
+    criteria.length > 0
+      ? `Success criteria:\n${criteria
+          .map((c) => `- ${c.metric} ${c.operator} ${c.target} (weight ${c.weight})`)
+          .join('\n')}`
+      : 'No success criteria were recorded for this task.'
+
+  return { title: task.title, brief: task.brief, successCriteria: rendered }
 }
 
 export async function POST(request: Request) {
@@ -60,17 +193,6 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Session not found' }, { status: 404 })
   }
 
-  const [bot] = await db
-    .select()
-    .from(projectBots)
-    .where(
-      and(
-        eq(projectBots.id, chatSession.botId),
-        eq(projectBots.userId, userId),
-      ),
-    )
-    .limit(1)
-
   const [project] = await db
     .select()
     .from(projects)
@@ -82,8 +204,8 @@ export async function POST(request: Request) {
     )
     .limit(1)
 
-  if (!bot || !project) {
-    return Response.json({ error: 'Project or bot not found' }, { status: 404 })
+  if (!project) {
+    return Response.json({ error: 'Project not found' }, { status: 404 })
   }
 
   const [orientation] = await db
@@ -93,26 +215,33 @@ export async function POST(request: Request) {
     .orderBy(desc(orientationProfiles.createdAt))
     .limit(1)
 
-  const system = buildSystemPrompt(
-    {
-      specialistKey: bot.specialistKey,
-      displayName: bot.displayName,
-      mandate: bot.mandate,
-    },
-    orientation
-      ? {
-          userName: orientation.userName,
-          goal: orientation.goal,
-          industry: orientation.industry,
-          jurisdiction: orientation.jurisdiction,
-          geography: orientation.geography,
-          businessModel: orientation.businessModel,
-        }
-      : null,
-    project.name,
-    project.objective,
-    (orientation?.researchBrief as ResearchBrief | null) ?? null,
-  )
+  const orientationAnswers = orientation
+    ? {
+        userName: orientation.userName,
+        goal: orientation.goal,
+        industry: orientation.industry,
+        jurisdiction: orientation.jurisdiction,
+        geography: orientation.geography,
+        businessModel: orientation.businessModel,
+      }
+    : null
+  const research = (orientation?.researchBrief as ResearchBrief | null) ?? null
+
+  // A conversation is with one agent at one layer. The orchestrator has no bot
+  // row; a sub-agent borrows its parent department's bot but gets its own prompt
+  // built from the ontology, so the user can talk to the SEO Specialist directly
+  // rather than only through the Marketing head.
+  const system = await resolveSystemPrompt({
+    chatSession,
+    project,
+    userId,
+    orientationAnswers,
+    research,
+  })
+
+  if (!system) {
+    return Response.json({ error: 'Agent not found' }, { status: 404 })
+  }
 
   const result = streamText({
     model: resolveModel(),

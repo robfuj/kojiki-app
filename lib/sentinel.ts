@@ -38,6 +38,15 @@ export type SentinelEntryType =
   | 'signal_propagated'
   | 'objective_proposed'
   | 'objective_status_changed'
+  // KAIZEN — the Check verdict, sealed so an outcome cannot be restated later.
+  | 'kaizen_checked'
+  // NEURAXIS — the causal trace, the escalation, and the gate lifecycle. Sealing
+  // experiences is what lets the gate count verified corroboration rather than
+  // accepting an agent's assertion that it has earned more authority.
+  | 'experience_recorded'
+  | 'escalation_raised'
+  | 'gate_requested'
+  | 'gate_decided'
 
 /** Deterministic JSON: sorted keys at every depth, so a hash is reproducible. */
 export function canonicalJson(value: unknown): string {

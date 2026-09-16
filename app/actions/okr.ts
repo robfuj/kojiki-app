@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { objectives, projectBots, projects } from '@/lib/db/schema'
 import { resolveModel } from '@/lib/ai'
+import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
 import { and, asc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -21,8 +22,6 @@ export type ObjectiveRow = typeof objectives.$inferSelect
 export interface OkrNode extends ObjectiveRow {
   children: OkrNode[]
 }
-
-const MAX_DEPTH = 3
 
 async function assertProjectOwnership(userId: string, projectId: string) {
   const [project] = await db
@@ -60,49 +59,6 @@ export async function getOkrTree(projectId: string): Promise<OkrNode[]> {
   }
 
   return roots
-}
-
-/**
- * Recomputes progress for every ancestor of `startId`, bottom-up. A node that has
- * children always derives its percentage from them, so the root Overall Goal
- * reflects the whole tree rather than a hand-entered number.
- */
-async function rollupAncestors(userId: string, startId: string | null) {
-  let currentId = startId
-  let guard = 0
-
-  while (currentId && guard < MAX_DEPTH + 2) {
-    guard += 1
-
-    const [node] = await db
-      .select()
-      .from(objectives)
-      .where(and(eq(objectives.id, currentId), eq(objectives.userId, userId)))
-      .limit(1)
-    if (!node) break
-
-    const children = await db
-      .select({ progress: objectives.progress })
-      .from(objectives)
-      .where(
-        and(
-          eq(objectives.parentObjectiveId, currentId),
-          eq(objectives.userId, userId),
-        ),
-      )
-
-    if (children.length > 0) {
-      const average = Math.round(
-        children.reduce((sum, child) => sum + child.progress, 0) / children.length,
-      )
-      await db
-        .update(objectives)
-        .set({ progress: average, updatedAt: new Date() })
-        .where(and(eq(objectives.id, currentId), eq(objectives.userId, userId)))
-    }
-
-    currentId = node.parentObjectiveId
-  }
 }
 
 export async function createObjective(input: {

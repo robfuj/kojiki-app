@@ -1,9 +1,10 @@
 'use client'
 
 import { getProjectWorkspace } from '@/app/actions/projects'
-import { ChatModule } from '@/components/workspace/chat-module'
+import { ChatModule, type ChatFocus } from '@/components/workspace/chat-module'
 import { OkrTree } from '@/components/workspace/okr-tree'
 import { ProjectsRail } from '@/components/workspace/projects-rail'
+import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
 import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
@@ -26,6 +27,14 @@ export function WorkspaceShell({
   const [selectedId, setSelectedId] = useState<string | null>(
     projects[0]?.id ?? null,
   )
+  // Which sub-goal's execution panel is open, and which agent the sidebar is
+  // talking to. The orchestrator is the default conversation because it is the
+  // layer the user coordinates through; drilling into a sub-agent from the
+  // sub-goal panel overrides it until the user goes back.
+  const [openSubGoalId, setOpenSubGoalId] = useState<string | null>(null)
+  const [chatFocus, setChatFocus] = useState<ChatFocus | null>({
+    kind: 'orchestrator',
+  })
 
   // A newly created project arrives through router.refresh(); follow it if the
   // current selection no longer exists.
@@ -83,21 +92,41 @@ export function WorkspaceShell({
       <ProjectsRail
         projects={projects}
         selectedId={activeId}
-        onSelect={setSelectedId}
+        onSelect={(projectId) => {
+          setSelectedId(projectId)
+          // A sub-goal from another project is not open in this one.
+          setOpenSubGoalId(null)
+          setChatFocus({ kind: 'orchestrator' })
+        }}
         onCreated={(project) => {
           router.refresh()
           setSelectedId(project.id)
+          setOpenSubGoalId(null)
+          setChatFocus({ kind: 'orchestrator' })
         }}
       />
 
       <div className="flex min-h-0 flex-1">
         <main className="min-w-0 flex-1 overflow-y-auto">
           {activeId && workspace ? (
-            <OkrTree
-              projectId={activeId}
-              projectName={workspace.project.name}
-              bots={workspace.bots}
-            />
+            openSubGoalId ? (
+              <SubGoalPanel
+                key={openSubGoalId}
+                objectiveId={openSubGoalId}
+                bots={workspace.bots}
+                onBack={() => setOpenSubGoalId(null)}
+                onTalkToSubAgent={(subAgent) =>
+                  setChatFocus({ kind: 'sub_agent', ...subAgent })
+                }
+              />
+            ) : (
+              <OkrTree
+                projectId={activeId}
+                projectName={workspace.project.name}
+                bots={workspace.bots}
+                onOpenSubGoal={setOpenSubGoalId}
+              />
+            )
           ) : (
             <EmptyWorkspace hasProjects={projects.length > 0} />
           )}
@@ -109,6 +138,8 @@ export function WorkspaceShell({
               projectId={activeId}
               projectName={workspace.project.name}
               bots={workspace.bots}
+              focus={chatFocus}
+              onClearFocus={() => setChatFocus({ kind: 'orchestrator' })}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-8 text-center">

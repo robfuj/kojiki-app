@@ -25,6 +25,8 @@ interface OkrTreeProps {
   projectId: string
   projectName: string
   bots: BotRow[]
+  /** Opens the execution panel for a sub-goal: its tasks, gates and agent traffic. */
+  onOpenSubGoal: (objectiveId: string) => void
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -34,7 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
   complete: 'complete',
 }
 
-export function OkrTree({ projectId, projectName, bots }: OkrTreeProps) {
+export function OkrTree({ projectId, projectName, bots, onOpenSubGoal }: OkrTreeProps) {
   const { data, isLoading, mutate } = useSWR(
     ['okr', projectId],
     () => getOkrTree(projectId),
@@ -88,6 +90,7 @@ export function OkrTree({ projectId, projectName, bots }: OkrTreeProps) {
               botName={botName}
               onChanged={refresh}
               canAddChild={node.depth < 3}
+              onOpenSubGoal={onOpenSubGoal}
             />
           ))}
         </div>
@@ -101,9 +104,16 @@ interface ObjectiveNodeProps {
   botName: (botId: string | null) => string | null
   onChanged: () => void
   canAddChild: boolean
+  onOpenSubGoal: (objectiveId: string) => void
 }
 
-function ObjectiveNode({ node, botName, onChanged, canAddChild }: ObjectiveNodeProps) {
+function ObjectiveNode({
+  node,
+  botName,
+  onChanged,
+  canAddChild,
+  onOpenSubGoal,
+}: ObjectiveNodeProps) {
   const [expanded, setExpanded] = useState(true)
   const [draft, setDraft] = useState<number | null>(null)
   const [adding, setAdding] = useState(false)
@@ -208,16 +218,21 @@ function ObjectiveNode({ node, botName, onChanged, canAddChild }: ObjectiveNodeP
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3
-                className={cn(
-                  'text-balance',
-                  isRoot
-                    ? 'font-serif text-lg text-foreground'
-                    : 'text-sm font-medium text-foreground',
-                )}
-              >
-                {node.title}
-              </h3>
+              {isRoot ? (
+                <h3 className="font-serif text-lg text-balance text-foreground">
+                  {node.title}
+                </h3>
+              ) : (
+                // A sub-goal opens its execution panel: the tasks, the Kaizen
+                // verdicts, any governance gate, and the agent traffic behind it.
+                <button
+                  type="button"
+                  onClick={() => onOpenSubGoal(node.id)}
+                  className="text-left text-sm font-medium text-balance text-foreground underline-offset-4 transition-colors hover:text-seal hover:underline"
+                >
+                  {node.title}
+                </button>
+              )}
 
               <span
                 className={cn(
@@ -235,6 +250,16 @@ function ObjectiveNode({ node, botName, onChanged, canAddChild }: ObjectiveNodeP
               {owner && (
                 <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                   {owner}
+                </span>
+              )}
+
+              {/* Reabsorption names the sub-agent that did the work, so the tree
+                  reads as "proposed · Marketing · SEO Specialist" rather than as
+                  an anonymous departmental claim. */}
+              {node.assigneeSubAgentTitle && (
+                <span className="inline-flex items-center gap-1 rounded-sm border border-seal/40 bg-seal-soft px-1.5 py-0.5 font-mono text-[10px] text-seal">
+                  <span aria-hidden="true">↳</span>
+                  {node.assigneeSubAgentTitle}
                 </span>
               )}
             </div>
@@ -365,6 +390,7 @@ function ObjectiveNode({ node, botName, onChanged, canAddChild }: ObjectiveNodeP
               botName={botName}
               onChanged={onChanged}
               canAddChild={child.depth < 3}
+              onOpenSubGoal={onOpenSubGoal}
             />
           ))}
         </div>

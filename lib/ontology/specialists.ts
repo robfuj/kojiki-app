@@ -4,7 +4,7 @@
  * scripts/generate-ontology.mjs — this module only adds lookup helpers.
  */
 
-import { SPECIALISTS, type Specialist } from './generated'
+import { SPECIALISTS, type Specialist, type SubAgent } from './generated'
 
 export {
   SPECIALISTS,

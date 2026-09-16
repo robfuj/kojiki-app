@@ -1,8 +1,11 @@
 'use client'
 
 import {
+  getOrCreateOrchestratorSession,
   getOrCreateSession,
+  getOrCreateSubAgentSession,
   getSessionMessages,
+  type SessionRow,
 } from '@/app/actions/chat'
 import type { BotRow } from '@/app/actions/projects'
 import { cn } from '@/lib/utils'
@@ -10,23 +13,90 @@ import { SYNAPSIS_STAGES } from '@/lib/ontology/synapsis'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
-import { ArrowUp, ChevronDown, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowUp, ChevronDown, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
+
+/**
+ * Which agent the sidebar is talking to.
+ *
+ * Three layers share one sidebar: the orchestrator above the departments, the
+ * department heads themselves, and the sub-agents underneath them. A sub-agent
+ * conversation can be scoped to one sub-goal, which is how "talk to the SEO
+ * Specialist about this task" works from the sub-goal panel.
+ */
+export type ChatFocus =
+  | { kind: 'orchestrator' }
+  | { kind: 'bot'; botId: string }
+  | {
+      kind: 'sub_agent'
+      botId: string
+      parentSpecialistKey: string
+      subAgentKey: string
+      subAgentTitle: string
+      objectiveId: string | null
+    }
 
 interface ChatModuleProps {
   projectId: string
   projectName: string
   bots: BotRow[]
+  /** Set when the user drills into a sub-agent from the sub-goal panel. */
+  focus?: ChatFocus | null
+  onClearFocus?: () => void
 }
 
-export function ChatModule({ projectId, projectName, bots }: ChatModuleProps) {
+export function ChatModule({
+  projectId,
+  projectName,
+  bots,
+  focus,
+  onClearFocus,
+}: ChatModuleProps) {
   const [activeBotId, setActiveBotId] = useState<string | null>(bots[0]?.id ?? null)
   const [showDetails, setShowDetails] = useState(false)
 
   const activeBot = bots.find((bot) => bot.id === activeBotId) ?? bots[0] ?? null
 
-  if (bots.length === 0) {
+  // A sub-agent focus overrides the tab selection: the user asked to talk to a
+  // specific sub-agent about specific work, so that is what they get.
+  if (focus?.kind === 'sub_agent') {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="shrink-0 border-b border-border px-4 py-3">
+          <button
+            type="button"
+            onClick={onClearFocus}
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-3" aria-hidden="true" />
+            Back to agents
+          </button>
+
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+            Sub-agent
+          </p>
+          <p className="mt-1 text-sm font-medium text-foreground">{focus.subAgentTitle}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Working under the {focus.parentSpecialistKey.replace(/_/g, ' ')} head
+            {focus.objectiveId ? ' on this sub-goal' : ''}. It answers from its own
+            ontology entry — its skills, tools and decision rights — not from the
+            department&apos;s mandate.
+          </p>
+        </div>
+
+        <SubAgentChat
+          key={`${projectId}:${focus.subAgentKey}:${focus.objectiveId ?? 'project'}`}
+          projectId={projectId}
+          focus={focus}
+        />
+      </div>
+    )
+  }
+
+  const orchestratorActive = focus?.kind === 'orchestrator'
+
+  if (bots.length === 0 && !orchestratorActive) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-center">
         <p className="text-sm text-muted-foreground">
@@ -41,7 +111,7 @@ export function ChatModule({ projectId, projectName, bots }: ChatModuleProps) {
       <div className="shrink-0 border-b border-border px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-            Department agents
+            Agents
           </p>
           <p className="truncate font-mono text-[10px] text-muted-foreground/60">
             {projectName}
@@ -51,17 +121,36 @@ export function ChatModule({ projectId, projectName, bots }: ChatModuleProps) {
         <div
           className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1"
           role="tablist"
-          aria-label="Department agents"
+          aria-label="Agents"
         >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={orchestratorActive}
+            onClick={() => onClearFocus?.()}
+            title="Coordinates the departments and reports the OKR tree back to you"
+            className={cn(
+              'shrink-0 rounded-sm border px-2 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors',
+              orchestratorActive
+                ? 'border-seal bg-seal text-primary-foreground'
+                : 'border-seal/40 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
+            )}
+          >
+            Orchestrator
+          </button>
+
           {bots.map((bot, index) => {
-            const active = bot.id === activeBot?.id
+            const active = !orchestratorActive && bot.id === activeBot?.id
             return (
               <button
                 key={bot.id}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setActiveBotId(bot.id)}
+                onClick={() => {
+                  setActiveBotId(bot.id)
+                  onClearFocus?.()
+                }}
                 title={bot.mandate ?? undefined}
                 className={cn(
                   'shrink-0 rounded-sm border px-2 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors',
@@ -81,37 +170,49 @@ export function ChatModule({ projectId, projectName, bots }: ChatModuleProps) {
           })}
         </div>
 
-        {activeBot && (
-          <>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              {activeBot.mandate}
-            </p>
+        {orchestratorActive ? (
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Sits above the departments. It reads the OKR tree, the tasks in flight
+            and any governance gate waiting on you, and reports what is actually
+            happening. It does not do departmental work itself.
+          </p>
+        ) : (
+          activeBot && (
+            <>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {activeBot.mandate}
+              </p>
 
-            <button
-              type="button"
-              onClick={() => setShowDetails((v) => !v)}
-              aria-expanded={showDetails}
-              className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
-            >
-              <ChevronDown
-                className={cn('size-3 transition-transform', showDetails && 'rotate-180')}
-                aria-hidden="true"
-              />
-              Decision rights &amp; handoffs
-            </button>
+              <button
+                type="button"
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+                className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
+              >
+                <ChevronDown
+                  className={cn('size-3 transition-transform', showDetails && 'rotate-180')}
+                  aria-hidden="true"
+                />
+                Decision rights &amp; handoffs
+              </button>
 
-            {showDetails && <BotDetails bot={activeBot} />}
-          </>
+              {showDetails && <BotDetails bot={activeBot} />}
+            </>
+          )
         )}
       </div>
 
-      {activeBot && (
-        <BotChat
-          key={`${projectId}:${activeBot.id}`}
-          projectId={projectId}
-          botId={activeBot.id}
-          botName={activeBot.displayName}
-        />
+      {orchestratorActive ? (
+        <OrchestratorChat key={`orchestrator:${projectId}`} projectId={projectId} />
+      ) : (
+        activeBot && (
+          <BotChat
+            key={`${projectId}:${activeBot.id}`}
+            projectId={projectId}
+            botId={activeBot.id}
+            botName={activeBot.displayName}
+          />
+        )
       )}
     </div>
   )
@@ -180,13 +281,85 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
     { revalidateOnFocus: false },
   )
 
+  return (
+    <SessionChat
+      session={session ?? null}
+      loading={loadingSession}
+      agentName={botName}
+      emptyHint={`${botName} is oriented on this project and ready. Ask it to work a decision through the SYNAPSIS cycle, or to take a goal from the OKR tree.`}
+    />
+  )
+}
+
+function OrchestratorChat({ projectId }: { projectId: string }) {
+  const { data: session, isLoading } = useSWR(
+    ['orchestrator-session', projectId],
+    () => getOrCreateOrchestratorSession(projectId),
+    { revalidateOnFocus: false },
+  )
+
+  return (
+    <SessionChat
+      session={session ?? null}
+      loading={isLoading}
+      agentName="Orchestrator"
+      emptyHint="Ask what is happening across the OKR tree, which sub-agents are working, or what is waiting on your decision. The orchestrator reports recorded state — it does not do departmental work itself."
+    />
+  )
+}
+
+function SubAgentChat({
+  projectId,
+  focus,
+}: {
+  projectId: string
+  focus: Extract<ChatFocus, { kind: 'sub_agent' }>
+}) {
+  const { data: session, isLoading } = useSWR(
+    [
+      'sub-agent-session',
+      projectId,
+      focus.botId,
+      focus.subAgentKey,
+      focus.objectiveId,
+    ],
+    () =>
+      getOrCreateSubAgentSession({
+        projectId,
+        botId: focus.botId,
+        parentSpecialistKey: focus.parentSpecialistKey,
+        subAgentKey: focus.subAgentKey,
+        subAgentTitle: focus.subAgentTitle,
+        objectiveId: focus.objectiveId,
+      }),
+    { revalidateOnFocus: false },
+  )
+
+  return (
+    <SessionChat
+      session={session ?? null}
+      loading={isLoading}
+      agentName={focus.subAgentTitle}
+      emptyHint={`${focus.subAgentTitle} is here with its own skills, tools and decision rights. Ask it what it is doing, or push back on its report. Anything outside its decision rights goes back to its department head as a recommendation.`}
+    />
+  )
+}
+
+interface SessionChatProps {
+  session: SessionRow | null
+  loading: boolean
+  agentName: string
+  emptyHint: string
+}
+
+function SessionChat({ session, loading, agentName, emptyHint }: SessionChatProps) {
   const { data: stored, isLoading: loadingMessages } = useSWR(
     session ? ['messages', session.id] : null,
     () => getSessionMessages(session!.id),
     { revalidateOnFocus: false },
   )
 
-  if (loadingSession || (session && loadingMessages)) {
+  if (loading || (session && loadingMessages)) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
@@ -207,7 +380,8 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
     <Conversation
       key={session.id}
       sessionId={session.id}
-      botName={botName}
+      agentName={agentName}
+      emptyHint={emptyHint}
       initialMessages={initialMessages}
     />
   )
@@ -215,11 +389,17 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
 
 interface ConversationProps {
   sessionId: string
-  botName: string
+  agentName: string
+  emptyHint: string
   initialMessages: UIMessage[]
 }
 
-function Conversation({ sessionId, botName, initialMessages }: ConversationProps) {
+function Conversation({
+  sessionId,
+  agentName,
+  emptyHint,
+  initialMessages,
+}: ConversationProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -251,31 +431,31 @@ function Conversation({ sessionId, botName, initialMessages }: ConversationProps
     sendMessage({ text })
   }
 
+  const composerId = `chat-composer-${sessionId}`
+
   return (
     <>
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4"
         role="log"
-        aria-label={`Conversation with ${botName}`}
+        aria-label={`Conversation with ${agentName}`}
         aria-live="polite"
       >
         {messages.length === 0 && (
           <p className="rounded-md border border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">
-            {botName} is oriented on this project and ready. Ask it to work a
-            decision through the SYNAPSIS cycle, or to take a goal from the OKR
-            tree.
+            {emptyHint}
           </p>
         )}
 
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} botName={botName} />
+          <MessageBubble key={message.id} message={message} agentName={agentName} />
         ))}
 
         {status === 'submitted' && (
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
             <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-            {botName} is working
+            {agentName} is working
           </p>
         )}
 
@@ -288,11 +468,11 @@ function Conversation({ sessionId, botName, initialMessages }: ConversationProps
 
       <div className="shrink-0 border-t border-border bg-card p-3">
         <div className="flex items-end gap-2 rounded-md border border-input bg-background p-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
-          <label htmlFor="chat-composer" className="sr-only">
-            Message {botName}
+          <label htmlFor={composerId} className="sr-only">
+            Message {agentName}
           </label>
           <textarea
-            id="chat-composer"
+            id={composerId}
             rows={2}
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -307,7 +487,7 @@ function Conversation({ sessionId, botName, initialMessages }: ConversationProps
                 submit()
               }
             }}
-            placeholder={`Message ${botName}…`}
+            placeholder={`Message ${agentName}…`}
             className="max-h-32 min-w-0 flex-1 resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
           />
           <button
@@ -330,10 +510,10 @@ function Conversation({ sessionId, botName, initialMessages }: ConversationProps
 
 function MessageBubble({
   message,
-  botName,
+  agentName,
 }: {
   message: UIMessage
-  botName: string
+  agentName: string
 }) {
   const isUser = message.role === 'user'
   const text = message.parts
@@ -346,7 +526,7 @@ function MessageBubble({
   return (
     <div className={cn('flex flex-col gap-1', isUser && 'items-end')}>
       <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
-        {isUser ? 'you' : botName}
+        {isUser ? 'you' : agentName}
       </p>
       <div
         className={cn(

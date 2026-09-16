@@ -1,0 +1,561 @@
+'use client'
+
+import {
+  checkTask,
+  escalateTask,
+  reabsorbTask,
+  runTask,
+  type TaskRow,
+} from '@/app/actions/tasks'
+import {
+  ERROR_CLASS_HINTS,
+  ERROR_CLASS_LABELS,
+  LEARNING_EXPLANATION,
+  TASK_STATUS_LABELS,
+  VALIDATION_LABELS,
+  type ErrorClass,
+  type ValidationResult,
+} from '@/lib/agent-labels'
+import type { Guardrail, GuardrailBreach, SuccessCriterion } from '@/lib/kaizen'
+import { cn } from '@/lib/utils'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  GitBranch,
+  Lightbulb,
+  MessageSquare,
+  Play,
+  Scale,
+  XCircle,
+} from 'lucide-react'
+import { useState } from 'react'
+
+/**
+ * One sub-agent task, rendered as the Kaizen cycle it actually went through.
+ *
+ * The card is ordered Plan → Do → Check → Act because that is the order the work
+ * happened in, and the ordering carries the integrity property: the success
+ * criteria are shown at the top, fixed before the work started, so the result
+ * below them can be read as a comparison rather than a claim.
+ */
+interface TaskCardProps {
+  task: TaskRow
+  onChanged: () => void
+  onTalkToSubAgent: (task: TaskRow) => void
+}
+
+const OPERATOR_LABEL: Record<string, string> = {
+  gte: '≥',
+  lte: '≤',
+  gt: '>',
+  lt: '<',
+  eq: '=',
+}
+
+const VERDICT_TONE: Record<ValidationResult, string> = {
+  PASS: 'border-seal/40 bg-seal-soft text-seal',
+  LEARNING: 'border-sumi/40 bg-sumi-soft text-sumi',
+  FAIL: 'border-destructive/40 bg-destructive/10 text-destructive',
+}
+
+const VERDICT_ICON: Record<ValidationResult, typeof CheckCircle2> = {
+  PASS: CheckCircle2,
+  LEARNING: Lightbulb,
+  FAIL: XCircle,
+}
+
+const VERDICT_EXPLANATION: Record<ValidationResult, string> = {
+  PASS: 'Every weighted criterion met, and no guardrail breached.',
+  LEARNING: 'A target was missed, but the attempt produced a lesson worth carrying forward.',
+  FAIL: 'A target was missed with no reusable lesson, or a guardrail was breached.',
+}
+
+function formatTimestamp(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [escalating, setEscalating] = useState(false)
+
+  const criteria = task.successCriteria as SuccessCriterion[]
+  const guardrails = task.guardrails as Guardrail[]
+  const result = (task.result ?? {}) as {
+    actuals?: Record<string, number>
+    blockedBy?: string | null
+    learningCase?: string | null
+  }
+  // Check writes the measured values onto the task; before it runs they only exist
+  // in what the sub-agent reported.
+  const actuals =
+    (task.actuals as Record<string, number> | null) ?? result.actuals ?? {}
+  const breaches = task.guardrailBreaches as GuardrailBreach[]
+  const verdict = task.validationResult as ValidationResult | null
+  const blocked = task.status === 'blocked'
+  const learningCase = result.learningCase ?? null
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true)
+    setError(null)
+    try {
+      await action()
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'That step could not complete')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const VerdictIcon = verdict ? VERDICT_ICON[verdict] : null
+
+  return (
+    <article
+      className={cn(
+        'rounded-md border bg-card',
+        blocked ? 'border-seal/50' : verdict ? 'border-border' : 'border-border',
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3.5 py-2.5">
+        <h4 className="text-sm font-medium text-balance text-foreground">{task.title}</h4>
+
+        <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          {task.subAgentTitle}
+        </span>
+
+        <span
+          className={cn(
+            'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+            blocked
+              ? 'bg-seal-soft text-seal'
+              : task.status === 'reabsorbed'
+                ? 'bg-seal-soft text-seal'
+                : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {TASK_STATUS_LABELS[task.status] ?? task.status}
+        </span>
+
+        {verdict && (
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide',
+              VERDICT_TONE[verdict],
+            )}
+          >
+            {VerdictIcon && <VerdictIcon className="size-3" aria-hidden="true" />}
+            {VALIDATION_LABELS[verdict]} · {task.outcomeScore ?? 0}/100
+          </span>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onTalkToSubAgent(task)}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+        >
+          <MessageSquare className="size-3" aria-hidden="true" />
+          Talk to {task.subAgentTitle}
+        </button>
+      </div>
+
+      <div className="space-y-3.5 p-3.5">
+        {/* PLAN — criteria fixed before the work started. */}
+        <section>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+            Plan · success criteria fixed before dispatch
+          </p>
+
+          {criteria.length === 0 ? (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              No criteria were recorded, so there is nothing to check against.
+            </p>
+          ) : (
+            <ul className="mt-1.5 space-y-1">
+              {criteria.map((criterion) => {
+                const actual = actuals[criterion.metric]
+                const measured = actual !== undefined
+                return (
+                  <li
+                    key={criterion.metric}
+                    className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-[11px]"
+                  >
+                    <span className="text-foreground">{criterion.metric}</span>
+                    <span className="text-muted-foreground/70">
+                      {OPERATOR_LABEL[criterion.operator] ?? criterion.operator}{' '}
+                      {criterion.target}
+                      {criterion.unit ? ` ${criterion.unit}` : ''}
+                    </span>
+                    <span className="text-muted-foreground/50">w{criterion.weight}</span>
+                    {measured && (
+                      <span
+                        className={cn(
+                          'ml-auto tabular-nums',
+                          verdict === 'FAIL' ? 'text-destructive' : 'text-foreground',
+                        )}
+                      >
+                        actual {actual}
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          {guardrails.length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-border pt-2">
+              {guardrails.map((guardrail) => (
+                <li
+                  key={guardrail.metric}
+                  className="flex items-baseline gap-2 font-mono text-[11px] text-muted-foreground"
+                >
+                  <Scale className="size-3 shrink-0 text-seal" aria-hidden="true" />
+                  <span>
+                    {guardrail.metric} {OPERATOR_LABEL[guardrail.operator]}{' '}
+                    {guardrail.limit}
+                  </span>
+                  {guardrail.note && (
+                    <span className="text-muted-foreground/60">— {guardrail.note}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {task.measurementWindowDays !== null && (
+            <p className="mt-2 font-mono text-[10px] text-muted-foreground/60">
+              measurement window {task.measurementWindowDays} day
+              {task.measurementWindowDays === 1 ? '' : 's'}
+            </p>
+          )}
+        </section>
+
+        {/* DO — what the sub-agent reported. */}
+        {task.resultSummary && (
+          <section className="border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+              Do · reported by {task.subAgentTitle}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed whitespace-pre-wrap text-foreground">
+              {task.resultSummary}
+            </p>
+            {result.blockedBy && (
+              <p className="mt-2 flex items-start gap-1.5 text-xs text-seal">
+                <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                Blocked by: {result.blockedBy}
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* CHECK — the mechanical comparison. */}
+        {verdict && (
+          <section className="border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+              Check · compared against the criteria above
+            </p>
+
+            <p className="mt-1.5 text-xs leading-relaxed text-foreground">
+              {VERDICT_EXPLANATION[verdict]} Scored {task.outcomeScore ?? 0}/100 by
+              weight.
+              {task.checkedAt && (
+                <span className="text-muted-foreground/60">
+                  {' '}
+                  Checked {formatTimestamp(task.checkedAt)}.
+                </span>
+              )}
+            </p>
+
+            {breaches.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {breaches.map((breach) => (
+                  <li
+                    key={breach.metric}
+                    className="flex items-start gap-1.5 text-xs text-destructive"
+                  >
+                    <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                    <span>
+                      Guardrail breached: {breach.metric} came in at {breach.actual},
+                      beyond the limit of {breach.limit}
+                      {breach.note ? ` — ${breach.note}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {/* ACT — the lesson, when the attempt produced one. */}
+        {learningCase && (
+          <section className="border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+              Act · lesson sealed for reuse
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-foreground">
+              {learningCase}
+            </p>
+            {verdict === 'LEARNING' && (
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                {LEARNING_EXPLANATION}
+              </p>
+            )}
+          </section>
+        )}
+
+        {blocked && (
+          <p className="flex items-start gap-1.5 rounded-md border border-seal/40 bg-seal-soft p-2.5 text-xs leading-relaxed text-seal">
+            <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+            Held by an open governance gate. Nothing further happens to this task
+            until you decide that gate.
+          </p>
+        )}
+
+        {error && (
+          <p role="alert" className="text-xs text-destructive">
+            {error}
+          </p>
+        )}
+
+        {!blocked && (
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+            {task.status === 'dispatched' && (
+              <ActionButton
+                onClick={() => run(() => runTask({ taskId: task.id }))}
+                busy={busy}
+                icon={Play}
+                label="Run task"
+                tone="primary"
+              />
+            )}
+
+            {task.status === 'reported' && (
+              <ActionButton
+                onClick={() => run(() => checkTask({ taskId: task.id }))}
+                busy={busy}
+                icon={Scale}
+                label="Check against criteria"
+                tone="primary"
+              />
+            )}
+
+            {verdict === 'FAIL' && !task.reabsorbedAt && (
+              <ActionButton
+                onClick={() => setEscalating((v) => !v)}
+                busy={false}
+                icon={GitBranch}
+                label={escalating ? 'Close escalation' : 'Escalate failure'}
+                tone="seal"
+              />
+            )}
+
+            {(verdict === 'PASS' || verdict === 'LEARNING') && !task.reabsorbedAt && (
+              <ActionButton
+                onClick={() => run(() => reabsorbTask({ taskId: task.id }))}
+                busy={busy}
+                icon={GitBranch}
+                label="Reabsorb into OKR tree"
+                tone="primary"
+              />
+            )}
+
+            {task.reabsorbedAt && (
+              <p className="font-mono text-[10px] uppercase tracking-wide text-seal">
+                reabsorbed — proposed as a node under this sub-goal
+              </p>
+            )}
+          </div>
+        )}
+
+        {escalating && !blocked && (
+          <EscalationForm
+            taskId={task.id}
+            busy={busy}
+            onSubmit={async (payload) => {
+              await run(() => escalateTask({ taskId: task.id, ...payload }))
+              setEscalating(false)
+            }}
+            onCancel={() => setEscalating(false)}
+          />
+        )}
+      </div>
+    </article>
+  )
+}
+
+interface ActionButtonProps {
+  onClick: () => void
+  busy: boolean
+  icon: typeof Play
+  label: string
+  tone: 'primary' | 'seal'
+}
+
+function ActionButton({ onClick, busy, icon: Icon, label, tone }: ActionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-opacity disabled:opacity-50',
+        tone === 'primary'
+          ? 'bg-sumi text-primary-foreground hover:opacity-90'
+          : 'border border-seal/50 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
+      )}
+    >
+      <Icon className="size-3" aria-hidden="true" />
+      {busy ? 'Working…' : label}
+    </button>
+  )
+}
+
+interface EscalationFormProps {
+  taskId: string
+  busy: boolean
+  onSubmit: (payload: {
+    errorClass: ErrorClass
+    redefinition?: string | null
+    reason?: string | null
+  }) => Promise<void>
+  onCancel: () => void
+}
+
+/**
+ * Neuraxis escalation.
+ *
+ * The user picks the layer by naming what actually went wrong. L0-L2 resolve
+ * autonomously; L3 and L4 open a gate and block the task, and the form says which
+ * before the choice is made rather than after.
+ */
+function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps) {
+  const [errorClass, setErrorClass] = useState<ErrorClass>('execution')
+  const [redefinition, setRedefinition] = useState('')
+  const [reason, setReason] = useState('')
+
+  const needsRdefinition = errorClass === 'assumption' || errorClass === 'model'
+  const isGovernance = errorClass === 'model' || errorClass === 'meta'
+
+  return (
+    <div className="rounded-md border border-seal/40 bg-background p-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-seal">
+        Neuraxis · escalate to the layer that can fix this
+      </p>
+
+      <fieldset className="mt-2.5">
+        <legend className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+          What actually went wrong
+        </legend>
+        <div className="mt-1.5 space-y-1">
+          {(Object.keys(ERROR_CLASS_LABELS) as ErrorClass[]).map((key) => (
+            <label
+              key={key}
+              className={cn(
+                'flex cursor-pointer items-start gap-2 rounded-sm border px-2 py-1.5 transition-colors',
+                errorClass === key
+                  ? 'border-seal/50 bg-seal-soft'
+                  : 'border-border bg-card hover:border-sumi/40',
+              )}
+            >
+              <input
+                type="radio"
+                name="error-class"
+                value={key}
+                checked={errorClass === key}
+                onChange={() => setErrorClass(key)}
+                className="mt-0.5 size-3 accent-[var(--seal)]"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-mono text-[11px] text-foreground">
+                  {ERROR_CLASS_LABELS[key]}
+                </span>
+                <span className="block text-xs leading-relaxed text-muted-foreground">
+                  {ERROR_CLASS_HINTS[key]}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {isGovernance && (
+        <p className="mt-2.5 flex items-start gap-1.5 rounded-sm border border-seal/40 bg-seal-soft p-2 text-xs leading-relaxed text-seal">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+          This reaches L3 or L4. It will open a governance gate and block the task
+          until you decide it — no agent can approve a change to its own authority.
+        </p>
+      )}
+
+      {needsRdefinition && (
+        <div className="mt-2.5">
+          <label
+            htmlFor="escalation-redefinition"
+            className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+          >
+            Redefinition — the corrected problem statement
+          </label>
+          <textarea
+            id="escalation-redefinition"
+            rows={2}
+            value={redefinition}
+            onChange={(event) => setRedefinition(event.target.value)}
+            placeholder="What the problem actually is, now that the old framing is known to be wrong"
+            className="mt-1 w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            The superseded statement is kept, not overwritten, so the reasoning
+            stays auditable.
+          </p>
+        </div>
+      )}
+
+      <div className="mt-2.5">
+        <label
+          htmlFor="escalation-reason"
+          className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+        >
+          Why (optional)
+        </label>
+        <input
+          id="escalation-reason"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="What made you classify it this way"
+          className="mt-1 w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+        />
+      </div>
+
+      <div className="mt-3 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() =>
+            onSubmit({
+              errorClass,
+              redefinition: redefinition.trim() || null,
+              reason: reason.trim() || null,
+            })
+          }
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-sm bg-seal px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <GitBranch className="size-3" aria-hidden="true" />
+          {busy ? 'Escalating…' : 'Escalate'}
+        </button>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}

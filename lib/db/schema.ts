@@ -205,12 +205,127 @@ export const subAgentTasks = pgTable('sub_agent_tasks', {
   resultSummary: text('resultSummary'),
   result: jsonb('result'),
   progress: integer('progress').notNull().default(0),
+
+  // KAIZEN — Plan. The head defines what "done" means before the sub-agent runs,
+  // so reabsorption is evidence-based rather than taking the sub-agent's word for
+  // it. Each criterion carries a metric, target, comparison operator and weight.
+  successCriteria: jsonb('successCriteria').notNull().default([]),
+  guardrails: jsonb('guardrails').notNull().default([]),
+  measurementWindowDays: integer('measurementWindowDays'),
+
+  // KAIZEN — Do/Check. Actuals captured against the criteria, then the verdict.
+  // `LEARNING` is the third state upstream defines: a failure that produced a
+  // learning case worth carrying forward, not merely a rejection.
+  actuals: jsonb('actuals'),
+  validationResult: text('validationResult'),
+  outcomeScore: integer('outcomeScore'),
+  guardrailBreaches: jsonb('guardrailBreaches').notNull().default([]),
+  checkedAt: timestamp('checkedAt'),
+
+  // NEURAXIS — Act. Set when Check failed: which error class the failure belongs
+  // to and how far it escalated. L0-L2 are autonomous; L3/L4 open a gate request
+  // that blocks until the user decides.
+  errorClass: text('errorClass'),
+  escalationLayer: text('escalationLayer'),
+  escalationId: text('escalationId'),
+  gateRequestId: text('gateRequestId'),
+
   // Set once the head has folded the result back into the OKR tree.
   reabsorbedAt: timestamp('reabsorbedAt'),
   proposedObjectiveId: text('proposedObjectiveId'),
   position: integer('position').notNull().default(0),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})
+
+// KAIZEN — Act. A causal trace of one attempt: what was hypothesised, what was
+// done, what was expected versus observed, how the gap was classified, and what
+// it escalated into. These are the corpus the Neuraxis governance gate counts as
+// corroboration, so an agent cannot manufacture authority by asserting it.
+export const kaizenExperiences = pgTable('kaizen_experiences', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  objectiveId: text('objectiveId'),
+  taskId: text('taskId'),
+  agentKey: text('agentKey').notNull(),
+  agentTitle: text('agentTitle').notNull(),
+  hypothesis: text('hypothesis').notNull(),
+  action: text('action').notNull(),
+  expected: text('expected').notNull(),
+  observed: text('observed').notNull(),
+  errorClass: text('errorClass').notNull(),
+  escalationLayer: text('escalationLayer').notNull(),
+  // L2 redefinitions carry lineage: what problem this one supersedes, and why.
+  redefinition: text('redefinition'),
+  supersedes: text('supersedes'),
+  reason: text('reason'),
+  insight: text('insight'),
+  reusable: boolean('reusable').notNull().default(false),
+  // Sealed into the ledger so the gate's corroboration bar counts verified traces.
+  sentinelEntryId: text('sentinelEntryId'),
+  recordedAt: timestamp('recordedAt').notNull().defaultNow(),
+})
+
+// NEURAXIS — the vertical axis. One row per escalation: the failure, its class,
+// the layer it reached, and whether that layer may act on its own.
+export const neuraxisEscalations = pgTable('neuraxis_escalations', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  objectiveId: text('objectiveId'),
+  taskId: text('taskId'),
+  experienceId: text('experienceId'),
+  agentKey: text('agentKey').notNull(),
+  agentTitle: text('agentTitle').notNull(),
+  errorClass: text('errorClass').notNull(),
+  layer: text('layer').notNull(),
+  // True for L0/L1/L2 — the agent may proceed. False for L3/L4, which block.
+  autonomous: boolean('autonomous').notNull(),
+  summary: text('summary').notNull(),
+  // The bounded, versioned problem restatement an L2 escalation produces.
+  redefinition: text('redefinition'),
+  supersedes: text('supersedes'),
+  reason: text('reason'),
+  status: text('status').notNull().default('resolved'),
+  gateRequestId: text('gateRequestId'),
+  sentinelEntryId: text('sentinelEntryId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// NEURAXIS governance gate. An L3 (ontology) or L4 (meta-strategy) change is a
+// change to an agent's own authority, so it never self-applies: the request blocks
+// here until the user approves or denies it. This is the mechanism that stops an
+// agent quietly expanding its own decision rights.
+export const gateRequests = pgTable('gate_requests', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  objectiveId: text('objectiveId'),
+  taskId: text('taskId'),
+  escalationId: text('escalationId'),
+  // ontology | meta_strategy
+  changeType: text('changeType').notNull(),
+  layer: text('layer').notNull(),
+  requestedByAgent: text('requestedByAgent').notNull(),
+  requestedByTitle: text('requestedByTitle').notNull(),
+  title: text('title').notNull(),
+  summary: text('summary').notNull(),
+  // What would change, and what it would cost if approved.
+  proposedChange: jsonb('proposedChange').notNull().default({}),
+  recommendation: text('recommendation'),
+  consult: jsonb('consult').notNull().default([]),
+  approveRole: text('approveRole'),
+  // How many distinct verified experiences corroborate the request.
+  corroborationCount: integer('corroborationCount').notNull().default(0),
+  status: text('status').notNull().default('pending'),
+  decision: text('decision'),
+  decisionNote: text('decisionNote'),
+  decidedAt: timestamp('decidedAt'),
+  // Upstream gates carry an SLA; a breach is surfaced, never auto-applied.
+  slaDueAt: timestamp('slaDueAt'),
+  sentinelEntryId: text('sentinelEntryId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
 // SENTINEL signing key. Exactly ONE keypair per project, generated on first use
