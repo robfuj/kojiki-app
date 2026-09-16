@@ -18,6 +18,11 @@
  */
 
 import { resolveModelForUser } from '@/lib/ai'
+import {
+  DEFAULT_LOCALE,
+  languageDirective,
+  type Locale,
+} from '@/lib/i18n/locales'
 import type { OrientationAnswers } from '@/lib/ontology/orientation'
 import { SPECIALISTS } from '@/lib/ontology/specialists'
 import { generateText } from 'ai'
@@ -133,6 +138,7 @@ Cite the URLs you used inline as [n] and list them at the end. Be specific and c
 export async function runOrchestrator(
   answers: OrientationAnswers,
   userId: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<OrchestratorResult> {
   const research = await researchOnTheWeb(contextLines(answers))
   const researchMethod: OrchestratorResult['researchMethod'] = research
@@ -170,7 +176,9 @@ ${
 Specialist catalog — the only specialists you may select from:
 ${catalog}
 
-Select the specialists this goal actually needs. Do not select all of them by default: a goal with no legal exposure needs no legal specialist, and a goal with no marketing surface needs no marketing specialist. Order them most central to the goal first. Every key you return must appear in the catalog above.`,
+Select the specialists this goal actually needs. Do not select all of them by default: a goal with no legal exposure needs no legal specialist, and a goal with no marketing surface needs no marketing specialist. Order them most central to the goal first. Every key you return must appear in the catalog above.${
+    languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
+  }`,
   })
 
   const call = toolCalls.find((c) => c.toolName === 'orchestrate')
@@ -312,8 +320,9 @@ export async function runProjectIntake(input: {
   orientation: OrientationAnswers
   goal: string
   userId: string
+  locale?: Locale
 }): Promise<ProjectIntakeResult> {
-  const { orientation, goal, userId } = input
+  const { orientation, goal, userId, locale = DEFAULT_LOCALE } = input
   const context = projectContextLines(orientation, goal)
 
   const research = await researchOnTheWeb(context)
@@ -354,7 +363,9 @@ Do two things.
 
 First, select the specialists this project actually needs. Do not select all of them by default: a goal with no legal exposure needs no legal specialist. Order them most central first. Every key you return must appear in the catalog above.
 
-Second, ask the three to five questions whose answers would materially change how this goal is decomposed. Ask only what the goal leaves genuinely open. If the goal already states its budget, timeline or audience, do not ask for it again. At most one question may be required; the rest are optional so the user can move quickly. Each question's "why" must say how the answer changes the plan.`,
+Second, ask the three to five questions whose answers would materially change how this goal is decomposed. Ask only what the goal leaves genuinely open. If the goal already states its budget, timeline or audience, do not ask for it again. At most one question may be required; the rest are optional so the user can move quickly. Each question's "why" must say how the answer changes the plan.${
+    languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
+  }`,
   })
 
   const call = toolCalls.find((c) => c.toolName === 'intake')

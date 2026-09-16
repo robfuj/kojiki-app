@@ -4,34 +4,37 @@ import { getAccentKey } from '@/app/actions/settings'
 import { OrientationFlow } from '@/components/orientation/orientation-flow'
 import { WorkspaceShell } from '@/components/workspace/workspace-shell'
 import { accentByKey, accentStyle } from '@/lib/accents'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { getSessionUser } from '@/lib/session'
 import { redirect } from 'next/navigation'
 
 export default async function HomePage() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect('/sign-in')
+  const user = await getSessionUser()
+  if (!user) redirect('/sign-in')
 
-  const orientation = await getOrientation()
+  // Read in parallel. These are independent, and serialising them is what kept the
+  // first paint slow enough for a dev HMR refresh to arrive before the client
+  // router had been constructed.
+  const [orientation, projects, accentKey] = await Promise.all([
+    getOrientation(),
+    listProjects(),
+    getAccentKey(),
+  ])
 
-  // The Orientation Protocol activates immediately, before any decision work.
-  if (!orientation) {
-    return <OrientationFlow userName={session.user.name ?? null} />
-  }
-
-  const [projects, accentKey] = await Promise.all([listProjects(), getAccentKey()])
-
-  // The accent is applied as CSS custom properties on a wrapper rather than as a
-  // per-user stylesheet, so the choice is server-rendered and costs no extra
-  // request. Both the workspace and the orientation flow inherit it.
+  // The Orientation Protocol activates immediately, before any decision work. Both
+  // branches sit inside the accent wrapper, so a first-run user sees the accent
+  // they will see after orientation rather than the default.
   return (
     <div style={accentStyle(accentByKey(accentKey))}>
-      <WorkspaceShell
-        orientation={orientation}
-        projects={projects}
-        userName={session.user.name ?? null}
-        accentKey={accentKey}
-      />
+      {orientation ? (
+        <WorkspaceShell
+          orientation={orientation}
+          projects={projects}
+          userName={user.name ?? null}
+          accentKey={accentKey}
+        />
+      ) : (
+        <OrientationFlow userName={user.name ?? null} />
+      )}
     </div>
   )
 }

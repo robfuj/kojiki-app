@@ -1,7 +1,8 @@
 'use client'
 
 import { setAccentKey } from '@/app/actions/settings'
-import { ACCENTS } from '@/lib/accents'
+import { useLocale } from '@/components/i18n/locale-provider'
+import { ACCENTS, type Accent } from '@/lib/accents'
 import { cn } from '@/lib/utils'
 import { Check, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -16,6 +17,8 @@ import { useState } from 'react'
  * indigo and neutral grey whatever is chosen here.
  */
 export function AccentPicker({ currentKey }: { currentKey: string }) {
+  const { t } = useLocale()
+  const ta = t.accents
   const router = useRouter()
   const [pending, setPending] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -31,8 +34,8 @@ export function AccentPicker({ currentKey }: { currentKey: string }) {
       // The shell applies the accent from a server read, so the tree must be
       // re-rendered for the choice to reach the rest of the workspace.
       router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save that accent')
+    } catch {
+      setError(ta.saveError)
     } finally {
       setPending(null)
     }
@@ -43,7 +46,7 @@ export function AccentPicker({ currentKey }: { currentKey: string }) {
       <div
         className="flex flex-wrap gap-2.5"
         role="radiogroup"
-        aria-label="Accent colour"
+        aria-label={ta.groupLabel}
       >
         {ACCENTS.map((accent) => {
           const selected = accent.key === currentKey
@@ -88,10 +91,10 @@ export function AccentPicker({ currentKey }: { currentKey: string }) {
 
               <span className="text-left">
                 <span className="block text-sm font-medium text-foreground">
-                  {accent.label}
+                  {accentName(accent, ta.names)}
                 </span>
                 <span className="sr-only">
-                  {selected ? ' — currently selected' : ''}
+                  {selected ? ta.selectedSuffix : ''}
                 </span>
               </span>
             </button>
@@ -106,10 +109,16 @@ export function AccentPicker({ currentKey }: { currentKey: string }) {
       )}
 
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-        The accent marks decisions, completed work and the primary action.
-        Everything else — structure, hierarchy and text — stays fixed, so the
-        workspace reads the same whichever you choose.
+        {ta.footnote}
       </p>
     </div>
   )
+}
+
+/**
+ * The accent names are traditional Japanese colours, so each dictionary carries
+ * its own rendering of them; the key is the only stable identity.
+ */
+function accentName(accent: Accent, names: Record<string, string>): string {
+  return names[accent.key] ?? accent.label
 }

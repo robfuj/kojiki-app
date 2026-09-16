@@ -1,8 +1,7 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/lib/auth'
+import { requireUserId } from '@/lib/session'
 import {
   deleteProviderConnection,
   getCatalog,
@@ -21,11 +20,7 @@ import type { ConnectionView, ProviderId } from '@/lib/provider-meta'
  * else, so there is no path by which a plaintext key reaches the client.
  */
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 export async function getConnections(): Promise<ConnectionView[]> {
   const userId = await getUserId()

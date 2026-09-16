@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from '@/components/i18n/locale-provider'
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -9,6 +10,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ mode }: AuthFormProps) {
+  const { t } = useLocale()
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -30,7 +32,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     setPending(false)
 
     if (result.error) {
-      setError(result.error.message ?? 'Something went wrong.')
+      setError(result.error.message ?? t.auth.genericError)
       return
     }
 
@@ -43,14 +45,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       {isSignUp ? (
         <label className="flex flex-col gap-2">
           <span className="text-xs font-medium text-muted-foreground">
-            Name
+            {t.auth.nameLabel}
           </span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             required
             autoComplete="name"
-            placeholder="Your name"
+            placeholder={t.auth.namePlaceholder}
             className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"
           />
         </label>
@@ -58,7 +60,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted-foreground">
-          Email
+          {t.auth.emailLabel}
         </span>
         <input
           type="email"
@@ -66,14 +68,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           onChange={(event) => setEmail(event.target.value)}
           required
           autoComplete="email"
-          placeholder="you@organization.com"
+          placeholder={t.auth.emailPlaceholder}
           className="h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"
         />
       </label>
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted-foreground">
-          Password
+          {t.auth.passwordLabel}
         </span>
         <input
           type="password"
@@ -82,7 +84,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           required
           minLength={8}
           autoComplete={isSignUp ? 'new-password' : 'current-password'}
-          placeholder="At least 8 characters"
+          placeholder={t.auth.passwordPlaceholder}
           className="h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"
         />
       </label>
@@ -98,7 +100,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         disabled={pending}
         className="h-11 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {pending ? 'Working…' : isSignUp ? 'Create account' : 'Sign in'}
+        {pending
+          ? t.common.working
+          : isSignUp
+            ? t.auth.signUpSubmit
+            : t.auth.signInSubmit}
       </button>
     </form>
   )

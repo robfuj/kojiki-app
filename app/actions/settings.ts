@@ -1,18 +1,22 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { ACCENTS, DEFAULT_ACCENT_KEY } from '@/lib/accents'
 import { db } from '@/lib/db'
 import { userPreferences } from '@/lib/db/schema'
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  type Locale,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE,
+  toLocale,
+} from '@/lib/i18n/locales'
+import { requireUserId } from '@/lib/session'
 import { eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 /**
  * The user's chosen accent key.
@@ -58,4 +62,68 @@ export async function setAccentKey(accentKey: string): Promise<string> {
   // re-read for the change to appear anywhere other than the picker itself.
   revalidatePath('/')
   return accentKey
+}
+
+/**
+ * The language to render in.
+ *
+ * The cookie takes precedence because it is the only source that exists on the
+ * sign-in pages, and because an explicit choice on this device should beat a
+ * preference saved from another one. A signed-in visitor with no cookie falls
+ * back to their stored preference, so the choice follows the account.
+ *
+ * Never throws: an unreadable preference must not stop the shell rendering.
+ */
+export async function getLocale(): Promise<Locale> {
+  const fromCookie = (await cookies()).get(LOCALE_COOKIE)?.value
+  if (isLocale(fromCookie)) return fromCookie
+
+  try {
+    const userId = await getUserId()
+
+    const [row] = await db
+      .select({ locale: userPreferences.locale })
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1)
+
+    return toLocale(row?.locale)
+  } catch {
+    return DEFAULT_LOCALE
+  }
+}
+
+/**
+ * Changes the language.
+ *
+ * Writes the cookie unconditionally so the choice applies even before sign-in,
+ * and additionally persists it for a signed-in user so it follows the account to
+ * other devices. The path is revalidated because the language is rendered on the
+ * server, including the `lang` attribute of the document.
+ */
+export async function setLocale(locale: string): Promise<Locale> {
+  const next = toLocale(locale)
+
+  ;(await cookies()).set(LOCALE_COOKIE, next, {
+    path: '/',
+    maxAge: LOCALE_COOKIE_MAX_AGE,
+    sameSite: 'lax',
+  })
+
+  try {
+    const userId = await getUserId()
+
+    await db
+      .insert(userPreferences)
+      .values({ userId, locale: next, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: { locale: next, updatedAt: new Date() },
+      })
+  } catch {
+    // Not signed in. The cookie alone carries the choice, which is enough.
+  }
+
+  revalidatePath('/')
+  return next
 }

@@ -11,7 +11,9 @@ import {
   IntakeScreen,
   type IntakeDirection,
 } from '@/components/intake/intake-screen'
+import { useLocale } from '@/components/i18n/locale-provider'
 import { Button } from '@/components/ui/button'
+import { format } from '@/lib/i18n'
 import { deriveRoster } from '@/lib/ontology/orientation'
 import type { ProjectIntakeResult } from '@/lib/orchestrator'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,8 @@ export function ProjectIntake({
   /** Hands the new project to the rail so it is selected the moment it exists. */
   onCreated: (project: ProjectRow) => void
 }) {
+  const { t } = useLocale()
+  const tp = t.projectIntake
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>('goal')
   const [direction, setDirection] = useState<IntakeDirection>('forward')
@@ -85,7 +89,11 @@ export function ProjectIntake({
 
   async function research() {
     if (goal.trim().length < 8) {
-      setError('Describe the goal in a little more detail.')
+      setError(tp.goalTooShort)
+      return
+    }
+    if (goal.trim().length > 2000) {
+      setError(tp.goalTooLong)
       return
     }
 
@@ -98,8 +106,10 @@ export function ProjectIntake({
       setQuestionStep(0)
       // A goal with no open questions goes straight to naming.
       goTo(intake.questions.length > 0 ? 'brief' : 'naming')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'The orchestrator could not research this goal')
+    } catch {
+      // The server repeats its own length checks; whatever it rejects, the
+      // reader gets the localised message rather than a server string.
+      setError(tp.researchError)
       setPhase('goal')
     }
   }
@@ -107,7 +117,7 @@ export function ProjectIntake({
   function advanceQuestion() {
     const question = questions[questionStep]
     if (question?.required && !answers[question.id]?.trim().length) {
-      setError('This answer is required before the plan can be built.')
+      setError(tp.questionRequired)
       return
     }
     setError(null)
@@ -122,7 +132,7 @@ export function ProjectIntake({
   async function create() {
     if (!result) return
     if (!name.trim()) {
-      setError('Give the project a name.')
+      setError(tp.nameRequired)
       return
     }
 
@@ -148,8 +158,8 @@ export function ProjectIntake({
       router.refresh()
       onCreated(project)
       onClose()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the project')
+    } catch {
+      setError(tp.createError)
       setPhase('naming')
     }
   }
@@ -160,7 +170,7 @@ export function ProjectIntake({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       <IntakeProgress
         value={(currentScreen + 1) / totalScreens}
-        label="New project progress"
+        label={tp.progressLabel}
       />
 
       <IntakeHeader onClose={onClose} disabled={busy} />
@@ -169,14 +179,14 @@ export function ProjectIntake({
         <IntakeScreen
           screenKey="goal"
           direction="forward"
-          eyebrow="New project"
-          prompt="What is this project trying to achieve?"
-          why="The orchestrator reads this goal, researches the field it sits in, and comes back with what it found and the questions worth asking before anything is planned."
+          eyebrow={tp.goalEyebrow}
+          prompt={tp.goalPrompt}
+          why={tp.goalWhy}
           field={{
             name: 'goal',
-            label: 'Project goal',
+            label: tp.goalLabel,
             kind: 'textarea',
-            placeholder: 'e.g. Launch a partner channel that adds 40 qualified deals a quarter',
+            placeholder: tp.goalPlaceholder,
             required: true,
           }}
           value={goal}
@@ -185,15 +195,16 @@ export function ProjectIntake({
             setError(null)
           }}
           onNext={() => void research()}
-          nextLabel="Ask the orchestrator"
+          nextLabel={tp.goalSubmit}
           error={error}
           busy={phase === 'researching'}
           busyNote={
             <>
-              Researching the field around{' '}
-              <span className="font-medium text-foreground">this goal</span> —
-              market, competition, regulation and risk — then deciding which
-              specialists it needs and what to ask you. This takes a moment.
+              {tp.researchingLead}
+              <span className="font-medium text-foreground">
+                {tp.researchingMid}
+              </span>
+              {tp.researchingTail}
             </>
           }
         />
@@ -205,14 +216,14 @@ export function ProjectIntake({
           direction={direction}
           eyebrow={
             result.researchMethod === 'web-search'
-              ? 'Orchestrator · live research'
-              : 'Orchestrator · model reasoning'
+              ? tp.briefEyebrowWeb
+              : tp.briefEyebrowModel
           }
-          prompt="Here is what I found."
-          why="Read this before answering. Where it is wrong or stale, say so in the questions that follow — the plan is built from both."
+          prompt={tp.briefPrompt}
+          why={tp.briefWhy}
           onNext={() => goTo('questions')}
           onBack={() => goTo('goal', 'back')}
-          nextLabel="Answer the questions"
+          nextLabel={tp.briefSubmit}
           error={error}
         >
           <BriefBody result={result} roster={roster} />
@@ -223,12 +234,15 @@ export function ProjectIntake({
         <IntakeScreen
           screenKey={questions[questionStep]?.id ?? 'questions'}
           direction={direction}
-          eyebrow={`Question ${questionStep + 1} of ${questions.length}`}
+          eyebrow={format(tp.questionEyebrow, {
+            current: questionStep + 1,
+            total: questions.length,
+          })}
           prompt={questions[questionStep]?.prompt ?? ''}
           why={questions[questionStep]?.why}
           field={{
             name: questions[questionStep]?.id ?? 'answer',
-            label: 'Your answer',
+            label: tp.answerLabel,
             kind: questions[questionStep]?.kind ?? 'text',
             required: questions[questionStep]?.required ?? false,
           }}
@@ -250,7 +264,9 @@ export function ProjectIntake({
             }
           }}
           nextLabel={
-            questionStep + 1 < questions.length ? 'Next question' : 'Build the project'
+            questionStep + 1 < questions.length
+              ? tp.nextQuestion
+              : tp.buildProject
           }
           error={error}
         />
@@ -260,14 +276,14 @@ export function ProjectIntake({
         <IntakeScreen
           screenKey="naming"
           direction={direction}
-          eyebrow="Last step"
-          prompt="What should this project be called?"
-          why="The goal becomes the root of the OKR tree and the specialists below are already chosen. The name is how you will find it in the rail."
+          eyebrow={tp.namingEyebrow}
+          prompt={tp.namingPrompt}
+          why={tp.namingWhy}
           field={{
             name: 'name',
-            label: 'Project name',
+            label: tp.nameLabel,
             kind: 'text',
-            placeholder: 'e.g. Partner channel',
+            placeholder: tp.namePlaceholder,
             required: true,
           }}
           value={name}
@@ -287,32 +303,27 @@ export function ProjectIntake({
                 ? () => goTo('brief', 'back')
                 : undefined
           }
-          nextLabel="Create project"
+          nextLabel={tp.namingSubmit}
           isFinal
           error={error}
           busy={phase === 'creating'}
-          busyNote="Creating the project, instantiating its specialists, and decomposing the goal into sub-goals."
+          busyNote={tp.creatingNote}
           footnote={
             result ? (
               <div className="mt-10 max-w-xl rounded-2xl bg-muted px-5 py-4">
                 <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
-                  what gets built
+                  {tp.builtEyebrow}
                 </p>
                 <ul className="mt-2.5 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+                  <li>{tp.builtRoot}</li>
                   <li>
-                    The goal becomes the root objective of a new OKR tree.
-                  </li>
-                  <li>
-                    {roster.length} specialists are instantiated:{' '}
+                    {format(tp.builtSpecialistsLead, { count: roster.length })}
                     <span className="text-foreground">
                       {roster.map((bot) => bot.displayName).join(', ')}
                     </span>
-                    .
+                    {tp.builtSpecialistsTail}
                   </li>
-                  <li>
-                    The root is decomposed into sub-goals owned by those
-                    specialists, ready to dispatch.
-                  </li>
+                  <li>{tp.builtSubGoals}</li>
                 </ul>
               </div>
             ) : undefined
@@ -330,6 +341,8 @@ function IntakeHeader({
   onClose: () => void
   disabled: boolean
 }) {
+  const { t } = useLocale()
+
   return (
     <header className="surface-translucent sticky top-0 z-40 border-b border-border">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
@@ -346,8 +359,8 @@ function IntakeHeader({
           className="rounded-full text-muted-foreground"
         >
           <X className="size-4" aria-hidden="true" />
-          Close
-          <span className="sr-only">the new project intake</span>
+          {t.common.close}
+          <span className="sr-only">{t.projectIntake.closeSr}</span>
         </Button>
       </div>
     </header>
@@ -361,10 +374,16 @@ function BriefBody({
   result: ProjectIntakeResult
   roster: { displayName: string; mandate: string; isPrimary: boolean }[]
 }) {
+  const { t } = useLocale()
+  const tp = t.projectIntake
+
   const sections = [
-    { heading: 'Market', body: result.brief.marketScan },
-    { heading: 'Competition', body: result.brief.competitiveLandscape },
-    { heading: 'Regulation', body: result.brief.regulatoryConsiderations },
+    { heading: tp.briefMarket, body: result.brief.marketScan },
+    { heading: tp.briefCompetition, body: result.brief.competitiveLandscape },
+    {
+      heading: tp.briefRegulation,
+      body: result.brief.regulatoryConsiderations,
+    },
   ]
 
   return (
@@ -384,7 +403,7 @@ function BriefBody({
         {result.brief.keyRisks.length > 0 && (
           <section>
             <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
-              Key risks
+              {tp.briefRisks}
             </h2>
             <ul className="mt-3 space-y-2">
               {result.brief.keyRisks.map((risk) => (
@@ -406,7 +425,7 @@ function BriefBody({
 
       <section className="rounded-2xl bg-muted px-5 py-5">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
-          Specialists selected
+          {tp.briefSpecialists}
         </h2>
         <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
           {result.rosterRationale}
@@ -432,7 +451,7 @@ function BriefBody({
       {result.brief.sources.length > 0 && (
         <section>
           <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            Sources
+            {tp.briefSources}
           </h2>
           <ul className="mt-3 space-y-1.5">
             {result.brief.sources.slice(0, 8).map((source) => (
@@ -455,9 +474,7 @@ function BriefBody({
       {result.researchMethod === 'model-reasoning' && (
         <p className="flex items-start gap-2.5 text-sm leading-relaxed text-muted-foreground">
           <Loader2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          Live web research was unavailable, so this brief comes from model
-          reasoning rather than current sources. Treat the figures as indicative
-          and correct anything you know to be wrong.
+          {tp.briefModelNote}
         </p>
       )}
     </div>

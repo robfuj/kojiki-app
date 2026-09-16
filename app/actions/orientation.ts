@@ -1,18 +1,13 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireUserId } from '@/lib/session'
+import { getLocale } from '@/app/actions/settings'
 import { db } from '@/lib/db'
 import { orientationProfiles } from '@/lib/db/schema'
 import { runOrchestrator } from '@/lib/orchestrator'
 import type { OrientationAnswers } from '@/lib/ontology/orientation'
 import { and, desc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
-
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 export type OrientationRecord = typeof orientationProfiles.$inferSelect
 
@@ -60,8 +55,9 @@ export async function completeOrientation(
 ): Promise<OrientationRecord> {
   const userId = await getUserId()
   const normalized = normalize(answers)
+  const locale = await getLocale()
 
-  const orchestrated = await runOrchestrator(normalized, userId)
+  const orchestrated = await runOrchestrator(normalized, userId, locale)
 
   const [row] = await db
     .insert(orientationProfiles)
@@ -96,8 +92,9 @@ export async function updateOrientation(
 ): Promise<OrientationRecord> {
   const userId = await getUserId()
   const normalized = normalize(answers)
+  const locale = await getLocale()
 
-  const orchestrated = await runOrchestrator(normalized, userId)
+  const orchestrated = await runOrchestrator(normalized, userId, locale)
 
   const [row] = await db
     .update(orientationProfiles)

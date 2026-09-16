@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from '@/components/i18n/locale-provider'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react'
@@ -100,6 +101,7 @@ export function IntakeScreen({
   footnote,
   header,
 }: IntakeScreenProps) {
+  const { t } = useLocale()
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
 
   // Typeform focuses the field as the screen arrives, so the user can type
@@ -192,11 +194,15 @@ export function IntakeScreen({
               <p className="mt-3 text-sm text-muted-foreground">
                 {field.required ? (
                   <>
-                    Press <KeyCap>Enter</KeyCap> to continue
+                    {t.intake.enterLead}
+                    <KeyCap>Enter</KeyCap>
+                    {t.intake.enterTail}
                   </>
                 ) : (
                   <>
-                    Optional — press <KeyCap>Enter</KeyCap> to continue, or skip
+                    {t.intake.optionalLead}
+                    <KeyCap>Enter</KeyCap>
+                    {t.intake.optionalTail}
                   </>
                 )}
               </p>
@@ -224,7 +230,7 @@ export function IntakeScreen({
                 className="text-muted-foreground"
               >
                 <ArrowLeft className="size-4" aria-hidden="true" />
-                Back
+                {t.intake.back}
               </Button>
             )}
 
@@ -235,7 +241,7 @@ export function IntakeScreen({
               disabled={busy || !canAdvance}
               className="rounded-full px-6 shadow-soft transition-shadow hover:shadow-lifted"
             >
-              {busy ? 'Working…' : nextLabel}
+              {busy ? t.common.working : nextLabel}
               {!busy && (
                 <ArrowRight className="size-4" aria-hidden="true" />
               )}
@@ -250,7 +256,7 @@ export function IntakeScreen({
                 disabled={busy}
                 className="text-muted-foreground"
               >
-                Skip
+                {t.intake.skip}
               </Button>
             )}
           </div>
@@ -268,7 +274,7 @@ export function IntakeScreen({
 
       {isFinal && (
         <p className="pb-8 text-center text-xs text-muted-foreground/70">
-          Last step
+          {t.intake.lastStep}
         </p>
       )}
     </div>

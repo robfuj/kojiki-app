@@ -2,7 +2,8 @@
 
 import { populateSubGoals } from '@/app/actions/okr'
 import type { ProjectRow } from '@/app/actions/projects'
-import { auth } from '@/lib/auth'
+import { getLocale } from '@/app/actions/settings'
+import { requireUserId } from '@/lib/session'
 import { db } from '@/lib/db'
 import { objectives, orientationProfiles, projectBots, projects } from '@/lib/db/schema'
 import { deriveRoster, type OrientationAnswers } from '@/lib/ontology/orientation'
@@ -12,14 +13,9 @@ import {
   type ResearchBrief,
 } from '@/lib/orchestrator'
 import { desc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+const getUserId = requireUserId
 
 async function loadOrientation(userId: string): Promise<OrientationAnswers> {
   const [row] = await db
@@ -65,8 +61,9 @@ export async function researchProjectGoal(input: {
   }
 
   const orientation = await loadOrientation(userId)
+  const locale = await getLocale()
 
-  return runProjectIntake({ orientation, goal, userId })
+  return runProjectIntake({ orientation, goal, userId, locale })
 }
 
 export interface IntakeAnswer {
