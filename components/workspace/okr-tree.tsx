@@ -205,7 +205,7 @@ function ObjectiveNode({
           'group rounded-2xl border bg-card transition-shadow',
           isRoot
             ? 'border-sumi/30 shadow-soft'
-            : 'border-border shadow-soft hover:shadow-elevated',
+            : 'border-border shadow-soft hover:shadow-lifted',
         )}
       >
         <div className="flex items-start gap-3 p-4 sm:p-5">

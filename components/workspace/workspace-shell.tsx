@@ -86,9 +86,9 @@ export function WorkspaceShell({
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
-            <Settings className="size-3" aria-hidden="true" />
+            <Settings className="size-3.5" aria-hidden="true" />
             Settings
           </button>
 

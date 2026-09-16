@@ -44,13 +44,13 @@ export function SettingsPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-background shadow-elevated"
+        className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-background shadow-floating"
       >
         <header className="surface-translucent sticky top-0 z-10 flex items-center gap-3 border-b border-border px-6 py-4">
-          <h2 id="settings-title" className="font-serif text-xl text-foreground">
+          <h2 id="settings-title" className="text-xl font-semibold text-foreground">
             Settings
           </h2>
-          <p className="hidden font-mono text-[11px] text-muted-foreground sm:block">
+          <p className="hidden text-xs text-muted-foreground sm:block">
             providers · appearance · files
           </p>
 
@@ -58,9 +58,9 @@ export function SettingsPanel({
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
-            <X className="size-3" aria-hidden="true" />
+            <X className="size-3.5" aria-hidden="true" />
             Close
           </button>
         </header>
@@ -110,11 +110,11 @@ function SettingsSection({
     <section aria-labelledby={`${id}-title`} className="px-6 py-6">
       <h3
         id={`${id}-title`}
-        className="font-serif text-lg text-foreground"
+        className="text-lg font-semibold text-foreground"
       >
         {title}
       </h3>
-      <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
 

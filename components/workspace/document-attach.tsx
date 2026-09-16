@@ -70,36 +70,36 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors',
+            'inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors',
             uploading
               ? 'cursor-wait text-muted-foreground'
               : 'text-muted-foreground hover:border-sumi hover:text-foreground',
           )}
         >
           {uploading ? (
-            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
           ) : (
-            <Paperclip className="size-3" aria-hidden="true" />
+            <Paperclip className="size-3.5" aria-hidden="true" />
           )}
           {uploading ? 'Reading…' : 'Add file'}
         </button>
 
         <p
           id={`${inputId}-hint`}
-          className="truncate font-mono text-[10px] text-muted-foreground/60"
+          className="truncate font-mono text-[11px] text-muted-foreground"
         >
           {SUPPORTED_MIME_LABEL}
         </p>
       </div>
 
       {error && (
-        <p role="alert" className="mt-1.5 text-xs text-destructive">
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {error}
         </p>
       )}
 
       {documents.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1.5">
+        <ul className="mt-2.5 flex flex-wrap gap-2">
           {documents.map((document) => (
             <DocumentChip key={document.id} document={document} />
           ))}
@@ -112,9 +112,9 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
 function DocumentChip({ document }: { document: DocumentSummary }) {
   return (
     <li className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted py-1 pr-1.5 pl-2.5">
-      <FileText className="size-3 shrink-0 text-seal" aria-hidden="true" />
+      <FileText className="size-3.5 shrink-0 text-seal" aria-hidden="true" />
       <span className="truncate text-xs text-foreground">{document.name}</span>
-      <span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">
+      <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
         {Math.max(1, Math.round(document.charCount / 1000))}k
       </span>
     </li>

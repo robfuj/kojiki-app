@@ -94,13 +94,13 @@ export function ProviderConnect({
   }
 
   return (
-    <section className="rounded-md border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h3 className="flex items-center gap-2 font-serif text-base text-foreground">
+    <section className="rounded-2xl border border-border bg-card shadow-soft">
+      <div className="border-b border-border px-4 py-3.5 sm:px-5">
+        <h3 className="flex items-center gap-2 text-base font-medium text-foreground">
           <KeyRound className="size-4 text-seal" aria-hidden="true" />
           {title}
         </h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           A connected provider runs each task on the model you approved for it. With
           nothing connected, everything falls back to the Vercel AI Gateway free
           tier — no key and no cost, but rate limited, and it cannot guarantee the
@@ -108,14 +108,14 @@ export function ProviderConnect({
         </p>
       </div>
 
-      <div className="space-y-4 p-4">
+      <div className="space-y-5 p-4 sm:p-5">
         {connections.length > 0 && (
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {connections.map((connection) => (
               <li
                 key={connection.provider}
                 className={cn(
-                  'rounded-sm border px-2.5 py-2',
+                  'rounded-xl border px-3.5 py-2.5',
                   connection.isDefault
                     ? 'border-seal/40 bg-seal-soft'
                     : 'border-border bg-background',
@@ -127,8 +127,8 @@ export function ProviderConnect({
                     {connection.maskedKey}
                   </span>
                   {connection.isDefault && (
-                    <span className="inline-flex items-center gap-1 rounded-sm bg-seal px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-primary-foreground">
-                      <Check className="size-2.5" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                      <Check className="size-3" aria-hidden="true" />
                       default
                     </span>
                   )}
@@ -138,7 +138,7 @@ export function ProviderConnect({
                       <button
                         type="button"
                         onClick={() => setDefault(connection.provider)}
-                        className="rounded-sm border border-border bg-card px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+                        className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
                       >
                         Make default
                       </button>
@@ -146,17 +146,17 @@ export function ProviderConnect({
                     <button
                       type="button"
                       onClick={() => disconnect(connection.provider, connection.label)}
-                      className="inline-flex items-center gap-1 rounded-sm border border-border bg-card px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
                     >
-                      <Trash2 className="size-3" aria-hidden="true" />
+                      <Trash2 className="size-3.5" aria-hidden="true" />
                       Disconnect
                     </button>
                   </span>
                 </div>
 
                 {connection.lastError && (
-                  <p className="mt-1.5 flex items-start gap-1.5 text-xs text-destructive">
-                    <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                  <p className="mt-2 flex items-start gap-1.5 text-sm text-destructive">
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                     Last call failed: {connection.lastError}
                   </p>
                 )}
@@ -170,11 +170,11 @@ export function ProviderConnect({
           className={cn('space-y-3', connections.length > 0 && 'border-t border-border pt-4')}
         >
           <fieldset>
-            <legend className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+            <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               {connections.length > 0 ? 'Connect another' : 'Connect a provider'}
             </legend>
 
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-3">
+            <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
               {PROVIDER_IDS.map((id) => {
                 const option = PROVIDERS[id]
                 const connected = connections.some((entry) => entry.provider === id)
@@ -183,7 +183,7 @@ export function ProviderConnect({
                   <label
                     key={id}
                     className={cn(
-                      'flex cursor-pointer items-start gap-2 rounded-sm border px-2.5 py-2 transition-colors',
+                      'flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition-colors',
                       selected === id
                         ? 'border-seal/50 bg-seal-soft'
                         : 'border-border bg-background hover:border-sumi/40',
@@ -198,13 +198,13 @@ export function ProviderConnect({
                         setSelected(id)
                         setError(null)
                       }}
-                      className="mt-0.5 size-3 accent-[var(--seal)]"
+                      className="mt-0.5 size-3.5 accent-[var(--seal)]"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5 text-sm text-foreground">
                         {option.label}
                         {connected && (
-                          <span className="font-mono text-[10px] uppercase tracking-wide text-seal">
+                          <span className="text-[11px] font-medium text-seal">
                             connected
                           </span>
                         )}
@@ -222,11 +222,11 @@ export function ProviderConnect({
           <div>
             <label
               htmlFor="provider-api-key"
-              className="flex flex-wrap items-baseline gap-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70"
+              className="flex flex-wrap items-baseline gap-2 text-xs font-medium text-muted-foreground"
             >
               API key
               {meta.keyPrefix && (
-                <span className="normal-case tracking-normal text-muted-foreground/50">
+                <span className="font-normal text-muted-foreground">
                   normally starts with {meta.keyPrefix}
                 </span>
               )}
@@ -242,9 +242,9 @@ export function ProviderConnect({
                 setError(null)
               }}
               placeholder={`${meta.keyPrefix}…`}
-              className="mt-1 w-full rounded-md border border-input bg-background px-2.5 py-2 font-mono text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/25"
+              className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/25"
             />
-            <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
               Stored encrypted, shown only as a mask afterwards.
               <a
                 href={meta.keyDocsUrl}
@@ -253,7 +253,7 @@ export function ProviderConnect({
                 className="inline-flex items-center gap-1 text-seal underline-offset-2 hover:underline"
               >
                 Get a {meta.label} key
-                <ExternalLink className="size-3" aria-hidden="true" />
+                <ExternalLink className="size-3.5" aria-hidden="true" />
               </a>
             </p>
           </div>
@@ -265,12 +265,12 @@ export function ProviderConnect({
           )}
 
           {error && (
-            <p role="alert" className="text-xs text-destructive">
+            <p role="alert" className="text-sm text-destructive">
               {error}
             </p>
           )}
           {notice && (
-            <p role="status" className="text-xs text-seal">
+            <p role="status" className="text-sm text-seal">
               {notice}
             </p>
           )}
@@ -278,9 +278,9 @@ export function ProviderConnect({
           <button
             type="submit"
             disabled={busy || apiKey.trim().length === 0}
-            className="inline-flex items-center gap-1.5 rounded-sm bg-sumi px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            <KeyRound className="size-3" aria-hidden="true" />
+            <KeyRound className="size-3.5" aria-hidden="true" />
             {busy ? 'Saving…' : alreadyConnected ? 'Replace key' : 'Connect'}
           </button>
         </form>

@@ -42,7 +42,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-5">
       {isSignUp ? (
         <label className="flex flex-col gap-2">
-          <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+          <span className="text-xs font-medium text-muted-foreground">
             Name
           </span>
           <input
@@ -51,13 +51,13 @@ export function AuthForm({ mode }: AuthFormProps) {
             required
             autoComplete="name"
             placeholder="Your name"
-            className="h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"
           />
         </label>
       ) : null}
 
       <label className="flex flex-col gap-2">
-        <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+        <span className="text-xs font-medium text-muted-foreground">
           Email
         </span>
         <input
@@ -72,7 +72,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+        <span className="text-xs font-medium text-muted-foreground">
           Password
         </span>
         <input
@@ -96,7 +96,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       <button
         type="submit"
         disabled={pending}
-        className="h-11 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="h-11 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {pending ? 'Working…' : isSignUp ? 'Create account' : 'Sign in'}
       </button>
