@@ -111,6 +111,73 @@ function parseStage(file) {
   }
 }
 
+/** Acronyms that must stay uppercase when a sub-agent key becomes a title. */
+const ACRONYMS = new Set(['seo', 'aeo', 'pr', 'ab', 'ai', 'hr', 'okrs', 'okr'])
+
+/** "seo-specialist" -> "SEO Specialist". Deterministic, no upstream title field. */
+function titleFromKey(key) {
+  return key
+    .split('-')
+    .filter(Boolean)
+    .map((part) =>
+      ACRONYMS.has(part)
+        ? part.toUpperCase()
+        : part.charAt(0).toUpperCase() + part.slice(1),
+    )
+    .join(' ')
+}
+
+/**
+ * Parses one sub-agent config.yaml. A sub-agent is the unit of execution inside
+ * a department: its skills, tools and decision rights together form the job
+ * description the department head hands it when assigning work.
+ */
+function parseSubAgent(specDir, subDir, parent) {
+  const rel = `specialists/${specDir}/sub-agents/${subDir}`
+  const configPath = join(SOURCE_DIR, rel, 'config.yaml')
+  const raw = read(configPath)
+  const config = parseYaml(raw)
+
+  const agent = config.agent ?? {}
+  const model = config.model ?? {}
+  const rights = config.decision_rights ?? {}
+
+  const decisionRights = Object.fromEntries(
+    DECISION_VERBS.map((verb) => [verb, rights[verb] ?? []]),
+  )
+
+  const handoffs = (config.handoffs ?? []).map((handoff) => {
+    const schemaPath = handoff.payload_schema ?? null
+    return {
+      target: handoff.target,
+      trigger: handoff.trigger,
+      payloadSchema: schemaPath,
+      payloadSchemaResolved: schemaPath
+        ? existsSync(join(SOURCE_DIR, schemaPath))
+        : false,
+    }
+  })
+
+  const key = agent.name ?? subDir
+
+  return {
+    key,
+    title: titleFromKey(key),
+    parentSpecialistKey: parent.key,
+    parentDepartment: agent.parent_department ?? parent.department,
+    description: agent.description ?? '',
+    skills: config.skills ?? [],
+    tools: config.tools ?? [],
+    temperature: model.temperature ?? null,
+    maxTokens: model.max_tokens ?? null,
+    upstreamModel: model.model ?? null,
+    decisionRights,
+    handoffs,
+    source: `ontology/${rel}/config.yaml`,
+    sha256: sha256(raw),
+  }
+}
+
 function parseSpecialist(dir) {
   const configPath = join(SOURCE_DIR, 'specialists', dir, 'config.yaml')
   const raw = read(configPath)
@@ -139,7 +206,7 @@ function parseSpecialist(dir) {
     }
   })
 
-  return {
+  const specialist = {
     key: agent.name ?? dir,
     department: agent.department ?? dir,
     description: agent.description ?? '',
@@ -153,6 +220,18 @@ function parseSpecialist(dir) {
     source: `ontology/specialists/${dir}/config.yaml`,
     sha256: sha256(raw),
   }
+
+  const subAgentDir = join(SOURCE_DIR, 'specialists', dir, 'sub-agents')
+  specialist.subAgents = existsSync(subAgentDir)
+    ? readdirSync(subAgentDir)
+        .sort()
+        .filter((sub) =>
+          existsSync(join(subAgentDir, sub, 'config.yaml')),
+        )
+        .map((sub) => parseSubAgent(dir, sub, specialist))
+    : []
+
+  return specialist
 }
 
 function sortedEntries(dir) {
