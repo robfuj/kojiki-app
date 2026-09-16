@@ -9,7 +9,12 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
  * Vercel AI Gateway, which needs no key in v0 previews or Vercel deployments.
  */
 
-const GATEWAY_MODEL = 'anthropic/claude-sonnet-5'
+/**
+ * The Gateway free tier only allows `-free` suffixed models; paid accounts can
+ * point AI_GATEWAY_MODEL at anything in the catalog (e.g. anthropic/claude-sonnet-5).
+ */
+const GATEWAY_MODEL =
+  process.env.AI_GATEWAY_MODEL ?? 'inclusionai/ling-3.0-flash-vl-free'
 
 /** Model the ontology configs declare; overridable via OPENROUTER_MODEL. */
 const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-3.5-haiku'

@@ -7,7 +7,7 @@ import { resolveModel } from '@/lib/ai'
 import { and, asc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { z } from 'zod'
 
 async function getUserId() {
@@ -330,9 +330,19 @@ export async function populateSubGoals(input: {
     .map((bot) => `- ${bot.specialistKey}: ${bot.displayName} — ${bot.mandate ?? ''}`)
     .join('\n')
 
-  const { object } = await generateObject({
+  // generateObject sends a JSON-schema response format, which free-tier
+  // Gateway providers reject. A required tool call carries the same schema
+  // through the universally supported `tools` parameter instead.
+  const { toolCalls } = await generateText({
     model: resolveModel(),
-    schema: subGoalSchema,
+    tools: {
+      proposeSubGoals: {
+        description:
+          'Propose the sub-goals that decompose the parent goal, each owned by one department agent.',
+        inputSchema: subGoalSchema,
+      },
+    },
+    toolChoice: 'required',
     prompt: [
       'You are the Kojiki orchestration layer decomposing an objective into sub-goals.',
       '',
@@ -355,6 +365,10 @@ export async function populateSubGoals(input: {
       .join('\n'),
   })
 
+  const proposal = toolCalls.find((call) => call.toolName === 'proposeSubGoals')
+  if (!proposal) throw new Error('The agents returned no sub-goal proposal')
+  const { subGoals } = subGoalSchema.parse(proposal.input)
+
   const botByKey = new Map(bots.map((bot) => [bot.specialistKey, bot]))
   const depth = parent.depth + 1
 
@@ -370,7 +384,7 @@ export async function populateSubGoals(input: {
 
   const created: ObjectiveRow[] = []
 
-  for (const [index, subGoal] of object.subGoals.entries()) {
+  for (const [index, subGoal] of subGoals.entries()) {
     const owner = botByKey.get(subGoal.ownerSpecialistKey) ?? null
     const [row] = await db
       .insert(objectives)
