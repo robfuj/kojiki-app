@@ -1,10 +1,29 @@
 import { Analytics } from '@vercel/analytics/next'
+import { Geist, Geist_Mono, Zen_Old_Mincho } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist-sans',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+})
+
+// Mincho is the typeface of the Kojiki itself; it carries headings only.
+const mincho = Zen_Old_Mincho({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mincho',
+})
+
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Kojiki — Ontology Workspace',
+  description:
+    'Operational interface for the Kojiki ontology: run the Orientation Protocol, open projects, work with department agents through the SYNAPSIS cycle, and track OKR trees.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -28,8 +47,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: '(prefers-color-scheme: light)', color: '#fafbfc' },
+    { media: '(prefers-color-scheme: dark)', color: '#262b36' },
   ],
 }
 
@@ -39,11 +58,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
-      </body>
+    <html
+      lang="en"
+      className={`bg-background ${geistSans.variable} ${geistMono.variable} ${mincho.variable}`}
+    >
+      <body className="antialiased">{children}</body>
     </html>
   )
 }

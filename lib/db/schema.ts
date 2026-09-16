@@ -132,3 +132,23 @@ export const decisions = pgTable('decisions', {
   status: text('status').notNull().default('proposed'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
+
+// OKR tree. `parentObjectiveId` is null on the project's Overall Goal (the root);
+// department agents create sub-goals beneath it, and every node carries its own
+// completion percentage. Parent progress rolls up from its children.
+export const objectives = pgTable('objectives', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  parentObjectiveId: text('parentObjectiveId'),
+  ownerBotId: text('ownerBotId'),
+  title: text('title').notNull(),
+  description: text('description'),
+  kind: text('kind').notNull().default('sub_goal'),
+  status: text('status').notNull().default('proposed'),
+  progress: integer('progress').notNull().default(0),
+  depth: integer('depth').notNull().default(0),
+  position: integer('position').notNull().default(0),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})

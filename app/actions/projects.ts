@@ -6,6 +6,7 @@ import {
   chatMessages,
   chatSessions,
   decisions,
+  objectives,
   orientationProfiles,
   projectBots,
   projects,
@@ -100,6 +101,23 @@ export async function createProject(input: {
     })),
   )
 
+  // The OKR tree is rooted at the project's Overall Goal. Department agents
+  // populate sub-goals beneath it and roll their percentages up to this node.
+  await db.insert(objectives).values({
+    id: crypto.randomUUID(),
+    userId,
+    projectId,
+    parentObjectiveId: null,
+    ownerBotId: null,
+    title: input.objective?.trim() || name,
+    description: input.objective?.trim() ? name : null,
+    kind: 'overall_goal',
+    status: 'active',
+    progress: 0,
+    depth: 0,
+    position: 0,
+  })
+
   revalidatePath('/')
   return project
 }
@@ -161,6 +179,9 @@ export async function deleteProject(projectId: string): Promise<void> {
   await db
     .delete(decisions)
     .where(and(eq(decisions.projectId, projectId), eq(decisions.userId, userId)))
+  await db
+    .delete(objectives)
+    .where(and(eq(objectives.projectId, projectId), eq(objectives.userId, userId)))
   await db
     .delete(projectBots)
     .where(and(eq(projectBots.projectId, projectId), eq(projectBots.userId, userId)))
