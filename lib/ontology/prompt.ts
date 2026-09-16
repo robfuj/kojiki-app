@@ -1,6 +1,6 @@
 import { orientationContext, type OrientationAnswers } from './orientation'
 import { getSpecialist, specialistLabel } from './specialists'
-import { SYNAPSIS_STAGES } from './synapsis'
+import { SYNAPSIS_STAGES, stageBoundary } from './synapsis'
 
 interface BotRecord {
   specialistKey: string
@@ -41,10 +41,14 @@ export function buildSystemPrompt(
 
     if (specialist.handoffs.length > 0) {
       const handoffs = specialist.handoffs
-        .map(
-          (h) =>
-            `- on "${h.trigger}" hand off to ${specialistLabel(h.target)} (${h.payloadSchema})`,
-        )
+        .map((h) => {
+          const target = specialistLabel(h.target)
+          // Upstream config.yaml files cite payload schema paths that are not
+          // present in the repository; only cite one that actually resolves.
+          return h.payloadSchemaResolved && h.payloadSchema
+            ? `- on "${h.trigger}" hand off to ${target} (${h.payloadSchema})`
+            : `- on "${h.trigger}" hand off to ${target}`
+        })
         .join('\n')
       sections.push(
         `Cross-functional handoffs you may initiate:\n${handoffs}\nWhen work crosses your mandate, name the target department and the trigger rather than answering outside your rights.`,
@@ -56,9 +60,13 @@ export function buildSystemPrompt(
     }
   }
 
-  const stages = SYNAPSIS_STAGES.map(
-    (s) => `${s.index}. ${s.name.toUpperCase()} — ${s.authority}`,
-  ).join('\n')
+  const stages = SYNAPSIS_STAGES.map((s) => {
+    const boundary = stageBoundary(s)
+      .split('\n')
+      .map((line) => `     ${line}`)
+      .join('\n')
+    return `   ${s.index}. ${s.name} — ${s.authority}\n${boundary}`
+  }).join('\n')
   sections.push(
     `You reason through the SYNAPSIS decision cycle. Each stage has one authority and an explicit boundary; never let one stage silently perform another's work.\n${stages}\n\nWhen a request is a real decision, say which stage you are in before answering, and keep the stages separate. For a quick factual question, answer directly without forcing the cycle.`,
   )
