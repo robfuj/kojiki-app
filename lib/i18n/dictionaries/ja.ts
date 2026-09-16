@@ -220,4 +220,53 @@ export const ja: Dictionary = {
     briefModelNote:
       'ライブウェブ調査が利用できなかったため、このブリーフは現在の情報源ではなくモデル推論に基づいています。数値は目安として扱い、誤りを知っているものは修正してください。',
   },
+  accents: {
+    groupLabel: 'アクセントカラー',
+    selectedSuffix: ' — 現在選択中',
+    saveError: 'そのアクセントを保存できませんでした',
+    footnote:
+      'アクセントは決定、完了した作業、主要なアクションを示します。それ以外——構造、階層、テキスト——は固定なので、どれを選んでもワークスペースの読み方は変わりません。',
+    names: {
+      seal: '朱',
+      blue: '藍',
+      indigo: '墨',
+      green: '松',
+      amber: '狐',
+      plum: '梅',
+    },
+  },
+  providerPanel: {
+    intro:
+      'プロバイダーを接続すると、各タスクは承認したモデルで実行されます。何も接続していない場合、すべてVercel AI Gatewayの無料枠にフォールバックします。キーも費用も不要ですが、レート制限があり、タスクごとに承認した特定のモデルは保証されません。',
+    defaultBadge: '既定',
+    makeDefault: '既定にする',
+    disconnect: '切断',
+    lastErrorLead: '前回の呼び出しが失敗しました: ',
+    legendFirst: 'プロバイダーを接続',
+    legendAnother: '別のプロバイダーを接続',
+    apiKeyLabel: 'APIキー',
+    keyPrefixLead: '通常はこれで始まります: ',
+    storedNote: '暗号化して保存され、以降はマスク表示のみになります。',
+    getKeyLink: '{label}のキーを取得',
+    alreadyConnected:
+      '{label}は接続済みです。保存すると保存中のキーが置き換わります。',
+    connectedNotice: '{label}を{maskedKey}として接続しました。',
+    disconnectedNotice:
+      '{label}を切断しました。タスクは無料枠にフォールバックします。',
+    connectedTag: '接続済み',
+    saving: '保存中…',
+    replaceKey: 'キーを置き換え',
+    connect: '接続',
+    saveError: 'そのキーを保存できませんでした',
+    defaultError: '既定を変更できませんでした',
+    disconnectError: '切断できませんでした',
+    blurbs: {
+      openrouter:
+        '1つのキーで複数プロバイダーの数百のモデルに到達でき、無料枠も含まれます。試すのに最も安価な方法です。',
+      anthropic:
+        'Claudeへ直接接続。Anthropicのクレジットを既に持っている場合に使用します。',
+      openai:
+        'GPTへ直接接続。OpenAIのクレジットを既に持っている場合に使用します。',
+    },
+  },
 }

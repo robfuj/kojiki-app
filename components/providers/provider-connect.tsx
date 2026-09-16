@@ -6,6 +6,8 @@ import {
   getConnections,
   makeProviderDefault,
 } from '@/app/actions/providers'
+import { useLocale } from '@/components/i18n/locale-provider'
+import { format } from '@/lib/i18n'
 import {
   PROVIDERS,
   PROVIDER_IDS,
@@ -32,6 +34,8 @@ export function ProviderConnect({
   title?: string
   onConnected?: () => void
 }) {
+  const { t } = useLocale()
+  const tp = t.providerPanel
   const { data, mutate } = useSWR('provider-connections', getConnections, {
     revalidateOnFocus: false,
   })
@@ -59,11 +63,16 @@ export function ProviderConnect({
         makeDefault: connections.length === 0,
       })
       setApiKey('')
-      setNotice(`${view.label} connected as ${view.maskedKey}.`)
+      setNotice(
+        format(tp.connectedNotice, {
+          label: view.label,
+          maskedKey: view.maskedKey,
+        }),
+      )
       await mutate()
       onConnected?.()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save that key')
+    } catch {
+      setError(tp.saveError)
     } finally {
       setBusy(false)
     }
@@ -75,8 +84,8 @@ export function ProviderConnect({
     try {
       await makeProviderDefault(provider)
       await mutate()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not change the default')
+    } catch {
+      setError(tp.defaultError)
     }
   }
 
@@ -85,11 +94,11 @@ export function ProviderConnect({
     setNotice(null)
     try {
       await disconnectProvider(provider)
-      setNotice(`${label} disconnected. Tasks fall back to the free tier.`)
+      setNotice(format(tp.disconnectedNotice, { label }))
       await mutate()
       onConnected?.()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not disconnect')
+    } catch {
+      setError(tp.disconnectError)
     }
   }
 
@@ -101,10 +110,7 @@ export function ProviderConnect({
           {title}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          A connected provider runs each task on the model you approved for it. With
-          nothing connected, everything falls back to the Vercel AI Gateway free
-          tier — no key and no cost, but rate limited, and it cannot guarantee the
-          specific model a task was approved for.
+          {tp.intro}
         </p>
       </div>
 
@@ -129,7 +135,7 @@ export function ProviderConnect({
                   {connection.isDefault && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
                       <Check className="size-3" aria-hidden="true" />
-                      default
+                      {tp.defaultBadge}
                     </span>
                   )}
 
@@ -140,7 +146,7 @@ export function ProviderConnect({
                         onClick={() => setDefault(connection.provider)}
                         className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
                       >
-                        Make default
+                        {tp.makeDefault}
                       </button>
                     )}
                     <button
@@ -149,7 +155,7 @@ export function ProviderConnect({
                       className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
                     >
                       <Trash2 className="size-3.5" aria-hidden="true" />
-                      Disconnect
+                      {tp.disconnect}
                     </button>
                   </span>
                 </div>
@@ -157,7 +163,8 @@ export function ProviderConnect({
                 {connection.lastError && (
                   <p className="mt-2 flex items-start gap-1.5 text-sm text-destructive">
                     <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                    Last call failed: {connection.lastError}
+                    {tp.lastErrorLead}
+                    {connection.lastError}
                   </p>
                 )}
               </li>
@@ -171,7 +178,7 @@ export function ProviderConnect({
         >
           <fieldset>
             <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              {connections.length > 0 ? 'Connect another' : 'Connect a provider'}
+              {connections.length > 0 ? tp.legendAnother : tp.legendFirst}
             </legend>
 
             <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
@@ -205,12 +212,12 @@ export function ProviderConnect({
                         {option.label}
                         {connected && (
                           <span className="text-[11px] font-medium text-seal">
-                            connected
+                            {tp.connectedTag}
                           </span>
                         )}
                       </span>
                       <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                        {option.blurb}
+                        {tp.blurbs[id]}
                       </span>
                     </span>
                   </label>
@@ -224,10 +231,11 @@ export function ProviderConnect({
               htmlFor="provider-api-key"
               className="flex flex-wrap items-baseline gap-2 text-xs font-medium text-muted-foreground"
             >
-              API key
+              {tp.apiKeyLabel}
               {meta.keyPrefix && (
                 <span className="font-normal text-muted-foreground">
-                  normally starts with {meta.keyPrefix}
+                  {tp.keyPrefixLead}
+                  {meta.keyPrefix}
                 </span>
               )}
             </label>
@@ -245,14 +253,14 @@ export function ProviderConnect({
               className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/25"
             />
             <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
-              Stored encrypted, shown only as a mask afterwards.
+              {tp.storedNote}
               <a
                 href={meta.keyDocsUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-seal underline-offset-2 hover:underline"
               >
-                Get a {meta.label} key
+                {format(tp.getKeyLink, { label: meta.label })}
                 <ExternalLink className="size-3.5" aria-hidden="true" />
               </a>
             </p>
@@ -260,7 +268,7 @@ export function ProviderConnect({
 
           {alreadyConnected && (
             <p className="text-xs text-muted-foreground">
-              {meta.label} is already connected. Saving replaces the stored key.
+              {format(tp.alreadyConnected, { label: meta.label })}
             </p>
           )}
 
@@ -281,7 +289,7 @@ export function ProviderConnect({
             className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <KeyRound className="size-3.5" aria-hidden="true" />
-            {busy ? 'Saving…' : alreadyConnected ? 'Replace key' : 'Connect'}
+            {busy ? tp.saving : alreadyConnected ? tp.replaceKey : tp.connect}
           </button>
         </form>
       </div>

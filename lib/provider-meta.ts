@@ -21,7 +21,6 @@ export interface ProviderConfig {
   /** What the key looks like, so a pasted value can be sanity-checked. */
   keyPrefix: string
   keyDocsUrl: string
-  blurb: string
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
@@ -29,20 +28,16 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     label: 'OpenRouter',
     keyPrefix: 'sk-or-',
     keyDocsUrl: 'https://openrouter.ai/settings/keys',
-    blurb:
-      'One key reaches hundreds of models across providers, including a free tier. The cheapest way to experiment.',
   },
   anthropic: {
     label: 'Anthropic',
     keyPrefix: 'sk-ant-',
     keyDocsUrl: 'https://console.anthropic.com/settings/keys',
-    blurb: 'Direct to Claude. Use this when you already hold Anthropic credits.',
   },
   openai: {
     label: 'OpenAI',
     keyPrefix: 'sk-',
     keyDocsUrl: 'https://platform.openai.com/api-keys',
-    blurb: 'Direct to GPT. Use this when you already hold OpenAI credits.',
   },
 }
 

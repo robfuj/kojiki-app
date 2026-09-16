@@ -228,6 +228,53 @@ export const en = {
     briefModelNote:
       'Live web research was unavailable, so this brief comes from model reasoning rather than current sources. Treat the figures as indicative and correct anything you know to be wrong.',
   },
+  accents: {
+    groupLabel: 'Accent colour',
+    selectedSuffix: ' — currently selected',
+    saveError: 'Could not save that accent',
+    footnote:
+      'The accent marks decisions, completed work and the primary action. Everything else — structure, hierarchy and text — stays fixed, so the workspace reads the same whichever you choose.',
+    names: {
+      seal: 'Seal vermilion',
+      blue: 'Pacific blue',
+      indigo: 'Sumi indigo',
+      green: 'Pine green',
+      amber: 'Kitsune amber',
+      plum: 'Ume plum',
+    },
+  },
+  providerPanel: {
+    intro:
+      'A connected provider runs each task on the model you approved for it. With nothing connected, everything falls back to the Vercel AI Gateway free tier — no key and no cost, but rate limited, and it cannot guarantee the specific model a task was approved for.',
+    defaultBadge: 'default',
+    makeDefault: 'Make default',
+    disconnect: 'Disconnect',
+    lastErrorLead: 'Last call failed: ',
+    legendFirst: 'Connect a provider',
+    legendAnother: 'Connect another',
+    apiKeyLabel: 'API key',
+    keyPrefixLead: 'normally starts with ',
+    storedNote: 'Stored encrypted, shown only as a mask afterwards.',
+    getKeyLink: 'Get a {label} key',
+    alreadyConnected:
+      '{label} is already connected. Saving replaces the stored key.',
+    connectedNotice: '{label} connected as {maskedKey}.',
+    disconnectedNotice:
+      '{label} disconnected. Tasks fall back to the free tier.',
+    connectedTag: 'connected',
+    saving: 'Saving…',
+    replaceKey: 'Replace key',
+    connect: 'Connect',
+    saveError: 'Could not save that key',
+    defaultError: 'Could not change the default',
+    disconnectError: 'Could not disconnect',
+    blurbs: {
+      openrouter:
+        'One key reaches hundreds of models across providers, including a free tier. The cheapest way to experiment.',
+      anthropic: 'Direct to Claude. Use this when you already hold Anthropic credits.',
+      openai: 'Direct to GPT. Use this when you already hold OpenAI credits.',
+    },
+  },
 }
 
 export type Dictionary = typeof en
