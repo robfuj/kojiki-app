@@ -6,13 +6,14 @@ import { useLocale } from '@/components/i18n/locale-provider'
 import { ChatModule, type ChatFocus } from '@/components/workspace/chat-module'
 import { OkrTree } from '@/components/workspace/okr-tree'
 import { ProjectsRail } from '@/components/workspace/projects-rail'
+import { ResearchPanel } from '@/components/workspace/research-panel'
 import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
 import { SettingsPanel } from '@/components/workspace/settings-panel'
 import { SignOutButton } from '@/components/sign-out-button'
 import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
 import { format } from '@/lib/i18n'
-import { Settings } from 'lucide-react'
+import { Microscope, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import useSWR from 'swr'
@@ -45,6 +46,7 @@ export function WorkspaceShell({
     kind: 'orchestrator',
   })
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [researchOpen, setResearchOpen] = useState(false)
 
   // A newly created project arrives through router.refresh(); follow it if the
   // current selection no longer exists.
@@ -92,6 +94,16 @@ export function WorkspaceShell({
 
         <div className="ml-auto flex items-center gap-3">
           <LanguageSelector />
+
+          <button
+            type="button"
+            onClick={() => setResearchOpen(true)}
+            disabled={!activeId}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground disabled:opacity-40"
+          >
+            <Microscope className="size-3.5" aria-hidden="true" />
+            {t.research.openButton}
+          </button>
 
           <button
             type="button"
@@ -166,7 +178,7 @@ export function WorkspaceShell({
               projectName={workspace.project.name}
               bots={workspace.bots}
               focus={chatFocus}
-              onClearFocus={() => setChatFocus({ kind: 'orchestrator' })}
+              onFocusChange={setChatFocus}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
@@ -177,6 +189,14 @@ export function WorkspaceShell({
           )}
         </aside>
       </div>
+
+      {researchOpen && (
+        <ResearchPanel
+          project={projects.find((project) => project.id === activeId) ?? null}
+          orientation={orientation}
+          onClose={() => setResearchOpen(false)}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsPanel

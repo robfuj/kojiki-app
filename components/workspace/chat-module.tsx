@@ -42,9 +42,9 @@ interface ChatModuleProps {
   projectId: string
   projectName: string
   bots: BotRow[]
-  /** Set when the user drills into a sub-agent from the sub-goal panel. */
+  /** Which agent the sidebar is talking to. The parent owns it so the tree and the sidebar agree. */
   focus?: ChatFocus | null
-  onClearFocus?: () => void
+  onFocusChange: (focus: ChatFocus) => void
 }
 
 export function ChatModule({
@@ -52,12 +52,17 @@ export function ChatModule({
   projectName,
   bots,
   focus,
-  onClearFocus,
+  onFocusChange,
 }: ChatModuleProps) {
-  const [activeBotId, setActiveBotId] = useState<string | null>(bots[0]?.id ?? null)
   const [showDetails, setShowDetails] = useState(false)
 
-  const activeBot = bots.find((bot) => bot.id === activeBotId) ?? bots[0] ?? null
+  // Focus is the single source of truth for which agent is active. Deriving the
+  // department from it — instead of from local state that a parent callback can
+  // contradict — is what makes a division tab actually open that division.
+  const activeBot =
+    bots.find((bot) => bot.id === (focus?.kind === 'bot' ? focus.botId : null)) ??
+    bots[0] ??
+    null
 
   // A sub-agent focus overrides the tab selection: the user asked to talk to a
   // specific sub-agent about specific work, so that is what they get.
@@ -67,7 +72,7 @@ export function ChatModule({
         <div className="shrink-0 border-b border-border px-4 py-3">
           <button
             type="button"
-            onClick={onClearFocus}
+            onClick={() => onFocusChange({ kind: 'orchestrator' })}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -128,7 +133,7 @@ export function ChatModule({
             type="button"
             role="tab"
             aria-selected={orchestratorActive}
-            onClick={() => onClearFocus?.()}
+            onClick={() => onFocusChange({ kind: 'orchestrator' })}
             title="Coordinates the departments and reports the OKR tree back to you"
             className={cn(
               'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
@@ -148,10 +153,7 @@ export function ChatModule({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => {
-                  setActiveBotId(bot.id)
-                  onClearFocus?.()
-                }}
+                onClick={() => onFocusChange({ kind: 'bot', botId: bot.id })}
                 title={bot.mandate ?? undefined}
                 className={cn(
                   'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',

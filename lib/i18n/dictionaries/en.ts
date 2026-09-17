@@ -228,6 +228,31 @@ export const en = {
     briefModelNote:
       'Live web research was unavailable, so this brief comes from model reasoning rather than current sources. Treat the figures as indicative and correct anything you know to be wrong.',
   },
+  research: {
+    title: 'Initial research',
+    summary: 'What the orchestrator found before this work was decomposed',
+    closeAria: 'Close research',
+    openButton: 'Research',
+    companySection: 'Company orientation',
+    companyNote:
+      'The wider research captured during orientation. Every agent in every project receives it alongside the project brief.',
+    goalLabel: 'Goal researched',
+    industryLabel: 'Industry',
+    market: 'Market',
+    competition: 'Competition',
+    regulation: 'Regulation',
+    risks: 'Key risks',
+    sources: 'Sources',
+    answers: 'Your answers',
+    roster: 'Why these specialists',
+    methodWeb: 'Live web research',
+    methodModel: 'Model reasoning',
+    modelNote:
+      'Live web research was unavailable when this ran, so this brief comes from model reasoning rather than current sources. Treat the figures as indicative.',
+    empty:
+      'No research is stored for this project yet. It is captured when a project is created through the orchestrator intake.',
+    noBrief: 'No findings were recorded.',
+  },
   accents: {
     groupLabel: 'Accent colour',
     selectedSuffix: ' — currently selected',
