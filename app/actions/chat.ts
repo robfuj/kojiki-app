@@ -32,6 +32,9 @@ export async function getOrCreateSession(
 
   if (!bot) throw new Error('Bot not found in this project')
 
+  // Scoped to the department conversation. A sub-agent borrows this same bot row,
+  // so without the agentKind filter this lookup can return a sub-agent session and
+  // the department tab ends up answering from the sub-agent's prompt and history.
   const [existing] = await db
     .select()
     .from(chatSessions)
@@ -40,6 +43,7 @@ export async function getOrCreateSession(
         eq(chatSessions.projectId, projectId),
         eq(chatSessions.botId, botId),
         eq(chatSessions.userId, userId),
+        eq(chatSessions.agentKind, 'department'),
       ),
     )
     .limit(1)
@@ -53,6 +57,7 @@ export async function getOrCreateSession(
       userId,
       projectId,
       botId,
+      agentKind: 'department',
       title: bot.displayName,
     })
     .returning()

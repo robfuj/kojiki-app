@@ -187,7 +187,7 @@ export const ja: Dictionary = {
     briefEyebrowModel: 'オーケストレーター · モデル推論',
     briefPrompt: '調査結果は以下のとおりです。',
     briefWhy:
-      '回答する前に読んでください。誤りや古い情報があれば、続く質問で伝えてください。計画はその両方から作られます。',
+      '回答する前に読んでください。誤りや古い情報があれば���続く質問で伝えてください。計画はその両方から作られます。',
     briefSubmit: '質問に回答',
     questionEyebrow: '質問 {current} / {total}',
     answerLabel: 'あなたの回答',
@@ -219,6 +219,31 @@ export const ja: Dictionary = {
     briefSources: '出典',
     briefModelNote:
       'ライブウェブ調査が利用できなかったため、このブリーフは現在の情報源ではなくモデル推論に基づいています。数値は目安として扱い、誤りを知っているものは修正してください。',
+  },
+  research: {
+    title: '初期リサーチ',
+    summary: 'この作業が分解される前にオーケストレーターが見つけたもの',
+    closeAria: 'リサーチを閉じる',
+    openButton: 'リサーチ',
+    companySection: '会社オリエンテーション',
+    companyNote:
+      'オリエンテーション時に取得したより広いリサーチ。すべてのプロジェクトのすべてのエージェントが、プロジェクトブリーフと共にこれを受け取ります。',
+    goalLabel: 'リサーチした目標',
+    industryLabel: '業界',
+    market: '市場',
+    competition: '競合',
+    regulation: '規制',
+    risks: '主要リスク',
+    sources: '情報源',
+    answers: 'あなたの回答',
+    roster: 'このスペシャリストを選んだ理由',
+    methodWeb: 'ライブウェブ調査',
+    methodModel: 'モデル推論',
+    modelNote:
+      '実行時にライブウェブ調査が利用できなかったため、このブリーフは現在の情報源ではなくモデル推論に基づいています。数値は目安として扱ってください。',
+    empty:
+      'このプロジェクトにはまだリサーチが保存されていません。オーケストレーターインテークを通じてプロジェクトを作成すると記録されます。',
+    noBrief: '調査結果は記録されていません。',
   },
   accents: {
     groupLabel: 'アクセントカラー',
