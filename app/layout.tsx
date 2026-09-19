@@ -17,10 +17,14 @@ const geistMono = Geist_Mono({
 })
 
 // Mincho is the typeface of the Kojiki itself; it carries headings only.
+// preload: false — it is a CJK/serif fallback in every font stack, so the browser
+// fetches only the subsets a page actually renders. Preloading it emitted 48
+// <link rel=preload> entries and a ~6KB Link header on every single response.
 const mincho = Zen_Old_Mincho({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-mincho',
+  preload: false,
 })
 
 export const metadata: Metadata = {
