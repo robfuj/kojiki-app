@@ -179,6 +179,9 @@ export const objectives = pgTable('objectives', {
   assigneeSubAgentTitle: text('assigneeSubAgentTitle'),
   title: text('title').notNull(),
   description: text('description'),
+  // The window the node is meant to complete in, e.g. "Q3 2026". Display-only:
+  // the orchestrator proposes it and the user edits it in the OKR header.
+  timeframe: text('timeframe'),
   kind: text('kind').notNull().default('sub_goal'),
   status: text('status').notNull().default('proposed'),
   progress: integer('progress').notNull().default(0),
@@ -522,4 +525,30 @@ export const userPreferences = pgTable('user_preferences', {
   // resolved to the default on read, so a retired language cannot break a render.
   locale: text('locale').notNull().default('en'),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})
+
+// Progress samples for the OKR tree. Every time a node's percentage moves —
+// directly or through a rollup from its children — a row is appended here, so the
+// Home tab can draw a sparkline of where the objective has actually been rather
+// than only where it is now. Append-only; nothing reads it for authority.
+export const objectiveProgressHistory = pgTable('objective_progress_history', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  objectiveId: text('objectiveId').notNull(),
+  progress: integer('progress').notNull(),
+  recordedAt: timestamp('recordedAt').notNull().defaultNow(),
+})
+
+// One orchestrator review of the whole project: what each department found and
+// what the orchestrator recommends doing about it. A new review is a new row;
+// the tab shows the latest and the count of all of them.
+export const orchestratorReviews = pgTable('orchestrator_reviews', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  // [{ department, severity, summary, detail }]
+  findings: jsonb('findings').notNull().default([]),
+  // [{ label, kind, targetId, departmentName }]
+  actions: jsonb('actions').notNull().default([]),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
 })

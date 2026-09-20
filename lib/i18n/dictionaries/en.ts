@@ -84,6 +84,17 @@ export const en = {
     deleteAria: 'Delete {name}',
   },
 
+  nav: {
+    label: 'Workspace',
+    home: 'Home',
+    okrs: 'OKRs',
+    orchestrator: 'Orchestrator',
+    departments: 'Departments',
+    knowledgeBase: 'Knowledge Base',
+    decisions: 'Decisions',
+    reports: 'Reports',
+  },
+
   settings: {
     title: 'Settings',
     summary: 'providers · appearance · language · files',

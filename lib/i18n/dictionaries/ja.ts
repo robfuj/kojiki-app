@@ -85,6 +85,17 @@ export const ja: Dictionary = {
     deleteAria: '{name} を削除',
   },
 
+  nav: {
+    label: 'ワークスペース',
+    home: 'ホーム',
+    okrs: 'OKR',
+    orchestrator: 'オーケストレーター',
+    departments: '部門',
+    knowledgeBase: 'ナレッジベース',
+    decisions: '意思決定',
+    reports: 'レポート',
+  },
+
   settings: {
     title: '設定',
     summary: 'プロバイダー · 外観 · 言語 · ファイル',
