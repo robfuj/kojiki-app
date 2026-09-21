@@ -38,6 +38,12 @@ export type ChatFocus =
       objectiveId: string | null
     }
 
+/** A prompt pushed into the composer from outside — suggestion chips use it. */
+export interface ChatSeed {
+  text: string
+  nonce: number
+}
+
 interface ChatModuleProps {
   projectId: string
   projectName: string
@@ -45,6 +51,7 @@ interface ChatModuleProps {
   /** Which agent the sidebar is talking to. The parent owns it so the tree and the sidebar agree. */
   focus?: ChatFocus | null
   onFocusChange: (focus: ChatFocus) => void
+  seed?: ChatSeed | null
 }
 
 export function ChatModule({
@@ -53,6 +60,7 @@ export function ChatModule({
   bots,
   focus,
   onFocusChange,
+  seed,
 }: ChatModuleProps) {
   const [showDetails, setShowDetails] = useState(false)
 
@@ -97,6 +105,7 @@ export function ChatModule({
           key={`${projectId}:${focus.subAgentKey}:${focus.objectiveId ?? 'project'}`}
           projectId={projectId}
           focus={focus}
+          seed={seed}
         />
       </div>
     )
@@ -209,7 +218,11 @@ export function ChatModule({
       </div>
 
       {orchestratorActive ? (
-        <OrchestratorChat key={`orchestrator:${projectId}`} projectId={projectId} />
+        <OrchestratorChat
+          key={`orchestrator:${projectId}`}
+          projectId={projectId}
+          seed={seed}
+        />
       ) : (
         activeBot && (
           <BotChat
@@ -217,6 +230,7 @@ export function ChatModule({
             projectId={projectId}
             botId={activeBot.id}
             botName={activeBot.displayName}
+            seed={seed}
           />
         )
       )}
@@ -280,9 +294,10 @@ interface BotChatProps {
   projectId: string
   botId: string
   botName: string
+  seed?: ChatSeed | null
 }
 
-function BotChat({ projectId, botId, botName }: BotChatProps) {
+function BotChat({ projectId, botId, botName, seed }: BotChatProps) {
   const { data: session, isLoading: loadingSession } = useSWR(
     ['session', projectId, botId],
     () => getOrCreateSession(projectId, botId),
@@ -295,12 +310,19 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
       loading={loadingSession}
       agentName={botName}
       projectId={projectId}
+      seed={seed}
       emptyHint={`${botName} is oriented on this project and ready. Ask it to work a decision through the SYNAPSIS cycle, or to take a goal from the OKR tree.`}
     />
   )
 }
 
-function OrchestratorChat({ projectId }: { projectId: string }) {
+function OrchestratorChat({
+  projectId,
+  seed,
+}: {
+  projectId: string
+  seed?: ChatSeed | null
+}) {
   const { data: session, isLoading } = useSWR(
     ['orchestrator-session', projectId],
     () => getOrCreateOrchestratorSession(projectId),
@@ -313,6 +335,7 @@ function OrchestratorChat({ projectId }: { projectId: string }) {
       loading={isLoading}
       agentName="Orchestrator"
       projectId={projectId}
+      seed={seed}
       emptyHint="Ask what is happening across the OKR tree, which sub-agents are working, or what is waiting on your decision. The orchestrator reports recorded state — it does not do departmental work itself."
     />
   )
@@ -321,9 +344,11 @@ function OrchestratorChat({ projectId }: { projectId: string }) {
 function SubAgentChat({
   projectId,
   focus,
+  seed,
 }: {
   projectId: string
   focus: Extract<ChatFocus, { kind: 'sub_agent' }>
+  seed?: ChatSeed | null
 }) {
   const { data: session, isLoading } = useSWR(
     [
@@ -351,6 +376,7 @@ function SubAgentChat({
       loading={isLoading}
       agentName={focus.subAgentTitle}
       projectId={projectId}
+      seed={seed}
       emptyHint={`${focus.subAgentTitle} is here with its own skills, tools and decision rights. Ask it what it is doing, or push back on its report. Anything outside its decision rights goes back to its department head as a recommendation.`}
     />
   )
@@ -361,6 +387,7 @@ interface SessionChatProps {
   loading: boolean
   agentName: string
   projectId: string
+  seed?: ChatSeed | null
   emptyHint: string
 }
 
@@ -369,6 +396,7 @@ function SessionChat({
   loading,
   agentName,
   projectId,
+  seed,
   emptyHint,
 }: SessionChatProps) {
   const { data: stored, isLoading: loadingMessages } = useSWR(
@@ -400,6 +428,7 @@ function SessionChat({
       sessionId={session.id}
       agentName={agentName}
       projectId={projectId}
+      seed={seed}
       emptyHint={emptyHint}
       initialMessages={initialMessages}
     />
@@ -410,6 +439,7 @@ interface ConversationProps {
   sessionId: string
   agentName: string
   projectId: string
+  seed?: ChatSeed | null
   emptyHint: string
   initialMessages: UIMessage[]
 }
@@ -418,11 +448,18 @@ function Conversation({
   sessionId,
   agentName,
   projectId,
+  seed,
   emptyHint,
   initialMessages,
 }: ConversationProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Suggestion chips place their prompt in the composer for the user to edit or
+  // send; the nonce makes the same text re-seedable on a second click.
+  useEffect(() => {
+    if (seed) setInput(seed.text)
+  }, [seed])
 
   const transport = useMemo(
     () =>
@@ -488,7 +525,7 @@ function Conversation({
       </div>
 
       <div className="shrink-0 border-t border-border bg-card p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
+        <div className="flex items-end gap-2 rounded-xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <label htmlFor={composerId} className="sr-only">
             Message {agentName}
           </label>
@@ -516,7 +553,7 @@ function Conversation({
             onClick={submit}
             disabled={busy || !input.trim()}
             aria-label="Send message"
-            className="shrink-0 rounded-full bg-sumi p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="shrink-0 rounded-full bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <ArrowUp className="size-4" aria-hidden="true" />
           </button>
@@ -549,19 +586,28 @@ function MessageBubble({
 
   if (!text) return null
 
+  // The user speaks in an ink bubble; the agent answers in plain type beside its
+  // mark, the way the workspace's documents read.
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
+          {text}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={cn('flex flex-col gap-1.5', isUser && 'items-end')}>
-      <p className="px-1 text-xs font-medium text-muted-foreground">
-        {isUser ? 'You' : agentName}
-      </p>
-      <div
-        className={cn(
-          'max-w-[92%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
-          isUser
-            ? 'rounded-br-md bg-sumi text-primary-foreground'
-            : 'rounded-bl-md border border-border bg-card text-foreground shadow-soft',
-        )}
+    <div className="flex items-start gap-2.5">
+      <span
+        aria-hidden="true"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
       >
+        {agentName.slice(0, 1).toUpperCase()}
+      </span>
+      <div className="min-w-0 max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+        <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>
         {text}
       </div>
     </div>

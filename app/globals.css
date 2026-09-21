@@ -50,13 +50,25 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
 
-  /* Kojiki-specific. Seal vermilion marks decisions and completion and is the
-     user-changeable accent; sumi indigo marks structure. */
+  /* Kojiki-specific. The seal is the user-changeable accent — in the current
+     language a pine green that marks progress, completion and live state; sumi
+     is the neutral ink of structure and primary controls. */
   --color-seal: var(--seal);
   --color-seal-soft: var(--seal-soft);
   --color-seal-foreground: var(--seal-foreground);
   --color-sumi: var(--sumi);
   --color-sumi-soft: var(--sumi-soft);
+
+  /* Work-state hues for status pills: blue is in flight, amber awaits a human,
+     green is done, grey is idle or archived. */
+  --color-status-progress: var(--status-progress);
+  --color-status-progress-soft: var(--status-progress-soft);
+  --color-status-review: var(--status-review);
+  --color-status-review-soft: var(--status-review-soft);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-soft: var(--status-approved-soft);
+  --color-status-idle: var(--status-idle);
+  --color-status-idle-soft: var(--status-idle-soft);
 
   /* Depth is carried by shadow rather than by border, which is the single
      biggest visual difference from a hairline-ruled instrument UI. Three tiers
@@ -82,46 +94,56 @@
 :root {
   color-scheme: light;
 
-  /* Apple's own surfaces: #FBFBFD page, #FFFFFF card, #F5F5F7 recessed. */
-  --background: oklch(0.985 0.002 285);
-  --foreground: oklch(0.21 0.006 285);
+  /* Warm paper page, white cards, hairline rules: the workspace reads as a
+     quiet document rather than a glossy surface. */
+  --background: oklch(0.972 0.004 95);
+  --foreground: oklch(0.24 0.01 95);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.006 285);
+  --card-foreground: oklch(0.24 0.01 95);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.006 285);
+  --popover-foreground: oklch(0.24 0.01 95);
 
-  /* Sumi indigo — structure and primary actions. */
-  --primary: oklch(0.21 0.006 285);
-  --primary-foreground: oklch(0.985 0.002 285);
-  --sumi: oklch(0.42 0.06 275);
-  --sumi-soft: oklch(0.955 0.012 275);
+  /* Sumi ink — structure and primary controls. */
+  --primary: oklch(0.24 0.01 95);
+  --primary-foreground: oklch(0.99 0 0);
+  --sumi: oklch(0.45 0.012 95);
+  --sumi-soft: oklch(0.955 0.005 95);
 
-  --secondary: oklch(0.968 0.002 285);
-  --secondary-foreground: oklch(0.28 0.008 285);
-  --muted: oklch(0.968 0.002 285);
-  --muted-foreground: oklch(0.55 0.012 285);
-  --accent: oklch(0.968 0.002 285);
-  --accent-foreground: oklch(0.28 0.008 285);
+  --secondary: oklch(0.96 0.005 95);
+  --secondary-foreground: oklch(0.32 0.01 95);
+  --muted: oklch(0.96 0.005 95);
+  --muted-foreground: oklch(0.55 0.012 95);
+  --accent: oklch(0.96 0.005 95);
+  --accent-foreground: oklch(0.32 0.01 95);
 
-  /* Seal vermilion (shu) — the ink of a decision made. Overridable per user. */
-  --seal: oklch(0.58 0.19 28);
-  --seal-soft: oklch(0.955 0.022 30);
-  --seal-foreground: oklch(0.99 0.003 285);
+  /* Pine green — progress, completion, live state. Overridable per user. */
+  --seal: oklch(0.52 0.11 160);
+  --seal-soft: oklch(0.96 0.03 160);
+  --seal-foreground: oklch(0.99 0 0);
 
-  --destructive: oklch(0.58 0.21 27);
-  --border: oklch(0.21 0.006 285 / 9%);
-  --input: oklch(0.21 0.006 285 / 14%);
-  --ring: oklch(0.58 0.19 28 / 45%);
+  --status-progress: oklch(0.55 0.15 255);
+  --status-progress-soft: oklch(0.96 0.02 255);
+  --status-review: oklch(0.62 0.13 70);
+  --status-review-soft: oklch(0.96 0.03 70);
+  --status-approved: oklch(0.52 0.11 160);
+  --status-approved-soft: oklch(0.96 0.03 160);
+  --status-idle: oklch(0.55 0.012 95);
+  --status-idle-soft: oklch(0.96 0.005 95);
 
-  --chart-1: oklch(0.42 0.06 275);
-  --chart-2: oklch(0.58 0.19 28);
-  --chart-3: oklch(0.55 0.012 285);
-  --chart-4: oklch(0.62 0.1 275);
-  --chart-5: oklch(0.7 0.12 30);
+  --destructive: oklch(0.55 0.19 25);
+  --border: oklch(0.24 0.01 95 / 10%);
+  --input: oklch(0.24 0.01 95 / 14%);
+  --ring: oklch(0.52 0.11 160 / 45%);
 
-  /* Generous radii: 14px base reads as a soft card rather than a ruled panel. */
-  --radius: 0.875rem;
+  --chart-1: oklch(0.52 0.11 160);
+  --chart-2: oklch(0.55 0.15 255);
+  --chart-3: oklch(0.62 0.13 70);
+  --chart-4: oklch(0.55 0.012 95);
+  --chart-5: oklch(0.6 0.09 200);
+
+  /* Tight radii: 10px base keeps cards crisp against the hairline rules. */
+  --radius: 0.625rem;
 
   --shadow-soft-value: 0 1px 2px oklch(0.21 0.006 285 / 4%),
     0 1px 3px oklch(0.21 0.006 285 / 3%);
@@ -143,40 +165,49 @@
 .dark {
   color-scheme: dark;
 
-  --background: oklch(0.16 0.006 285);
-  --foreground: oklch(0.96 0.003 285);
+  --background: oklch(0.185 0.006 95);
+  --foreground: oklch(0.95 0.004 95);
 
-  --card: oklch(0.2 0.007 285);
-  --card-foreground: oklch(0.96 0.003 285);
-  --popover: oklch(0.2 0.007 285);
-  --popover-foreground: oklch(0.96 0.003 285);
+  --card: oklch(0.225 0.007 95);
+  --card-foreground: oklch(0.95 0.004 95);
+  --popover: oklch(0.225 0.007 95);
+  --popover-foreground: oklch(0.95 0.004 95);
 
-  --primary: oklch(0.96 0.003 285);
-  --primary-foreground: oklch(0.18 0.006 285);
-  --sumi: oklch(0.78 0.05 275);
-  --sumi-soft: oklch(0.28 0.03 275);
+  --primary: oklch(0.93 0.004 95);
+  --primary-foreground: oklch(0.2 0.006 95);
+  --sumi: oklch(0.75 0.012 95);
+  --sumi-soft: oklch(0.3 0.008 95);
 
-  --secondary: oklch(0.25 0.008 285);
-  --secondary-foreground: oklch(0.93 0.004 285);
-  --muted: oklch(0.25 0.008 285);
-  --muted-foreground: oklch(0.68 0.01 285);
-  --accent: oklch(0.27 0.009 285);
-  --accent-foreground: oklch(0.93 0.004 285);
+  --secondary: oklch(0.27 0.008 95);
+  --secondary-foreground: oklch(0.92 0.004 95);
+  --muted: oklch(0.27 0.008 95);
+  --muted-foreground: oklch(0.68 0.012 95);
+  --accent: oklch(0.29 0.008 95);
+  --accent-foreground: oklch(0.92 0.004 95);
 
-  --seal: oklch(0.68 0.17 30);
-  --seal-soft: oklch(0.3 0.06 30);
-  --seal-foreground: oklch(0.16 0.006 285);
+  --seal: oklch(0.68 0.11 160);
+  --seal-soft: oklch(0.3 0.05 160);
+  --seal-foreground: oklch(0.18 0.006 95);
 
-  --destructive: oklch(0.66 0.2 28);
+  --status-progress: oklch(0.7 0.13 255);
+  --status-progress-soft: oklch(0.3 0.05 255);
+  --status-review: oklch(0.74 0.12 70);
+  --status-review-soft: oklch(0.32 0.05 70);
+  --status-approved: oklch(0.68 0.11 160);
+  --status-approved-soft: oklch(0.3 0.05 160);
+  --status-idle: oklch(0.68 0.012 95);
+  --status-idle-soft: oklch(0.29 0.008 95);
+
+  --destructive: oklch(0.66 0.18 25);
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.17 30 / 50%);
+  --ring: oklch(0.68 0.11 160 / 50%);
 
-  --chart-1: oklch(0.78 0.05 275);
-  --chart-2: oklch(0.68 0.17 30);
-  --chart-3: oklch(0.68 0.01 285);
-  --chart-4: oklch(0.6 0.07 275);
-  --chart-5: oklch(0.74 0.11 32);
+  --chart-1: oklch(0.68 0.11 160);
+  --chart-2: oklch(0.7 0.13 255);
+  --chart-3: oklch(0.74 0.12 70);
+  --chart-4: oklch(0.68 0.012 95);
+  --chart-5: oklch(0.72 0.08 200);
 
   --shadow-soft-value: 0 1px 2px oklch(0 0 0 / 30%);
   --shadow-lifted-value: 0 2px 4px oklch(0 0 0 / 30%), 0 8px 20px oklch(0 0 0 / 35%);

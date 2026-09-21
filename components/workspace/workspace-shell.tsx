@@ -1,22 +1,44 @@
 'use client'
 
 import { getProjectWorkspace } from '@/app/actions/projects'
-import { LanguageSelector } from '@/components/i18n/language-selector'
-import { useLocale } from '@/components/i18n/locale-provider'
-import { ChatModule, type ChatFocus } from '@/components/workspace/chat-module'
-import { OkrTree } from '@/components/workspace/okr-tree'
-import { ProjectsRail } from '@/components/workspace/projects-rail'
-import { ResearchPanel } from '@/components/workspace/research-panel'
-import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
-import { SettingsPanel } from '@/components/workspace/settings-panel'
-import { SignOutButton } from '@/components/sign-out-button'
-import type { OrientationRecord } from '@/app/actions/orientation'
 import type { ProjectRow } from '@/app/actions/projects'
-import { format } from '@/lib/i18n'
-import { Microscope, Settings } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import type { OrientationRecord } from '@/app/actions/orientation'
+import { useLocale } from '@/components/i18n/locale-provider'
+import {
+  ChatModule,
+  type ChatFocus,
+  type ChatSeed,
+} from '@/components/workspace/chat-module'
+import { ResearchPanel } from '@/components/workspace/research-panel'
+import { SettingsPanel } from '@/components/workspace/settings-panel'
+import { Sidebar, type TabKey } from '@/components/workspace/sidebar'
+import { TopBar } from '@/components/workspace/topbar'
+import { ReviewCard } from '@/components/workspace/review-card'
+import { DecisionsTab } from '@/components/workspace/tabs/decisions-tab'
+import { DepartmentsTab } from '@/components/workspace/tabs/departments-tab'
+import { EvidenceTab } from '@/components/workspace/tabs/evidence-tab'
+import { LearningTab } from '@/components/workspace/tabs/learning-tab'
+import { OverviewTab } from '@/components/workspace/tabs/overview-tab'
+import { WorkTab } from '@/components/workspace/tabs/work-tab'
+import { Waypoints } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import useSWR from 'swr'
+
+const TAB_KEYS: TabKey[] = [
+  'overview',
+  'work',
+  'decisions',
+  'departments',
+  'evidence',
+  'learning',
+  'orchestrator',
+]
+
+function initialTab(): TabKey {
+  if (typeof window === 'undefined') return 'overview'
+  const param = new URLSearchParams(window.location.search).get('tab')
+  return TAB_KEYS.includes(param as TabKey) ? (param as TabKey) : 'overview'
+}
 
 interface WorkspaceShellProps {
   orientation: OrientationRecord
@@ -33,18 +55,18 @@ export function WorkspaceShell({
   accentKey,
 }: WorkspaceShellProps) {
   const { t } = useLocale()
-  const router = useRouter()
   const [selectedId, setSelectedId] = useState<string | null>(
     projects[0]?.id ?? null,
   )
-  // Which sub-goal's execution panel is open, and which agent the sidebar is
-  // talking to. The orchestrator is the default conversation because it is the
-  // layer the user coordinates through; drilling into a sub-agent from the
-  // sub-goal panel overrides it until the user goes back.
-  const [openSubGoalId, setOpenSubGoalId] = useState<string | null>(null)
+  const [tab, setTab] = useState<TabKey>(initialTab)
+  const [returnTab, setReturnTab] = useState<TabKey>('overview')
+  const [query, setQuery] = useState('')
   const [chatFocus, setChatFocus] = useState<ChatFocus | null>({
     kind: 'orchestrator',
   })
+  const [seed, setSeed] = useState<ChatSeed | null>(null)
+  const [workObjectiveId, setWorkObjectiveId] = useState<string | null>(null)
+  const [deptBotId, setDeptBotId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [researchOpen, setResearchOpen] = useState(false)
 
@@ -54,6 +76,8 @@ export function WorkspaceShell({
     selectedId && projects.some((project) => project.id === selectedId)
       ? selectedId
       : (projects[0]?.id ?? null)
+  const activeProject =
+    projects.find((project) => project.id === activeId) ?? null
 
   const { data: workspace } = useSWR(
     activeId ? ['workspace', activeId] : null,
@@ -61,138 +85,176 @@ export function WorkspaceShell({
     { revalidateOnFocus: false },
   )
 
+  // The open view lives in the URL so a refresh lands where the user left off.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    params.set('tab', tab)
+    window.history.replaceState(null, '', `?${params.toString()}`)
+  }, [tab])
+
+  function goTo(next: TabKey) {
+    if (next === 'orchestrator') {
+      setReturnTab(tab === 'orchestrator' ? returnTab : tab)
+      setChatFocus({ kind: 'orchestrator' })
+    }
+    setTab(next)
+  }
+
+  function openConversation(focus: ChatFocus) {
+    setReturnTab(tab === 'orchestrator' ? returnTab : tab)
+    setChatFocus(focus)
+    setTab('orchestrator')
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <header className="surface-translucent flex shrink-0 items-center gap-4 border-b border-border px-5 py-3">
-        <div className="flex items-baseline gap-2.5">
-          <span className="font-serif text-2xl leading-none tracking-tight text-foreground">
-            古事記
-          </span>
-          <span className="hidden text-sm text-muted-foreground sm:block">Kojiki</span>
-        </div>
-
-        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
-
-        <dl className="flex min-w-0 items-center gap-4 text-sm">
-          <div className="flex shrink-0 items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{t.workspace.userLabel}</dt>
-            <dd className="font-medium text-foreground">{orientation.userName}</dd>
-          </div>
-          <div className="hidden min-w-0 items-baseline gap-1.5 md:flex">
-            <dt className="shrink-0 text-muted-foreground">
-              {t.workspace.industryLabel}
-            </dt>
-            <dd className="truncate text-foreground">{orientation.industry}</dd>
-          </div>
-          <div className="hidden min-w-0 items-baseline gap-1.5 xl:flex">
-            <dt className="shrink-0 text-muted-foreground">
-              {t.workspace.goalLabel}
-            </dt>
-            <dd className="truncate text-foreground">{orientation.goal}</dd>
-          </div>
-        </dl>
-
-        <div className="ml-auto flex items-center gap-3">
-          <LanguageSelector />
-
-          <button
-            type="button"
-            onClick={() => setResearchOpen(true)}
-            disabled={!activeId}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground disabled:opacity-40"
-          >
-            <Microscope className="size-3.5" aria-hidden="true" />
-            {t.research.openButton}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
-          >
-            <Settings className="size-3.5" aria-hidden="true" />
-            {t.workspace.settings}
-          </button>
-
-          <p className="hidden items-center gap-2 text-sm text-muted-foreground lg:flex">
-            {userName
-              ? format(t.workspace.signedInAs, { name: userName })
-              : t.workspace.orientationComplete}
-            {userName && (
-              <>
-                <span aria-hidden="true">·</span>
-                <SignOutButton />
-              </>
-            )}
-          </p>
-        </div>
-      </header>
-
-      <ProjectsRail
+      <TopBar
         projects={projects}
-        selectedId={activeId}
+        activeId={activeId}
         onSelect={(projectId) => {
           setSelectedId(projectId)
-          // A sub-goal from another project is not open in this one.
-          setOpenSubGoalId(null)
+          setWorkObjectiveId(null)
+          setDeptBotId(null)
           setChatFocus({ kind: 'orchestrator' })
         }}
         onCreated={(project) => {
-          router.refresh()
           setSelectedId(project.id)
-          setOpenSubGoalId(null)
+          setWorkObjectiveId(null)
+          setDeptBotId(null)
           setChatFocus({ kind: 'orchestrator' })
         }}
+        query={query}
+        onQueryChange={setQuery}
+        userName={userName}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenResearch={() => setResearchOpen(true)}
+        onOpenDecisions={() => goTo('decisions')}
       />
 
-      <div className="flex min-h-0 flex-1">
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          {activeId && workspace ? (
-            openSubGoalId ? (
-              <SubGoalPanel
-                key={openSubGoalId}
-                objectiveId={openSubGoalId}
+      {tab === 'orchestrator' && activeId && workspace ? (
+        <div className="flex min-h-0 flex-1 justify-center">
+          <div className="flex min-h-0 w-full max-w-3xl flex-col px-4 py-5">
+            <div className="flex shrink-0 items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card">
+                <Waypoints className="size-4 text-foreground" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  {t.tabs.orchestrator.brand} / {t.nav.orchestrator}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {t.tabs.orchestrator.subtitle}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTab(returnTab)}
+                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {t.tabs.orchestrator.collapse}
+              </button>
+            </div>
+
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+              <ReviewCard
+                projectId={activeId}
                 bots={workspace.bots}
-                onBack={() => setOpenSubGoalId(null)}
-                onTalkToSubAgent={(subAgent) =>
-                  setChatFocus({ kind: 'sub_agent', ...subAgent })
-                }
+                onAskDepartment={(botId) => setChatFocus({ kind: 'bot', botId })}
+                onOpenObjective={(objectiveId) => {
+                  setWorkObjectiveId(objectiveId)
+                  setTab('work')
+                }}
               />
-            ) : (
-              <OkrTree
+            </div>
+
+            <div className="mt-3 flex shrink-0 flex-wrap gap-1.5">
+              {t.tabs.orchestrator.suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() =>
+                    setSeed({ text: suggestion, nonce: Date.now() })
+                  }
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-3 flex min-h-[22rem] shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+              <ChatModule
                 projectId={activeId}
                 projectName={workspace.project.name}
                 bots={workspace.bots}
-                onOpenSubGoal={setOpenSubGoalId}
+                focus={chatFocus}
+                onFocusChange={setChatFocus}
+                seed={seed}
               />
-            )
-          ) : (
-            <EmptyWorkspace hasProjects={projects.length > 0} />
-          )}
-        </main>
-
-        <aside className="hidden w-[25rem] shrink-0 flex-col border-l border-border bg-sidebar lg:flex xl:w-[28rem]">
-          {activeId && workspace ? (
-            <ChatModule
-              projectId={activeId}
-              projectName={workspace.project.name}
-              bots={workspace.bots}
-              focus={chatFocus}
-              onFocusChange={setChatFocus}
-            />
-          ) : (
-            <div className="flex flex-1 items-center justify-center p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {t.workspace.sidebarEmpty}
-              </p>
             </div>
-          )}
-        </aside>
-      </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <Sidebar
+            projectName={activeProject?.name ?? null}
+            projectMeta={activeProject?.objective ?? null}
+            tab={tab}
+            onTab={goTo}
+          />
+
+          <main className="min-w-0 flex-1 overflow-y-auto">
+            {activeId && workspace ? (
+              <>
+                {tab === 'overview' && (
+                  <OverviewTab
+                    projectId={activeId}
+                    projectName={workspace.project.name}
+                    projectObjective={workspace.project.objective}
+                    onOpenWork={() => goTo('work')}
+                    onOpenDecisions={() => goTo('decisions')}
+                    onChatWithBot={(botId) =>
+                      openConversation({ kind: 'bot', botId })
+                    }
+                  />
+                )}
+                {tab === 'work' && (
+                  <WorkTab
+                    projectId={activeId}
+                    selectedId={workObjectiveId}
+                    onSelect={setWorkObjectiveId}
+                    onTalkToSubAgent={openConversation}
+                  />
+                )}
+                {tab === 'decisions' && (
+                  <DecisionsTab projectId={activeId} query={query} />
+                )}
+                {tab === 'departments' && (
+                  <DepartmentsTab
+                    projectId={activeId}
+                    query={query}
+                    selectedBotId={deptBotId}
+                    onSelectBot={setDeptBotId}
+                    onChatWithBot={(botId) =>
+                      openConversation({ kind: 'bot', botId })
+                    }
+                  />
+                )}
+                {tab === 'evidence' && (
+                  <EvidenceTab projectId={activeId} query={query} />
+                )}
+                {tab === 'learning' && <LearningTab projectId={activeId} />}
+              </>
+            ) : (
+              <EmptyWorkspace hasProjects={projects.length > 0} />
+            )}
+          </main>
+        </div>
+      )}
 
       {researchOpen && (
         <ResearchPanel
-          project={projects.find((project) => project.id === activeId) ?? null}
+          project={activeProject}
           orientation={orientation}
           onClose={() => setResearchOpen(false)}
         />
@@ -218,7 +280,7 @@ function EmptyWorkspace({ hasProjects }: { hasProjects: boolean }) {
         <p className="font-serif text-6xl leading-none text-border" aria-hidden="true">
           目
         </p>
-        <h2 className="mt-6 font-serif text-2xl text-balance text-foreground">
+        <h2 className="mt-6 text-2xl font-semibold text-balance text-foreground">
           {hasProjects
             ? t.workspace.noneSelectedTitle
             : t.workspace.noneYetTitle}

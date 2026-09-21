@@ -228,6 +228,51 @@ export async function getHomePayload(projectId: string): Promise<HomePayload> {
   }
 }
 
+/** The measured criteria of one objective, at any depth in the tree. */
+export async function getObjectiveKeyResults(
+  objectiveId: string,
+): Promise<KeyResultRow[]> {
+  const userId = await getUserId()
+
+  const [objective] = await db
+    .select()
+    .from(objectives)
+    .where(and(eq(objectives.id, objectiveId), eq(objectives.userId, userId)))
+    .limit(1)
+  if (!objective) throw new Error('Objective not found')
+
+  const tasks = await db
+    .select()
+    .from(subAgentTasks)
+    .where(
+      and(eq(subAgentTasks.userId, userId), eq(subAgentTasks.objectiveId, objectiveId)),
+    )
+
+  const rows: KeyResultRow[] = []
+  for (const task of tasks) {
+    const criteria = (task.successCriteria ?? []) as Criterion[]
+    const actuals = actualsOf(task)
+    for (const criterion of criteria) {
+      const target = Number(criterion.target)
+      const actual = actuals[criterion.metric]
+      rows.push({
+        taskId: task.id,
+        taskTitle: task.title,
+        metric: criterion.metric,
+        target,
+        operator: criterion.operator,
+        weight: Number(criterion.weight ?? 1),
+        actual: actual === undefined ? null : actual,
+        met:
+          actual === undefined || Number.isNaN(target)
+            ? null
+            : meets(criterion.operator, actual, target),
+      })
+    }
+  }
+  return rows
+}
+
 // ---------------------------------------------------------------------------
 // Departments
 // ---------------------------------------------------------------------------
@@ -368,6 +413,21 @@ export async function listReusableLearnings(projectId: string): Promise<Learning
     )
     .orderBy(desc(kaizenExperiences.recordedAt))
     .limit(50)
+}
+
+/** Every Kaizen experience in the project — the Learning tab's raw material. */
+export async function listProjectLearnings(projectId: string): Promise<LearningRow[]> {
+  const userId = await getUserId()
+  await assertProjectOwnership(userId, projectId)
+
+  return db
+    .select()
+    .from(kaizenExperiences)
+    .where(
+      and(eq(kaizenExperiences.projectId, projectId), eq(kaizenExperiences.userId, userId)),
+    )
+    .orderBy(desc(kaizenExperiences.recordedAt))
+    .limit(100)
 }
 
 // ---------------------------------------------------------------------------

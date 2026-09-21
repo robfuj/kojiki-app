@@ -60,12 +60,12 @@ export const ACCENTS: readonly Accent[] = [
   {
     key: 'green',
     label: 'Pine green',
-    seal: 'oklch(0.55 0.14 160)',
-    sealSoft: 'oklch(0.955 0.022 160)',
-    sealForeground: 'oklch(0.99 0.003 285)',
-    darkSeal: 'oklch(0.68 0.13 160)',
+    seal: 'oklch(0.52 0.11 160)',
+    sealSoft: 'oklch(0.96 0.03 160)',
+    sealForeground: 'oklch(0.99 0 0)',
+    darkSeal: 'oklch(0.68 0.11 160)',
     darkSealSoft: 'oklch(0.3 0.05 160)',
-    swatch: '#1D8A55',
+    swatch: '#1E7F5C',
   },
   {
     key: 'amber',
@@ -90,7 +90,7 @@ export const ACCENTS: readonly Accent[] = [
   },
 ]
 
-export const DEFAULT_ACCENT_KEY = 'seal'
+export const DEFAULT_ACCENT_KEY = 'green'
 
 export function accentByKey(key: string | null | undefined): Accent {
   return ACCENTS.find((accent) => accent.key === key) ?? ACCENTS[0]
