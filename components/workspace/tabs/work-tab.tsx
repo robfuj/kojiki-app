@@ -170,7 +170,9 @@ export function WorkTab({
               objectiveId={selected.id}
               bots={workspace?.bots ?? []}
               onBack={() => onSelect(root?.id ?? null)}
-              onTalkToSubAgent={onTalkToSubAgent}
+              onTalkToSubAgent={(input) =>
+                onTalkToSubAgent({ kind: 'sub_agent', ...input })
+              }
             />
           </div>
         )}
