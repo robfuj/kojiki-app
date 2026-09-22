@@ -1,28 +1,23 @@
 'use client'
 
-import { listDocuments } from '@/app/actions/documents'
 import {
   getHomePayload,
   getProjectReport,
   listDepartmentWork,
-  listProjectDecisions,
+  listProjectGates,
 } from '@/app/actions/workspace'
 import { useLocale } from '@/components/i18n/locale-provider'
-import { ReportsSection } from '@/components/workspace/reports-section'
-import { Sparkline } from '@/components/workspace/sparkline'
 import {
   AvatarCircle,
   Card,
-  Eyebrow,
   ProgressBar,
   StatusPill,
-  departmentIcon,
   toneForStatus,
   useRelativeTime,
 } from '@/components/workspace/ui/primitives'
 import { format } from '@/lib/i18n'
-import { ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { Coins, ListChecks, Scale, Target } from 'lucide-react'
 import useSWR from 'swr'
 
 interface OverviewTabProps {
@@ -34,9 +29,26 @@ interface OverviewTabProps {
   onChatWithBot: (botId: string) => void
 }
 
+const DOT_TONE: Record<string, string> = {
+  progress: 'bg-status-progress',
+  review: 'bg-status-review',
+  approved: 'bg-status-approved',
+  idle: 'bg-status-idle',
+}
+
+const BUBBLE_TONES = [
+  'bg-primary/15 text-primary',
+  'bg-status-review-soft text-status-review',
+  'bg-status-approved-soft text-status-approved',
+  'bg-status-progress-soft text-status-progress',
+]
+
+const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
+
 /**
- * The project's front page: where the whole effort stands, the organisation
- * carrying it, the decisions just made, and the numbers behind all three.
+ * The bento board: one stat strip, then an asymmetric grid — the live work
+ * table, the stage load chart, the company objective on ink, department
+ * bubbles and the gate queue.
  */
 export function OverviewTab({
   projectId,
@@ -49,234 +61,345 @@ export function OverviewTab({
   const { t } = useLocale()
   const labels = t.tabs.overview
   const relative = useRelativeTime()
-  const [reportOpen, setReportOpen] = useState(false)
 
   const { data: home } = useSWR(['home', projectId], () =>
     getHomePayload(projectId),
   )
-  const { data: departments } = useSWR(['departments', projectId], () =>
-    listDepartmentWork(projectId),
-  )
-  const { data: decisions } = useSWR(['decisions', projectId], () =>
-    listProjectDecisions(projectId),
-  )
   const { data: report } = useSWR(['report', projectId], () =>
     getProjectReport(projectId),
   )
-  const { data: documents } = useSWR(['documents', projectId], () =>
-    listDocuments(projectId),
+  const { data: gates } = useSWR(['gates', projectId], () =>
+    listProjectGates(projectId),
+  )
+  const { data: departments } = useSWR(['departments', projectId], () =>
+    listDepartmentWork(projectId),
   )
 
-  const overall = home?.root?.progress ?? report?.averageProgress ?? 0
-  const gatesPending = report?.gatesPending ?? 0
-  const botName = (botId: string | null) =>
-    departments?.find((dept) => dept.botId === botId)?.displayName ?? '—'
-  const signalTotal = report
-    ? Object.values(report.signalsByKind).reduce((sum, n) => sum + n, 0)
-    : 0
-  const activeDepartments =
-    departments?.filter((dept) => dept.objectives.length > 0).length ?? 0
+  if (!home || !report) {
+    return (
+      <div className="space-y-4 px-6 py-6">
+        <div className="h-24 animate-pulse rounded-2xl bg-muted/60" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/60 lg:col-span-2" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/60" />
+        </div>
+      </div>
+    )
+  }
+
+  const pendingGates = (gates ?? []).filter((gate) => gate.status === 'pending')
+  const doneTasks = report.tasksByStatus.done ?? 0
+  const stages = Object.entries(report.tasksByStatus).filter(
+    ([, count]) => count > 0,
+  )
+  const maxStage = Math.max(1, ...stages.map(([, count]) => count))
+  const objectives = home.objectives.filter((objective) => !objective.isRoot)
+
+  const bubbles = (departments ?? []).map((department) => {
+    const open = department.tasks.filter(
+      (task) => !CLOSED_TASK_STATUSES.includes(task.status),
+    ).length
+    return { ...department, open }
+  })
+  const maxOpen = Math.max(1, ...bubbles.map((bubble) => bubble.open))
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 px-6 py-6">
-      <Card className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <Eyebrow>{labels.eyebrow}</Eyebrow>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance text-foreground">
-              {projectName}
-            </h1>
-            {projectObjective && (
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-pretty text-muted-foreground">
-                {projectObjective}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onOpenWork}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            {labels.viewDetails}
-            <ChevronRight className="size-3.5" aria-hidden="true" />
-          </button>
+    <div className="space-y-4 px-6 py-6">
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
+            {projectName}
+          </h1>
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+            {projectObjective ?? ''}
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={onOpenWork}
+          className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {labels.viewDetails}
+        </button>
+      </div>
 
-        <div className="mt-5">
-          <ProgressBar value={overall} className="max-w-md" />
-          <div className="mt-2.5 flex flex-wrap items-center gap-3">
-            <p className="text-xs text-muted-foreground">
-              {format(labels.overallProgress, { percent: overall })}
-            </p>
-            <StatusPill tone="approved">{labels.active}</StatusPill>
-            <StatusPill tone={gatesPending > 0 ? 'review' : 'idle'}>
-              {gatesPending === 1
-                ? labels.gate
-                : format(labels.gates, { count: gatesPending })}
-            </StatusPill>
-            {home?.root && home.root.history.length > 1 && (
-              <Sparkline
-                values={home.root.history.map((point) => point.progress)}
-                className="h-6 w-24 text-seal"
-              />
-            )}
-          </div>
-        </div>
+      <Card className="grid grid-cols-2 divide-y divide-border overflow-hidden p-0 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+        <StatCell
+          icon={Target}
+          label={labels.objectives}
+          value={String(report.objectiveCount)}
+          sub={format(labels.rootProgress, {
+            percent: String(report.rootProgress ?? 0),
+          })}
+        />
+        <StatCell
+          icon={ListChecks}
+          label={labels.tasks}
+          value={String(report.taskCount)}
+          sub={format(labels.done, { count: String(doneTasks) })}
+        />
+        <StatCell
+          icon={Scale}
+          label={labels.gateQueue}
+          value={String(report.gatesPending)}
+          sub={format(labels.decided, { count: String(report.gatesDecided) })}
+        />
+        <StatCell
+          icon={Coins}
+          label={labels.spend}
+          value={`$${report.totalCostUsd.toFixed(2)}`}
+          sub={format(labels.tokens, {
+            count: `${(report.totalTokens / 1000).toFixed(1)}k`,
+          })}
+        />
       </Card>
 
-      <section aria-label={labels.organization}>
-        <h2 className="text-sm font-medium text-foreground">
-          {labels.organization}
-        </h2>
-        {departments && departments.length > 0 ? (
-          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {departments.map((dept) => {
-              const Icon = departmentIcon(dept.specialistKey)
-              const progress =
-                dept.objectives.length === 0
-                  ? 0
-                  : Math.round(
-                      dept.objectives.reduce(
-                        (sum, objective) => sum + objective.progress,
-                        0,
-                      ) / dept.objectives.length,
-                    )
-
-              return (
-                <Card key={dept.botId} className="flex flex-col p-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <Icon className="size-4 text-foreground" aria-hidden="true" />
-                    </span>
-                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                      {dept.displayName}
-                    </p>
-                    <p className="text-xs tabular-nums text-muted-foreground">
-                      {progress}%
-                    </p>
-                  </div>
-                  <ProgressBar value={progress} className="mt-3" />
-                  <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                    {dept.mandate ?? dept.functionLine}
-                  </p>
-                  <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
-                    <AvatarCircle name={dept.displayName} className="size-6" />
-                    <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                      {dept.displayName}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => onChatWithBot(dept.botId)}
-                      className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      {labels.chat}
-                    </button>
-                  </div>
-                </Card>
-              )
-            })}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="p-0 lg:col-span-2">
+          <div className="flex items-center justify-between px-5 py-4">
+            <p className="text-sm font-medium text-foreground">{labels.liveWork}</p>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {objectives.length}
+            </span>
           </div>
-        ) : (
-          <p className="mt-3 rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
-            {labels.emptyDepartments}
+          {objectives.length === 0 ? (
+            <p className="px-5 pb-6 text-sm text-muted-foreground">
+              {labels.emptyDepartments}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border border-t border-border">
+              {objectives.slice(0, 7).map((objective) => (
+                <li
+                  key={objective.id}
+                  className="flex items-center gap-3 px-5 py-3"
+                >
+                  <span
+                    className={cn(
+                      'size-2 shrink-0 rounded-full',
+                      DOT_TONE[toneForStatus(objective.status)],
+                    )}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {objective.title}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {objective.ownerName ?? '—'}
+                    </p>
+                  </div>
+                  <div className="hidden w-24 shrink-0 sm:block">
+                    <ProgressBar value={objective.progress} />
+                  </div>
+                  <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                    {objective.progress}%
+                  </span>
+                  <span className="hidden shrink-0 text-[11px] tabular-nums text-muted-foreground md:block">
+                    {format(labels.tasksDone, {
+                      done: String(objective.doneTaskCount),
+                      total: String(objective.taskCount),
+                    })}
+                  </span>
+                  <StatusPill tone={toneForStatus(objective.status)}>
+                    {objective.status.replace(/_/g, ' ')}
+                  </StatusPill>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <p className="text-sm font-medium text-foreground">{labels.stageLoad}</p>
+          {stages.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">{labels.noGates}</p>
+          ) : (
+            <div className="mt-5 flex h-36 items-end gap-2">
+              {stages.map(([status, count]) => (
+                <div
+                  key={status}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                >
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {count}
+                  </span>
+                  <div
+                    className={cn(
+                      'w-full rounded-full',
+                      count === maxStage ? 'bg-primary' : 'bg-muted',
+                    )}
+                    style={{ height: `${Math.max(8, (count / maxStage) * 100)}%` }}
+                  />
+                  <span className="w-full truncate text-center text-[10px] text-muted-foreground">
+                    {status.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <div className="rounded-2xl bg-foreground p-5 text-background shadow-soft">
+          <p className="text-[11px] font-medium tracking-[0.14em] text-background/60 uppercase">
+            {labels.companyObjective}
           </p>
-        )}
-      </section>
-
-      <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
-        <Card>
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="text-sm font-medium text-foreground">
-              {labels.recentDecisions}
-            </h2>
-            <button
-              type="button"
-              onClick={onOpenDecisions}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {t.tabs.decisions.all}
-              <ChevronRight className="size-3" aria-hidden="true" />
-            </button>
+          <p className="mt-2.5 text-lg leading-snug font-semibold text-balance">
+            {home.root?.title ?? projectObjective ?? '—'}
+          </p>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-background/20">
+            <div
+              className="h-full rounded-full bg-background"
+              style={{ width: `${home.root?.progress ?? 0}%` }}
+            />
           </div>
-          {decisions && decisions.length > 0 ? (
-            <ul className="divide-y divide-border">
-              {decisions.slice(0, 5).map((decision) => (
-                <li key={decision.id}>
+          <p className="mt-2 text-xs text-background/70">
+            {format(labels.overallProgress, {
+              percent: String(home.root?.progress ?? report.averageProgress),
+            })}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {Object.entries(report.objectivesByStatus)
+              .filter(([, count]) => count > 0)
+              .map(([status, count]) => (
+                <span
+                  key={status}
+                  className="rounded-full bg-background/10 px-2 py-0.5 text-[10px] font-medium tabular-nums"
+                >
+                  {status.replace(/_/g, ' ')} · {count}
+                </span>
+              ))}
+          </div>
+        </div>
+
+        <Card className="p-5">
+          <p className="text-sm font-medium text-foreground">
+            {labels.departmentLoad}
+          </p>
+          {bubbles.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              {labels.emptyDepartments}
+            </p>
+          ) : (
+            <>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                {bubbles.map((bubble, index) => {
+                  const size = 56 + Math.round((bubble.open / maxOpen) * 64)
+                  return (
+                    <button
+                      key={bubble.botId}
+                      type="button"
+                      onClick={() => onChatWithBot(bubble.botId)}
+                      title={bubble.displayName}
+                      aria-label={bubble.displayName}
+                      style={{ width: size, height: size }}
+                      className={cn(
+                        'flex items-center justify-center rounded-full transition-transform hover:scale-105',
+                        BUBBLE_TONES[index % BUBBLE_TONES.length],
+                      )}
+                    >
+                      <span className="text-sm font-semibold tabular-nums">
+                        {bubble.open}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {bubbles.map((bubble, index) => (
+                  <span
+                    key={bubble.botId}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      BUBBLE_TONES[index % BUBBLE_TONES.length],
+                    )}
+                  >
+                    {bubble.displayName}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card className="p-0">
+          <div className="flex items-center justify-between px-5 py-4">
+            <p className="text-sm font-medium text-foreground">{labels.gateQueue}</p>
+            <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-status-review">
+              {pendingGates.length}
+            </span>
+          </div>
+          {pendingGates.length === 0 ? (
+            <p className="border-t border-border px-5 py-6 text-sm text-muted-foreground">
+              {labels.noGates}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border border-t border-border">
+              {pendingGates.slice(0, 5).map((gate) => (
+                <li key={gate.id} className="flex items-center gap-3 px-5 py-3">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-status-review-soft text-status-review">
+                    <Scale className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {gate.title}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {gate.requestedByTitle} · {relative(gate.createdAt)}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={onOpenDecisions}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
                   >
-                    <span className="w-20 shrink-0 font-mono text-[11px] text-muted-foreground">
-                      {decision.id.slice(0, 8)}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      {decision.title}
-                    </span>
-                    <span className="hidden w-24 shrink-0 truncate text-xs text-muted-foreground sm:block">
-                      {botName(decision.botId)}
-                    </span>
-                    <StatusPill tone={toneForStatus(decision.status)}>
-                      {t.tabs.decisions.statuses[
-                        decision.status as 'proposed' | 'accepted' | 'rejected'
-                      ] ?? t.tabs.decisions.statuses.other}
-                    </StatusPill>
-                    <span className="w-16 shrink-0 text-right text-[11px] text-muted-foreground">
-                      {relative(decision.createdAt)}
-                    </span>
+                    {labels.viewDetails}
                   </button>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="px-4 py-6 text-sm text-muted-foreground">
-              {t.tabs.decisions.none}
-            </p>
           )}
         </Card>
 
-        <Card className="p-4">
-          <h2 className="text-sm font-medium text-foreground">
-            {labels.keyMetrics}
-          </h2>
-          <dl className="mt-3 space-y-2.5">
-            <MetricRow
-              label={labels.totalDecisions}
-              value={String(decisions?.length ?? 0)}
-            />
-            <MetricRow
-              label={labels.departmentsActive}
-              value={`${activeDepartments} / ${departments?.length ?? 0}`}
-            />
-            <MetricRow
-              label={labels.evidenceItems}
-              value={String(documents?.length ?? 0)}
-            />
-            <MetricRow label={labels.signals} value={String(signalTotal)} />
-          </dl>
-          <button
-            type="button"
-            onClick={() => setReportOpen((v) => !v)}
-            aria-expanded={reportOpen}
-            className="mt-4 text-xs font-medium text-seal transition-opacity hover:opacity-80"
-          >
-            {reportOpen ? labels.hideReport : labels.fullReport}
-          </button>
+        <Card className="flex items-center gap-4 p-5">
+          <AvatarCircle name={projectName} className="size-12 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">{labels.active}</p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {format(labels.gates, { count: String(report.gatesPending) })} ·{' '}
+              {format(labels.signals, {})}
+            </p>
+          </div>
         </Card>
       </div>
-
-      {reportOpen && report && <ReportsSection report={report} />}
     </div>
   )
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
+function StatCell({
+  icon: Icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: typeof Target
+  label: string
+  value: string
+  sub: string
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium tabular-nums text-foreground">
-        {value}
-      </dd>
+    <div className="flex items-center gap-3 px-5 py-4">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          {label}
+        </p>
+        <p className="mt-0.5 truncate text-xl font-semibold tabular-nums text-foreground">
+          {value}
+        </p>
+        <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
+      </div>
     </div>
   )
 }

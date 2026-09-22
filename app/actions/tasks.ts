@@ -41,6 +41,16 @@ import { buildSubAgentBrief } from '@/lib/ontology/brief'
 import { getSubAgent, subAgentsOf } from '@/lib/ontology/specialists'
 import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
 import { appendSentinelEntry } from '@/lib/sentinel'
+import {
+  completeChain,
+  findChainByDispatch,
+  recordCausalNode,
+  recordOutcome,
+  recordOutput,
+  recordProblem,
+  recordTransition,
+  startChain,
+} from '@/lib/engine/causal'
 
 /**
  * The execution flow: a department head reads a sub-goal, picks whichever of its
@@ -386,6 +396,43 @@ export async function assignSubAgents(input: {
       })
       .returning()
 
+    // The causal chain opens at dispatch: every artifact this task produces
+    // hangs off it, hash-linked, so the run replays stage by stage. The problem
+    // record is the synapsis Plan input, fixed before any work happens.
+    const chainId = await startChain({
+      userId,
+      projectId: input.projectId,
+      dispatchId: taskId,
+    })
+    await recordProblem({
+      userId,
+      projectId: input.projectId,
+      problemId: taskId,
+      dispatchId: taskId,
+      goal: assignment.title.trim(),
+      context: {
+        brief,
+        instruction: assignment.instruction,
+        objectiveId: objective.id,
+        subAgentKey: sub.key,
+      },
+      constraints: guardrails.map((guardrail) => JSON.stringify(guardrail)),
+    })
+    await recordCausalNode({
+      userId,
+      chainId,
+      stage: 'dispatch',
+      artifactType: 'problem',
+      artifactId: taskId,
+      agentId: `${bot.specialistKey}/${sub.key}`,
+      content: {
+        title: assignment.title.trim(),
+        brief,
+        successCriteria: criteria,
+        guardrails,
+      },
+    })
+
     if (proposed) {
       await appendSentinelEntry({
         userId,
@@ -664,6 +711,34 @@ export async function runTask(input: { taskId: string }): Promise<TaskRow> {
     payload: { actuals: parsed.actuals, progress: parsed.progress },
   })
 
+  const runChain = await findChainByDispatch(userId, task.id)
+  if (runChain) {
+    await recordCausalNode({
+      userId,
+      chainId: runChain.id,
+      stage: 'execute',
+      artifactType: 'output',
+      artifactId: task.id,
+      agentId: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+      content: {
+        resultSummary: parsed.resultSummary,
+        actuals: parsed.actuals,
+        progress: parsed.progress,
+        modelId: route.modelId,
+      },
+    })
+    await recordTransition({
+      userId,
+      chainId: runChain.id,
+      fromStage: 'dispatch',
+      toStage: 'execute',
+      agentId: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+      signer: `${task.parentSpecialistKey}/${task.subAgentKey}`,
+      inputSummary: task.title,
+      outputSummary: parsed.resultSummary,
+    })
+  }
+
   revalidatePath('/')
 
   const [updated] = await db
@@ -720,6 +795,62 @@ export async function checkTask(input: {
     agentTitle: task.subAgentTitle,
     outcome,
   })
+
+  // The synapsis record: the reported output and its measured outcome, the way
+  // the upstream engine persists the Check stage as JSONB. The chain closes
+  // here unless a learning case reopens it into a KAIZEN cycle.
+  await recordOutput({
+    userId,
+    projectId: task.projectId,
+    outputId: task.id,
+    content: {
+      resultSummary: task.resultSummary,
+      actuals: result.actuals ?? {},
+    },
+    measurementWindow: { days: task.measurementWindowDays },
+    confidence: 'medium',
+  })
+  await recordOutcome({
+    userId,
+    outputId: task.id,
+    actuals: result.actuals ?? {},
+    evaluations: { score: outcome.score },
+    outcomeScore: outcome.result,
+    targetMet: outcome.result === 'PASS',
+    converged: outcome.result === 'PASS',
+    iterationCount: 1,
+    guardrailViolations: outcome.breaches,
+    confidence: 'medium',
+  })
+  const checkChain = await findChainByDispatch(userId, task.id)
+  if (checkChain) {
+    await recordCausalNode({
+      userId,
+      chainId: checkChain.id,
+      stage: 'check',
+      artifactType: 'outcome',
+      artifactId: task.id,
+      agentId: task.parentSpecialistKey,
+      content: { result: outcome.result, score: outcome.score },
+    })
+    await recordTransition({
+      userId,
+      chainId: checkChain.id,
+      fromStage: 'execute',
+      toStage: 'check',
+      agentId: task.parentSpecialistKey,
+      signer: task.parentSpecialistKey,
+      inputSummary: task.resultSummary ?? task.title,
+      outputSummary: describeCheck(outcome),
+    })
+    await completeChain({
+      userId,
+      chainId: checkChain.id,
+      finalProblemId: task.id,
+      finalOutputId: task.id,
+      totalTokens: (task.actualInputTokens ?? 0) + (task.actualOutputTokens ?? 0),
+    })
+  }
 
   // Check is when evidence arrives, so the sub-goal's percentage moves here:
   // the verdict counts as a share of its sub-goal until reabsorption turns it

@@ -88,6 +88,8 @@ export const ja: Dictionary = {
   nav: {
     label: 'ワークスペース',
     knowledge: 'ナレッジ',
+    operations: 'オペレーション',
+    system: 'システム',
     overview: '概要',
     work: 'ワーク',
     decisions: '意思決定',
@@ -118,6 +120,20 @@ export const ja: Dictionary = {
       signals: 'シグナル (Mycelium)',
       emptyDepartments:
         '部門エージェントはまだいません。インテーク時にオーケストレーターが部門を編成します。',
+      liveWork: '進行中の仕事',
+      stageLoad: 'ステージ別負荷',
+      departmentLoad: '部門別負荷',
+      gateQueue: 'ゲートキュー',
+      companyObjective: '会社目標',
+      noGates: '承認待ちのゲートはありません。',
+      tasksDone: 'タスク {done}/{total}',
+      objectives: '目標',
+      tasks: 'タスク',
+      spend: 'コスト',
+      decided: '決定済み {count} 件',
+      done: '完了 {count} 件',
+      rootProgress: 'ルート {percent}%',
+      tokens: '{count} トークン',
     },
     work: {
       subtitle: '目標と主要な結果、進行中のタスク。',
@@ -193,7 +209,7 @@ export const ja: Dictionary = {
       close: '閉じる',
       empty: 'ドキュメントを選択すると内容が表示されます。',
       none:
-        'ドキュメントはまだありません。アップロードするとエージェントの根拠あるコンテキストになります。',
+        'ドキュメントはまだありません。アップロードするとエー���ェントの根拠あるコンテキストになります。',
       library: 'ライブラリ',
     },
     learning: {
@@ -210,6 +226,8 @@ export const ja: Dictionary = {
     },
     orchestrator: {
       brand: '古事記',
+      ask: '古事記に聞く',
+      askHint: 'ヘッダーをドラッグすると会話パネルを移動できます。',
       subtitle: '質問し、探索し、行動する。',
       collapse: 'ワークスペースへ戻る',
       runReview: 'プロジェクトレビューを実行',
@@ -345,7 +363,7 @@ export const ja: Dictionary = {
     namingEyebrow: '最終ステップ',
     namingPrompt: 'このプロジェクトを何と呼びますか？',
     namingWhy:
-      '目標はOKRツリーのルートになり、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
+      '目標はOKRツリーのルートにな���、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
     nameLabel: 'プロジェクト名',
     namePlaceholder: '例：パートナーチャネル',
     nameRequired: 'プロジェクトに名前を付けてください。',

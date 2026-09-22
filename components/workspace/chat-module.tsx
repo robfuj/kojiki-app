@@ -244,7 +244,7 @@ function BotDetails({ bot }: { bot: BotRow }) {
   const verbs = ['own', 'recommend', 'consult', 'approve', 'execute', 'escalate', 'automate']
 
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-4 shadow-soft">
+    <div className="mt-3 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
       <dl className="space-y-2">
         {verbs.map((verb) => {
           const items = rights[verb]
@@ -525,7 +525,7 @@ function Conversation({
       </div>
 
       <div className="shrink-0 border-t border-border bg-card p-3">
-        <div className="flex items-end gap-2 rounded-xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
+        <div className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <label htmlFor={composerId} className="sr-only">
             Message {agentName}
           </label>
@@ -591,7 +591,7 @@ function MessageBubble({
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
+        <div className="max-w-[85%] rounded-[1.375rem] rounded-br-lg bg-primary px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
           {text}
         </div>
       </div>

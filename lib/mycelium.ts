@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { myceliumSignals } from '@/lib/db/schema'
+import { reinforceEdge } from '@/lib/engine/registry'
 import { appendSentinelEntry, type SentinelEntryType } from '@/lib/sentinel'
 
 /**
@@ -95,6 +96,21 @@ export async function propagateSignal(
     .update(myceliumSignals)
     .set({ sentinelEntryId: entry.id })
     .where(eq(myceliumSignals.id, id))
+
+  // Every routed signal reinforces the mycelium edge between the two nodes —
+  // how the registry learns which pathways carry traffic. Best-effort: projects
+  // created before the registry existed have no nodes yet, and a missing edge
+  // must never block the signal itself.
+  await reinforceEdge({
+    userId: input.userId,
+    projectId: input.projectId,
+    fromAgent: input.fromAgent,
+    toAgent: input.toAgent,
+    signalId: id,
+    triggerEvent: input.signalKind,
+  }).catch((error: unknown) => {
+    console.warn('[v0] edge reinforcement skipped:', error)
+  })
 
   return {
     id,

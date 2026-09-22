@@ -87,6 +87,8 @@ export const en = {
   nav: {
     label: 'Workspace',
     knowledge: 'Knowledge',
+    operations: 'Operations',
+    system: 'System',
     overview: 'Overview',
     work: 'Work',
     decisions: 'Decisions',
@@ -117,6 +119,20 @@ export const en = {
       signals: 'Signals (Mycelium)',
       emptyDepartments:
         'No department agents yet. The orchestrator staffs the project during intake.',
+      liveWork: 'Live work',
+      stageLoad: 'Stage load',
+      departmentLoad: 'Department load',
+      gateQueue: 'Gate queue',
+      companyObjective: 'Company objective',
+      noGates: 'No gates awaiting you.',
+      tasksDone: '{done}/{total} tasks',
+      objectives: 'Objectives',
+      tasks: 'Tasks',
+      spend: 'Spend',
+      decided: '{count} decided',
+      done: '{count} done',
+      rootProgress: '{percent}% root',
+      tokens: '{count} tokens',
     },
     work: {
       subtitle: 'Objectives, key results and the tasks in flight.',
@@ -207,6 +223,8 @@ export const en = {
     },
     orchestrator: {
       brand: 'Kojiki',
+      ask: 'Ask Kojiki',
+      askHint: 'Drag by the header to move the conversation.',
       subtitle: 'Ask, explore, and take action.',
       collapse: 'Back to workspace',
       runReview: 'Run project review',

@@ -13,10 +13,13 @@ import { cn } from '@/lib/utils'
 import {
   Bell,
   ChevronDown,
+  ChevronRight,
   Microscope,
+  PanelLeft,
   Plus,
   Search,
   Settings,
+  Sparkles,
   Trash2,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -25,6 +28,7 @@ import useSWR from 'swr'
 interface TopBarProps {
   projects: ProjectRow[]
   activeId: string | null
+  activeName: string | null
   onSelect: (id: string) => void
   onCreated: (project: ProjectRow) => void
   query: string
@@ -33,16 +37,20 @@ interface TopBarProps {
   onOpenSettings: () => void
   onOpenResearch: () => void
   onOpenDecisions: () => void
+  onOpenAsk: () => void
+  sidebarCollapsed: boolean
+  onToggleSidebar: () => void
 }
 
 /**
- * The workspace topbar: brand, the project switcher as inline pills, search,
- * and the two places a human gets pulled in — the gate bell and the account
- * menu.
+ * Two-tier chrome: the Kojiki bar carries brand and the places a human gets
+ * pulled in (Ask, gates, account); the white bar beneath carries the project
+ * switcher, the breadcrumb and search.
  */
 export function TopBar({
   projects,
   activeId,
+  activeName,
   onSelect,
   onCreated,
   query,
@@ -51,6 +59,9 @@ export function TopBar({
   onOpenSettings,
   onOpenResearch,
   onOpenDecisions,
+  onOpenAsk,
+  sidebarCollapsed,
+  onToggleSidebar,
 }: TopBarProps) {
   const { t } = useLocale()
   const [intakeOpen, setIntakeOpen] = useState(false)
@@ -68,17 +79,58 @@ export function TopBar({
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <div className="flex shrink-0 items-baseline gap-2">
-          <span className="font-serif text-xl leading-none tracking-tight text-foreground">
-            古事記
+      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur-xl">
+        <div className="flex shrink-0 items-center gap-2.5">
+          <span
+            className="flex size-7 items-center justify-center rounded-lg bg-primary font-serif text-sm text-primary-foreground"
+            aria-hidden="true"
+          >
+            古
           </span>
-          <span className="hidden text-xs text-muted-foreground sm:block">
+          <span className="text-sm font-semibold tracking-tight text-foreground">
             Kojiki
           </span>
         </div>
 
-        <div className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+        <div className="flex-1" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={onOpenAsk}
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+        >
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          {t.tabs.orchestrator.ask}
+        </button>
+
+        <GateBell activeId={activeId} onOpenDecisions={onOpenDecisions} />
+        <AccountMenu
+          userName={userName}
+          onOpenSettings={onOpenSettings}
+          onOpenResearch={onOpenResearch}
+        />
+      </header>
+
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card px-3">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-expanded={!sidebarCollapsed}
+          aria-label={t.nav.label}
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <PanelLeft className="size-4" aria-hidden="true" />
+        </button>
+
+        <div className="hidden shrink-0 items-center gap-1.5 text-xs md:flex">
+          <span className="text-muted-foreground">{t.nav.label}</span>
+          <ChevronRight className="size-3 text-muted-foreground/60" aria-hidden="true" />
+          <span className="max-w-40 truncate font-medium text-foreground">
+            {activeName ?? '—'}
+          </span>
+        </div>
+
+        <div className="mx-1 h-4 w-px shrink-0 bg-border" aria-hidden="true" />
 
         <nav
           aria-label={t.projects.label}
@@ -135,32 +187,23 @@ export function TopBar({
           </button>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative hidden md:block">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <label htmlFor="workspace-search" className="sr-only">
-              {t.tabs.searchPlaceholder}
-            </label>
-            <input
-              id="workspace-search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder={t.tabs.searchPlaceholder}
-              className="h-8 w-44 rounded-full border border-border bg-background pr-3 pl-8 text-xs text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50 lg:w-56"
-            />
-          </div>
-
-          <GateBell activeId={activeId} onOpenDecisions={onOpenDecisions} />
-          <AccountMenu
-            userName={userName}
-            onOpenSettings={onOpenSettings}
-            onOpenResearch={onOpenResearch}
+        <div className="relative hidden shrink-0 lg:block">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <label htmlFor="workspace-search" className="sr-only">
+            {t.tabs.searchPlaceholder}
+          </label>
+          <input
+            id="workspace-search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder={t.tabs.searchPlaceholder}
+            className="h-8 w-44 rounded-full border border-border bg-background pr-3 pl-8 text-xs text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
           />
         </div>
-      </header>
+      </div>
 
       {intakeOpen && (
         <ProjectIntake
@@ -215,7 +258,7 @@ function GateBell({
             className="fixed inset-0 z-30 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-40 mt-2 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-lifted">
+          <div className="absolute right-0 z-40 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-lifted">
             <p className="border-b border-border px-3 py-2 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
               {t.tabs.decisions.awaiting}
             </p>
@@ -285,7 +328,7 @@ function AccountMenu({
             className="fixed inset-0 z-30 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-card shadow-lifted">
+          <div className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-card shadow-lifted">
             <div className="border-b border-border px-3 py-2.5">
               <p className="truncate text-sm font-medium text-foreground">
                 {userName ?? t.workspace.orientationComplete}

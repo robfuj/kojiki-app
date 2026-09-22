@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { gateRequests, neuraxisEscalations, subAgentTasks } from '@/lib/db/schema'
 import { countCorroboratingExperiences, recordExperience } from '@/lib/kaizen'
+import { recordGovernanceChange } from '@/lib/engine/causal'
 import { appendSentinelEntry } from '@/lib/sentinel'
 
 /**
@@ -358,6 +359,25 @@ export async function decideGate(input: DecideGateInput) {
       decision,
       note: input.note ?? null,
     },
+  })
+
+  // The governance record: every authority change as a JSONB payload with its
+  // approver, mirroring the upstream engine's governance_changes table.
+  await recordGovernanceChange({
+    userId,
+    projectId: gate.projectId,
+    changeType: gate.changeType,
+    target: gateRequestId,
+    payload: {
+      decision,
+      note: input.note ?? null,
+      layer: gate.layer,
+      escalationId: gate.escalationId,
+      requestedBy: gate.requestedByAgent,
+    },
+    reason: input.note ?? null,
+    gateId: gateRequestId,
+    approver: 'user',
   })
 
   if (gate.taskId) {

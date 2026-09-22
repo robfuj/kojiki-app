@@ -14,7 +14,8 @@
     "db:migrate-model-routing": "node scripts/migrate-model-routing.mjs",
     "db:migrate-documents": "node scripts/migrate-documents.mjs",
     "db:migrate-locale": "node scripts/migrate-locale.mjs",
-    "db:migrate-workspace-tabs": "node scripts/migrate-workspace-tabs.mjs"
+    "db:migrate-workspace-tabs": "node scripts/migrate-workspace-tabs.mjs",
+    "db:migrate-engine": "node scripts/migrate-engine-schema.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.54",

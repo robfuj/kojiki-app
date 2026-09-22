@@ -6,6 +6,7 @@ import { getLocale } from '@/app/actions/settings'
 import { requireUserId } from '@/lib/session'
 import { db } from '@/lib/db'
 import { objectives, orientationProfiles, projectBots, projects } from '@/lib/db/schema'
+import { bootstrapProjectRegistry } from '@/lib/engine/registry'
 import { deriveRoster, type OrientationAnswers } from '@/lib/ontology/orientation'
 import {
   runProjectIntake,
@@ -152,6 +153,10 @@ export async function createProjectFromIntake(input: {
       position: bot.position,
     })),
   )
+
+  // The registry is the engine's authority on who exists: the orchestrator node
+  // plus every head beneath it, carrying its ontology decision rights.
+  await bootstrapProjectRegistry({ userId, projectId, roster })
 
   const [root] = await db
     .insert(objectives)

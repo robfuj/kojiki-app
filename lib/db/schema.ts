@@ -552,3 +552,293 @@ export const orchestratorReviews = pgTable('orchestrator_reviews', {
   actions: jsonb('actions').notNull().default([]),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Engine layer — the upstream kojiki-ontology persistence model (alembic 0001–
+// 0015 plus the post-alembic engine/models.py). The upstream Python engine
+// persists its mycelium registry, synapsis reasoning cycle, causal chains and
+// governance changes as JSONB documents; these tables mirror that shape.
+// Two documented deviations: every table carries `userId` because this app is
+// multi-tenant and the upstream engine is single-tenant, and columns are
+// camelCase to match the rest of this schema (upstream is snake_case).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The registry is the engine's authority on which nodes exist. A node is an
+// orchestrator, a department head, or a sub-agent; `decisionRights` is the JSONB
+// grant that says what the node may decide alone and what it must escalate.
+export const myceliumNodes = pgTable('mycelium_nodes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  domain: text('domain').notNull(),
+  type: text('type').notNull(),
+  status: text('status').notNull().default('active'),
+  pipelineManifestRef: text('pipelineManifestRef'),
+  pipelineValidated: boolean('pipelineValidated').notNull().default(false),
+  publicKey: text('publicKey'),
+  keyStatus: text('keyStatus').notNull().default('none'),
+  keyIssuedAt: timestamp('keyIssuedAt'),
+  keyRevokedAt: timestamp('keyRevokedAt'),
+  parentId: text('parentId'),
+  decisionRights: jsonb('decisionRights').notNull().default({}),
+  decisionRight: text('decisionRight'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})
+
+// Append-only audit of registry events, mirroring mycelium_node_audit upstream.
+export const myceliumNodeAudit = pgTable('mycelium_node_audit', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  eventType: text('eventType').notNull(),
+  nodeId: text('nodeId').notNull(),
+  actor: text('actor'),
+  detail: jsonb('detail').notNull().default({}),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// A learned pathway between two nodes. Every routed signal reinforces its edge;
+// the counters are how the registry knows which pathways carry real traffic.
+export const myceliumEdges = pgTable(
+  'mycelium_edges',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    fromKr: text('fromKr').notNull(),
+    toKr: text('toKr').notNull(),
+    weight: text('weight').notNull().default('1'),
+    reciprocalExchanges: integer('reciprocalExchanges').notNull().default(0),
+    oneDirectionalExchanges: integer('oneDirectionalExchanges').notNull().default(0),
+    lastReinforced: timestamp('lastReinforced'),
+    triggerEvent: text('triggerEvent'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('mycelium_edges_kr_unique').on(table.userId, table.fromKr, table.toKr)],
+)
+
+export const myceliumEdgeExchanges = pgTable('mycelium_edge_exchanges', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  edgeId: text('edgeId').notNull(),
+  fromKr: text('fromKr').notNull(),
+  toKr: text('toKr').notNull(),
+  exchangeType: text('exchangeType').notNull().default('one_directional'),
+  signalId: text('signalId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// Sealed evidence attached to a gate request upstream; kept for parity so gate
+// decisions can carry signer-verified exhibits.
+export const sentinelGateEvidence = pgTable(
+  'sentinel_gate_evidence',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    gateRequestId: text('gateRequestId').notNull(),
+    experienceId: text('experienceId').notNull(),
+    signer: text('signer'),
+    signature: text('signature'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('sentinel_gate_evidence_unique').on(
+      table.gateRequestId,
+      table.experienceId,
+      table.signer,
+    ),
+  ],
+)
+
+// ── Synapsis: the reasoning cycle, one row per stage, JSONB payloads ──
+
+export const synapsisProblems = pgTable('synapsis_problems', {
+  problemId: text('problemId').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  dispatchId: text('dispatchId'),
+  goal: text('goal').notNull(),
+  context: jsonb('context').notNull().default({}),
+  assumptions: jsonb('assumptions').notNull().default([]),
+  constraints: jsonb('constraints').notNull().default([]),
+  unknowns: jsonb('unknowns').notNull().default([]),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const synapsisEvidence = pgTable('synapsis_evidence', {
+  findingId: text('findingId').primaryKey(),
+  userId: text('userId').notNull(),
+  problemId: text('problemId').notNull(),
+  question: text('question'),
+  answer: text('answer'),
+  source: text('source'),
+  confidence: text('confidence'),
+  retrievalState: text('retrievalState'),
+  coverageLimits: jsonb('coverageLimits').notNull().default([]),
+  sufficiency: jsonb('sufficiency').notNull().default({}),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const synapsisInterpretations = pgTable('synapsis_interpretations', {
+  interpretationId: text('interpretationId').primaryKey(),
+  userId: text('userId').notNull(),
+  problemId: text('problemId').notNull(),
+  synthesis: text('synthesis'),
+  confidence: text('confidence'),
+  keyDrivers: jsonb('keyDrivers').notNull().default([]),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const synapsisStrategies = pgTable('synapsis_strategies', {
+  strategyId: text('strategyId').primaryKey(),
+  userId: text('userId').notNull(),
+  problemId: text('problemId').notNull(),
+  interpretationRef: text('interpretationRef'),
+  objective: text('objective'),
+  rationale: text('rationale'),
+  timeline: text('timeline'),
+  successCriteria: jsonb('successCriteria').notNull().default([]),
+  escalationConditions: jsonb('escalationConditions').notNull().default([]),
+  decisionRights: jsonb('decisionRights').notNull().default({}),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// `strategyId` is nullable here (upstream: NOT NULL FK) because this app's
+// dispatch writes the problem and the output directly; the interpretation and
+// strategy stages are recorded when a run produces them, not synthesised.
+export const synapsisOutputs = pgTable('synapsis_outputs', {
+  outputId: text('outputId').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  strategyId: text('strategyId'),
+  content: jsonb('content').notNull().default({}),
+  measurementWindow: jsonb('measurementWindow').notNull().default({}),
+  confidence: text('confidence'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const synapsisOutcomes = pgTable('synapsis_outcomes', {
+  outcomeId: text('outcomeId').primaryKey(),
+  userId: text('userId').notNull(),
+  outputId: text('outputId').notNull(),
+  actuals: jsonb('actuals').notNull().default({}),
+  evaluations: jsonb('evaluations').notNull().default({}),
+  outcomeScore: text('outcomeScore'),
+  targetMet: boolean('targetMet'),
+  converged: boolean('converged'),
+  iterationCount: integer('iterationCount'),
+  guardrailViolations: jsonb('guardrailViolations').notNull().default([]),
+  deviationAnalysis: text('deviationAnalysis'),
+  confidence: text('confidence'),
+  kaizenIteration: integer('kaizenIteration'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const synapsisLearning = pgTable('synapsis_learning', {
+  learningId: text('learningId').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  cycleTimestamp: timestamp('cycleTimestamp').notNull().defaultNow(),
+  experiences: jsonb('experiences').notNull().default([]),
+  patterns: jsonb('patterns').notNull().default([]),
+  reusableInsights: jsonb('reusableInsights').notNull().default([]),
+  redefinitions: jsonb('redefinitions').notNull().default({}),
+  outcomeScore: text('outcomeScore'),
+  guardrailViolations: jsonb('guardrailViolations').notNull().default([]),
+  confidence: text('confidence'),
+  kaizenIteration: integer('kaizenIteration'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const kaizenIterations = pgTable('kaizen_iterations', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  problemId: text('problemId').notNull(),
+  iteration: integer('iteration').notNull().default(1),
+  phase: text('phase'),
+  startedAt: timestamp('startedAt'),
+  completedAt: timestamp('completedAt'),
+  inputData: jsonb('inputData').notNull().default({}),
+  outputData: jsonb('outputData').notNull().default({}),
+  guardrailViolations: jsonb('guardrailViolations').notNull().default([]),
+  learningGenerated: boolean('learningGenerated').notNull().default(false),
+  experienceRefs: jsonb('experienceRefs').notNull().default([]),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// ── Causal chains: hash-linked replay of a dispatch, stage by stage ──
+
+export const causalChains = pgTable('causal_chains', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  dispatchId: text('dispatchId').notNull(),
+  startedAt: timestamp('startedAt').notNull().defaultNow(),
+  completedAt: timestamp('completedAt'),
+  totalTokens: integer('totalTokens'),
+  totalLatencyMs: integer('totalLatencyMs'),
+  finalProblemId: text('finalProblemId'),
+  finalOutputId: text('finalOutputId'),
+  finalLearningId: text('finalLearningId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const causalNodes = pgTable('causal_nodes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  chainId: text('chainId').notNull(),
+  stage: text('stage').notNull(),
+  artifactType: text('artifactType').notNull(),
+  artifactId: text('artifactId'),
+  contentHash: text('contentHash'),
+  content: jsonb('content').notNull().default({}),
+  agentId: text('agentId'),
+  tools: jsonb('tools').notNull().default([]),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const causalTransitions = pgTable('causal_transitions', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  chainId: text('chainId').notNull(),
+  fromStage: text('fromStage').notNull(),
+  toStage: text('toStage').notNull(),
+  inputHash: text('inputHash'),
+  outputHash: text('outputHash'),
+  agentId: text('agentId'),
+  signer: text('signer'),
+  signature: text('signature'),
+  publicKey: text('publicKey'),
+  inputSummary: text('inputSummary'),
+  outputSummary: text('outputSummary'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// Every authority change — a gate decision, a redefinition, a roster change —
+// lands here as a JSONB payload, the way upstream's governance_changes does.
+export const governanceChanges = pgTable('governance_changes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  changeType: text('changeType').notNull(),
+  target: text('target'),
+  payload: jsonb('payload').notNull().default({}),
+  reason: text('reason'),
+  gateId: text('gateId'),
+  approver: text('approver'),
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+})
+
+export const deckDnaCache = pgTable('deck_dna_cache', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  cacheKey: text('cacheKey').notNull().unique(),
+  department: text('department'),
+  mode: text('mode'),
+  templateData: jsonb('templateData').notNull().default({}),
+  slides: jsonb('slides').notNull().default([]),
+  hitCount: integer('hitCount').notNull().default(0),
+  lastAccessed: timestamp('lastAccessed'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  expiresAt: timestamp('expiresAt'),
+})

@@ -3,12 +3,14 @@
 import { getProjectWorkspace } from '@/app/actions/projects'
 import type { ProjectRow } from '@/app/actions/projects'
 import type { OrientationRecord } from '@/app/actions/orientation'
-import { useLocale } from '@/components/i18n/locale-provider'
 import {
-  ChatModule,
-  type ChatFocus,
-  type ChatSeed,
-} from '@/components/workspace/chat-module'
+  getProjectReport,
+  listProjectGates,
+} from '@/app/actions/workspace'
+import { useLocale } from '@/components/i18n/locale-provider'
+import type { ChatFocus, ChatSeed } from '@/components/workspace/chat-module'
+import { AskKojikiPanel } from '@/components/workspace/ask-kojiki-panel'
+import { GateRail } from '@/components/workspace/gate-rail'
 import { ResearchPanel } from '@/components/workspace/research-panel'
 import { SettingsPanel } from '@/components/workspace/settings-panel'
 import { Sidebar, type TabKey } from '@/components/workspace/sidebar'
@@ -20,7 +22,7 @@ import { EvidenceTab } from '@/components/workspace/tabs/evidence-tab'
 import { LearningTab } from '@/components/workspace/tabs/learning-tab'
 import { OverviewTab } from '@/components/workspace/tabs/overview-tab'
 import { WorkTab } from '@/components/workspace/tabs/work-tab'
-import { Waypoints } from 'lucide-react'
+import { Sparkles, Waypoints } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 
@@ -33,6 +35,8 @@ const TAB_KEYS: TabKey[] = [
   'learning',
   'orchestrator',
 ]
+
+const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
 
 function initialTab(): TabKey {
   if (typeof window === 'undefined') return 'overview'
@@ -65,6 +69,8 @@ export function WorkspaceShell({
     kind: 'orchestrator',
   })
   const [seed, setSeed] = useState<ChatSeed | null>(null)
+  const [askOpen, setAskOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [workObjectiveId, setWorkObjectiveId] = useState<string | null>(null)
   const [deptBotId, setDeptBotId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -84,6 +90,23 @@ export function WorkspaceShell({
     () => getProjectWorkspace(activeId!),
     { revalidateOnFocus: false },
   )
+  const { data: gates } = useSWR(
+    activeId ? ['gates', activeId] : null,
+    () => listProjectGates(activeId!),
+    { revalidateOnFocus: false },
+  )
+  const { data: report } = useSWR(
+    activeId ? ['report', activeId] : null,
+    () => getProjectReport(activeId!),
+    { revalidateOnFocus: false },
+  )
+
+  const pendingGates = (gates ?? []).filter((gate) => gate.status === 'pending').length
+  const openTasks = report
+    ? Object.entries(report.tasksByStatus)
+        .filter(([status]) => !CLOSED_TASK_STATUSES.includes(status))
+        .reduce((sum, [, count]) => sum + count, 0)
+    : 0
 
   // The open view lives in the URL so a refresh lands where the user left off.
   useEffect(() => {
@@ -100,10 +123,11 @@ export function WorkspaceShell({
     setTab(next)
   }
 
+  // Conversations live in the floating panel, wherever the user parked it.
   function openConversation(focus: ChatFocus) {
     setReturnTab(tab === 'orchestrator' ? returnTab : tab)
     setChatFocus(focus)
-    setTab('orchestrator')
+    setAskOpen(true)
   }
 
   return (
@@ -111,6 +135,7 @@ export function WorkspaceShell({
       <TopBar
         projects={projects}
         activeId={activeId}
+        activeName={activeProject?.name ?? null}
         onSelect={(projectId) => {
           setSelectedId(projectId)
           setWorkObjectiveId(null)
@@ -129,6 +154,12 @@ export function WorkspaceShell({
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenResearch={() => setResearchOpen(true)}
         onOpenDecisions={() => goTo('decisions')}
+        onOpenAsk={() => {
+          setChatFocus({ kind: 'orchestrator' })
+          setAskOpen(true)
+        }}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
       />
 
       {tab === 'orchestrator' && activeId && workspace ? (
@@ -159,7 +190,9 @@ export function WorkspaceShell({
               <ReviewCard
                 projectId={activeId}
                 bots={workspace.bots}
-                onAskDepartment={(botId) => setChatFocus({ kind: 'bot', botId })}
+                onAskDepartment={(botId) =>
+                  openConversation({ kind: 'bot', botId })
+                }
                 onOpenObjective={(objectiveId) => {
                   setWorkObjectiveId(objectiveId)
                   setTab('work')
@@ -167,30 +200,32 @@ export function WorkspaceShell({
               />
             </div>
 
-            <div className="mt-3 flex shrink-0 flex-wrap gap-1.5">
+            <div className="mt-3 flex shrink-0 flex-wrap items-center gap-1.5">
               {t.tabs.orchestrator.suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setSeed({ text: suggestion, nonce: Date.now() })
-                  }
+                    setChatFocus({ kind: 'orchestrator' })
+                    setAskOpen(true)
+                  }}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
                 >
                   {suggestion}
                 </button>
               ))}
-            </div>
-
-            <div className="mt-3 flex min-h-[22rem] shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
-              <ChatModule
-                projectId={activeId}
-                projectName={workspace.project.name}
-                bots={workspace.bots}
-                focus={chatFocus}
-                onFocusChange={setChatFocus}
-                seed={seed}
-              />
+              <button
+                type="button"
+                onClick={() => {
+                  setChatFocus({ kind: 'orchestrator' })
+                  setAskOpen(true)
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+              >
+                <Sparkles className="size-3.5" aria-hidden="true" />
+                {t.tabs.orchestrator.ask}
+              </button>
             </div>
           </div>
         </div>
@@ -201,6 +236,13 @@ export function WorkspaceShell({
             projectMeta={activeProject?.objective ?? null}
             tab={tab}
             onTab={goTo}
+            collapsed={sidebarCollapsed}
+            counts={{
+              work: openTasks,
+              decisions: pendingGates,
+              learning: report?.reusableLearningsCount ?? 0,
+            }}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
 
           <main className="min-w-0 flex-1 overflow-y-auto">
@@ -249,7 +291,26 @@ export function WorkspaceShell({
               <EmptyWorkspace hasProjects={projects.length > 0} />
             )}
           </main>
+
+          {activeId && (
+            <GateRail
+              projectId={activeId}
+              onOpenDecisions={() => goTo('decisions')}
+            />
+          )}
         </div>
+      )}
+
+      {askOpen && activeId && workspace && (
+        <AskKojikiPanel
+          projectId={activeId}
+          projectName={workspace.project.name}
+          bots={workspace.bots}
+          focus={chatFocus}
+          onFocusChange={setChatFocus}
+          seed={seed}
+          onClose={() => setAskOpen(false)}
+        />
       )}
 
       {researchOpen && (
