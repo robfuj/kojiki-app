@@ -3,6 +3,7 @@
 import { listProjectDecisions } from '@/app/actions/workspace'
 import { listDepartmentWork } from '@/app/actions/workspace'
 import { useLocale } from '@/components/i18n/locale-provider'
+import { PathsCard } from '@/components/workspace/paths-card'
 import {
   AvatarCircle,
   Card,
@@ -337,6 +338,8 @@ export function DepartmentsTab({
           </Card>
         )}
       </div>
+
+      <PathsCard projectId={projectId} />
     </div>
   )
 }

@@ -9,8 +9,12 @@ import { objectives, orientationProfiles, projectBots, projects } from '@/lib/db
 import { bootstrapProjectRegistry } from '@/lib/engine/registry'
 import { deriveRoster, type OrientationAnswers } from '@/lib/ontology/orientation'
 import {
+  runClarifyPhase,
   runProjectIntake,
+  runReResearchPhase,
+  type ClarifyQuestion,
   type ProjectIntakeResult,
+  type ReResearchResult,
   type ResearchBrief,
 } from '@/lib/orchestrator'
 import { desc, eq } from 'drizzle-orm'
@@ -50,6 +54,7 @@ async function loadOrientation(userId: string): Promise<OrientationAnswers> {
  */
 export async function researchProjectGoal(input: {
   goal: string
+  clarifyAnswers?: IntakeAnswer[]
 }): Promise<ProjectIntakeResult> {
   const userId = await getUserId()
   const goal = input.goal.trim()
@@ -64,7 +69,82 @@ export async function researchProjectGoal(input: {
   const orientation = await loadOrientation(userId)
   const locale = await getLocale()
 
-  return runProjectIntake({ orientation, goal, userId, locale })
+  return runProjectIntake({
+    orientation,
+    goal,
+    userId,
+    locale,
+    clarifyAnswers: sanitiseAnswers(input.clarifyAnswers),
+  })
+}
+
+/**
+ * Phase one of the orientation protocol: the orchestrator reads the goal and
+ * returns only the questions the goal leaves open. Nothing is written.
+ */
+export async function clarifyProjectGoal(input: {
+  goal: string
+}): Promise<ClarifyQuestion[]> {
+  const userId = await getUserId()
+  const goal = input.goal.trim()
+
+  if (goal.length < 8) {
+    throw new Error('Describe the goal in a little more detail.')
+  }
+  if (goal.length > 2000) {
+    throw new Error('That goal is too long. Keep it under 2000 characters.')
+  }
+
+  const orientation = await loadOrientation(userId)
+  const locale = await getLocale()
+
+  return runClarifyPhase({ orientation, goal, userId, locale })
+}
+
+/**
+ * Phases four and five: the answers fold into the research context, the field
+ * is researched again, and the goal is restated around what the user said.
+ */
+export async function reResearchProjectGoal(input: {
+  goal: string
+  clarifyAnswers?: IntakeAnswer[]
+  answers?: IntakeAnswer[]
+  brief: ResearchBrief
+}): Promise<ReResearchResult> {
+  const userId = await getUserId()
+  const goal = input.goal.trim()
+
+  if (goal.length < 8) {
+    throw new Error('Describe the goal in a little more detail.')
+  }
+  if (goal.length > 2000) {
+    throw new Error('That goal is too long. Keep it under 2000 characters.')
+  }
+
+  const orientation = await loadOrientation(userId)
+  const locale = await getLocale()
+
+  return runReResearchPhase({
+    orientation,
+    goal,
+    clarifyAnswers: sanitiseAnswers(input.clarifyAnswers),
+    answers: sanitiseAnswers(input.answers),
+    priorBrief: input.brief,
+    userId,
+    locale,
+  })
+}
+
+function sanitiseAnswers(
+  answers: IntakeAnswer[] | undefined,
+): { prompt: string; answer: string }[] {
+  return (answers ?? [])
+    .filter((item) => item.answer.trim().length > 0)
+    .slice(0, 8)
+    .map((item) => ({
+      prompt: item.prompt.slice(0, 500),
+      answer: item.answer.trim().slice(0, 2000),
+    }))
 }
 
 export interface IntakeAnswer {
@@ -92,6 +172,9 @@ export async function createProjectFromIntake(input: {
   brief: ResearchBrief
   researchMethod: 'web-search' | 'model-reasoning'
   answers: IntakeAnswer[]
+  /** Phase five's restatement; becomes the root objective when present. */
+  refinedGoal?: string
+  refinementNote?: string
 }): Promise<ProjectRow> {
   const userId = await getUserId()
 
@@ -116,6 +199,10 @@ export async function createProjectFromIntake(input: {
       answer: item.answer.trim().slice(0, 2000),
     }))
 
+  // The refined goal is capped and falls back to the raw goal: the root
+  // objective must never be empty or unbounded.
+  const refinedObjective = (input.refinedGoal?.trim() || goal).slice(0, 2000)
+
   const projectId = crypto.randomUUID()
 
   const [project] = await db
@@ -128,6 +215,8 @@ export async function createProjectFromIntake(input: {
       orientationId: null,
       intakeContext: {
         goal,
+        refinedGoal: refinedObjective,
+        refinementNote: input.refinementNote?.slice(0, 1000) ?? null,
         brief: input.brief,
         answers,
         rosterRationale: input.rosterRationale,
@@ -166,7 +255,7 @@ export async function createProjectFromIntake(input: {
       projectId,
       parentObjectiveId: null,
       ownerBotId: null,
-      title: goal,
+      title: refinedObjective,
       description: name,
       kind: 'overall_goal',
       status: 'active',

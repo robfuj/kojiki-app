@@ -225,6 +225,7 @@ export const en = {
       brand: 'Kojiki',
       ask: 'Ask Kojiki',
       askHint: 'Drag by the header to move the conversation.',
+      popOut: 'Pop the conversation out',
       subtitle: 'Ask, explore, and take action.',
       collapse: 'Back to workspace',
       runReview: 'Run project review',
@@ -355,6 +356,14 @@ export const en = {
     researchingTail:
       ' — market, competition, regulation and risk — then deciding which specialists it needs and what to ask you. This takes a moment.',
     researchError: 'The orchestrator could not research this goal',
+    clarifyingNote:
+      'Reading the goal and deciding what it leaves open. If nothing is open, the research starts immediately.',
+    clarifyEyebrow: 'Clarifying {current} of {total}',
+    clarifySubmit: 'Research the field',
+    refiningNote:
+      'Re-researching the field with your answers and restating the goal around them. This takes a moment.',
+    refinedEyebrow: 'Refined goal',
+    refinedNoteLabel: 'What changed versus the first brief',
     briefEyebrowWeb: 'Orchestrator · live research',
     briefEyebrowModel: 'Orchestrator · model reasoning',
     briefPrompt: 'Here is what I found.',
@@ -392,6 +401,12 @@ export const en = {
     briefModelNote:
       'Live web research was unavailable, so this brief comes from model reasoning rather than current sources. Treat the figures as indicative and correct anything you know to be wrong.',
   },
+  paths: {
+    title: 'Mycelium paths',
+    empty: 'No reinforced paths yet. Paths form as agents exchange signals.',
+    exchanges: '{reciprocal} reciprocal · {one} one-way',
+  },
+
   research: {
     title: 'Initial research',
     summary: 'What the orchestrator found before this work was decomposed',

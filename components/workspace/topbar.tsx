@@ -13,15 +13,13 @@ import { cn } from '@/lib/utils'
 import {
   Bell,
   ChevronDown,
-  ChevronRight,
-  Microscope,
   PanelLeft,
   Plus,
   Search,
   Settings,
-  Sparkles,
   Trash2,
 } from 'lucide-react'
+import Image from 'next/image'
 import { useState } from 'react'
 import useSWR from 'swr'
 
@@ -35,31 +33,28 @@ interface TopBarProps {
   onQueryChange: (query: string) => void
   userName: string | null
   onOpenSettings: () => void
-  onOpenResearch: () => void
   onOpenDecisions: () => void
-  onOpenAsk: () => void
   sidebarCollapsed: boolean
   onToggleSidebar: () => void
 }
 
 /**
- * Two-tier chrome: the Kojiki bar carries brand and the places a human gets
- * pulled in (Ask, gates, account); the white bar beneath carries the project
- * switcher, the breadcrumb and search.
+ * Two-tier chrome. The Kojiki bar carries the mark, the lettering and search —
+ * the place a human looks something up. The bar beneath is the project bar:
+ * full-height cards, exactly the size the switcher has always been. Switching
+ * only — everything that belongs to one project lives in the left rail beside
+ * its name.
  */
 export function TopBar({
   projects,
   activeId,
-  activeName,
   onSelect,
   onCreated,
   query,
   onQueryChange,
   userName,
   onOpenSettings,
-  onOpenResearch,
   onOpenDecisions,
-  onOpenAsk,
   sidebarCollapsed,
   onToggleSidebar,
 }: TopBarProps) {
@@ -79,117 +74,30 @@ export function TopBar({
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur-xl">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur-xl">
         <div className="flex shrink-0 items-center gap-2.5">
-          <span
-            className="flex size-7 items-center justify-center rounded-lg bg-primary font-serif text-sm text-primary-foreground"
+          <Image
+            src="/images/kojiki-mark.png"
+            alt=""
             aria-hidden="true"
-          >
-            古
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            Kojiki
-          </span>
+            width={32}
+            height={32}
+            className="size-8 dark:invert"
+          />
+          <Image
+            src="/images/kojiki-lettering.png"
+            alt={t.tabs.orchestrator.brand}
+            width={160}
+            height={40}
+            className="h-9 w-auto dark:invert"
+          />
         </div>
 
         <div className="flex-1" aria-hidden="true" />
 
-        <button
-          type="button"
-          onClick={onOpenAsk}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
-        >
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          {t.tabs.orchestrator.ask}
-        </button>
-
-        <GateBell activeId={activeId} onOpenDecisions={onOpenDecisions} />
-        <AccountMenu
-          userName={userName}
-          onOpenSettings={onOpenSettings}
-          onOpenResearch={onOpenResearch}
-        />
-      </header>
-
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card px-3">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          aria-expanded={!sidebarCollapsed}
-          aria-label={t.nav.label}
-          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <PanelLeft className="size-4" aria-hidden="true" />
-        </button>
-
-        <div className="hidden shrink-0 items-center gap-1.5 text-xs md:flex">
-          <span className="text-muted-foreground">{t.nav.label}</span>
-          <ChevronRight className="size-3 text-muted-foreground/60" aria-hidden="true" />
-          <span className="max-w-40 truncate font-medium text-foreground">
-            {activeName ?? '—'}
-          </span>
-        </div>
-
-        <div className="mx-1 h-4 w-px shrink-0 bg-border" aria-hidden="true" />
-
-        <nav
-          aria-label={t.projects.label}
-          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto"
-        >
-          {projects.map((project) => {
-            const active = project.id === activeId
-            return (
-              <div key={project.id} className="group relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onSelect(project.id)}
-                  aria-current={active ? 'true' : undefined}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
-                    active
-                      ? 'border-border bg-muted text-foreground'
-                      : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'size-1.5 rounded-full',
-                      active ? 'bg-seal' : 'bg-border',
-                    )}
-                    aria-hidden="true"
-                  />
-                  {project.name}
-                  {active && (
-                    <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => remove(project.id)}
-                  disabled={deleting}
-                  aria-label={format(t.projects.deleteAria, { name: project.name })}
-                  className="absolute -top-1 -right-1 hidden rounded-full border border-border bg-card p-1 text-muted-foreground transition-colors group-hover:block hover:border-destructive hover:text-destructive"
-                >
-                  <Trash2 className="size-3" aria-hidden="true" />
-                </button>
-              </div>
-            )
-          })}
-
-          <button
-            type="button"
-            onClick={() => setIntakeOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-          >
-            <Plus className="size-3.5" aria-hidden="true" />
-            {t.projects.newProject}
-          </button>
-        </nav>
-
-        <div className="relative hidden shrink-0 lg:block">
+        <div className="relative hidden shrink-0 sm:block">
           <Search
-            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <label htmlFor="workspace-search" className="sr-only">
@@ -200,9 +108,100 @@ export function TopBar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={t.tabs.searchPlaceholder}
-            className="h-8 w-44 rounded-full border border-border bg-background pr-3 pl-8 text-xs text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
+            className="h-9 w-56 rounded-full border border-border bg-background pr-3 pl-9 text-xs text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
           />
         </div>
+
+        <GateBell activeId={activeId} onOpenDecisions={onOpenDecisions} />
+        <AccountMenu userName={userName} onOpenSettings={onOpenSettings} />
+      </header>
+
+      <div className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-expanded={!sidebarCollapsed}
+          aria-label={t.nav.label}
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <PanelLeft className="size-4" aria-hidden="true" />
+        </button>
+
+        <div className="shrink-0 pl-1">
+          <p className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+            {t.projects.label}
+          </p>
+          <p className="text-sm font-semibold tabular-nums text-foreground">
+            {projects.length}
+          </p>
+        </div>
+
+        <nav
+          aria-label={t.projects.label}
+          className="flex min-w-0 flex-1 items-stretch gap-2.5 overflow-x-auto py-0.5"
+        >
+          {projects.map((project) => {
+            const active = project.id === activeId
+            return (
+              <div
+                key={project.id}
+                className={cn(
+                  'group relative shrink-0 rounded-2xl border transition-colors',
+                  active
+                    ? 'border-foreground/50 bg-card shadow-soft'
+                    : 'border-border bg-card/60 hover:border-foreground/25',
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => onSelect(project.id)}
+                  aria-current={active ? 'true' : undefined}
+                  className="block w-full px-4 py-2.5 text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <AvatarCircle
+                      name={project.name}
+                      className="size-6 shrink-0 bg-muted text-[10px] text-foreground"
+                    />
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {project.name}
+                    </span>
+                    {active && (
+                      <ChevronDown
+                        className="size-3 shrink-0 text-muted-foreground/60"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
+                  {!active && (
+                    <span className="mt-1 block max-w-52 truncate text-xs text-muted-foreground">
+                      {project.objective}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => remove(project.id)}
+                  disabled={deleting}
+                  aria-label={format(t.projects.deleteAria, { name: project.name })}
+                  className="absolute -top-1.5 -right-1.5 hidden rounded-full border border-border bg-card p-1 text-muted-foreground transition-colors group-hover:block hover:border-destructive hover:text-destructive"
+                >
+                  <Trash2 className="size-3" aria-hidden="true" />
+                </button>
+              </div>
+            )
+          })}
+
+          <button
+            type="button"
+            onClick={() => setIntakeOpen(true)}
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-dashed border-border px-4 py-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {t.projects.newProject}
+          </button>
+        </nav>
       </div>
 
       {intakeOpen && (
@@ -299,11 +298,9 @@ function GateBell({
 function AccountMenu({
   userName,
   onOpenSettings,
-  onOpenResearch,
 }: {
   userName: string | null
   onOpenSettings: () => void
-  onOpenResearch: () => void
 }) {
   const { t } = useLocale()
   const [open, setOpen] = useState(false)
@@ -338,17 +335,6 @@ function AccountMenu({
               </div>
             </div>
             <div className="p-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  onOpenResearch()
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted"
-              >
-                <Microscope className="size-4 text-muted-foreground" aria-hidden="true" />
-                {t.research.openButton}
-              </button>
               <button
                 type="button"
                 onClick={() => {

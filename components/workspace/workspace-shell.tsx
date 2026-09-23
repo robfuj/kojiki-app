@@ -10,6 +10,7 @@ import {
 import { useLocale } from '@/components/i18n/locale-provider'
 import type { ChatFocus, ChatSeed } from '@/components/workspace/chat-module'
 import { AskKojikiPanel } from '@/components/workspace/ask-kojiki-panel'
+import { ChatDock } from '@/components/workspace/chat-dock'
 import { GateRail } from '@/components/workspace/gate-rail'
 import { ResearchPanel } from '@/components/workspace/research-panel'
 import { SettingsPanel } from '@/components/workspace/settings-panel'
@@ -37,6 +38,9 @@ const TAB_KEYS: TabKey[] = [
 ]
 
 const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
+
+/** Below this width the right rail does not exist, so chat must float. */
+const RAIL_BREAKPOINT = 768
 
 function initialTab(): TabKey {
   if (typeof window === 'undefined') return 'overview'
@@ -69,7 +73,7 @@ export function WorkspaceShell({
     kind: 'orchestrator',
   })
   const [seed, setSeed] = useState<ChatSeed | null>(null)
-  const [askOpen, setAskOpen] = useState(false)
+  const [chatPoppedOut, setChatPoppedOut] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [workObjectiveId, setWorkObjectiveId] = useState<string | null>(null)
   const [deptBotId, setDeptBotId] = useState<string | null>(null)
@@ -123,11 +127,15 @@ export function WorkspaceShell({
     setTab(next)
   }
 
-  // Conversations live in the floating panel, wherever the user parked it.
-  function openConversation(focus: ChatFocus) {
+  // Conversations live in the rail's dock by default. They float when the
+  // caller asks (the orchestrator view has no rail) or when the rail itself
+  // does not exist at this width.
+  function openConversation(focus: ChatFocus, float = false) {
     setReturnTab(tab === 'orchestrator' ? returnTab : tab)
     setChatFocus(focus)
-    setAskOpen(true)
+    if (float || window.innerWidth < RAIL_BREAKPOINT) {
+      setChatPoppedOut(true)
+    }
   }
 
   return (
@@ -152,12 +160,7 @@ export function WorkspaceShell({
         onQueryChange={setQuery}
         userName={userName}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenResearch={() => setResearchOpen(true)}
         onOpenDecisions={() => goTo('decisions')}
-        onOpenAsk={() => {
-          setChatFocus({ kind: 'orchestrator' })
-          setAskOpen(true)
-        }}
         sidebarCollapsed={sidebarCollapsed}
         onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
       />
@@ -191,7 +194,7 @@ export function WorkspaceShell({
                 projectId={activeId}
                 bots={workspace.bots}
                 onAskDepartment={(botId) =>
-                  openConversation({ kind: 'bot', botId })
+                  openConversation({ kind: 'bot', botId }, true)
                 }
                 onOpenObjective={(objectiveId) => {
                   setWorkObjectiveId(objectiveId)
@@ -207,8 +210,7 @@ export function WorkspaceShell({
                   type="button"
                   onClick={() => {
                     setSeed({ text: suggestion, nonce: Date.now() })
-                    setChatFocus({ kind: 'orchestrator' })
-                    setAskOpen(true)
+                    openConversation({ kind: 'orchestrator' }, true)
                   }}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
                 >
@@ -217,10 +219,7 @@ export function WorkspaceShell({
               ))}
               <button
                 type="button"
-                onClick={() => {
-                  setChatFocus({ kind: 'orchestrator' })
-                  setAskOpen(true)
-                }}
+                onClick={() => openConversation({ kind: 'orchestrator' }, true)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
               >
                 <Sparkles className="size-3.5" aria-hidden="true" />
@@ -243,6 +242,7 @@ export function WorkspaceShell({
               learning: report?.reusableLearningsCount ?? 0,
             }}
             onOpenSettings={() => setSettingsOpen(true)}
+            onOpenResearch={() => setResearchOpen(true)}
           />
 
           <main className="min-w-0 flex-1 overflow-y-auto">
@@ -255,9 +255,7 @@ export function WorkspaceShell({
                     projectObjective={workspace.project.objective}
                     onOpenWork={() => goTo('work')}
                     onOpenDecisions={() => goTo('decisions')}
-                    onChatWithBot={(botId) =>
-                      openConversation({ kind: 'bot', botId })
-                    }
+                    onChatWithBot={(botId) => openConversation({ kind: 'bot', botId })}
                   />
                 )}
                 {tab === 'work' && (
@@ -277,9 +275,7 @@ export function WorkspaceShell({
                     query={query}
                     selectedBotId={deptBotId}
                     onSelectBot={setDeptBotId}
-                    onChatWithBot={(botId) =>
-                      openConversation({ kind: 'bot', botId })
-                    }
+                    onChatWithBot={(botId) => openConversation({ kind: 'bot', botId })}
                   />
                 )}
                 {tab === 'evidence' && (
@@ -292,16 +288,30 @@ export function WorkspaceShell({
             )}
           </main>
 
-          {activeId && (
-            <GateRail
-              projectId={activeId}
-              onOpenDecisions={() => goTo('decisions')}
-            />
+          {activeId && workspace && (
+            <aside className="hidden w-72 shrink-0 flex-col border-l border-border bg-card/50 md:flex xl:w-80">
+              {chatPoppedOut ? (
+                <GateRail
+                  projectId={activeId}
+                  onOpenDecisions={() => goTo('decisions')}
+                />
+              ) : (
+                <ChatDock
+                  projectId={activeId}
+                  projectName={workspace.project.name}
+                  bots={workspace.bots}
+                  focus={chatFocus}
+                  onFocusChange={setChatFocus}
+                  seed={seed}
+                  onPopOut={() => setChatPoppedOut(true)}
+                />
+              )}
+            </aside>
           )}
         </div>
       )}
 
-      {askOpen && activeId && workspace && (
+      {chatPoppedOut && activeId && workspace && (
         <AskKojikiPanel
           projectId={activeId}
           projectName={workspace.project.name}
@@ -309,7 +319,7 @@ export function WorkspaceShell({
           focus={chatFocus}
           onFocusChange={setChatFocus}
           seed={seed}
-          onClose={() => setAskOpen(false)}
+          onClose={() => setChatPoppedOut(false)}
         />
       )}
 

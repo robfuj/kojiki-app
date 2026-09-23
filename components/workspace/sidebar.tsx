@@ -8,6 +8,7 @@ import {
   Lightbulb,
   Library,
   ListChecks,
+  Microscope,
   Scale,
   Settings,
   Users,
@@ -38,6 +39,7 @@ interface SidebarProps {
   collapsed: boolean
   counts: SidebarCounts
   onOpenSettings: () => void
+  onOpenResearch: () => void
 }
 
 /**
@@ -52,6 +54,7 @@ export function Sidebar({
   collapsed,
   counts,
   onOpenSettings,
+  onOpenResearch,
 }: SidebarProps) {
   const { t } = useLocale()
 
@@ -73,18 +76,37 @@ export function Sidebar({
         collapsed ? 'w-14' : 'w-60',
       )}
     >
-      <div className={cn('flex items-center gap-2.5 px-3 py-3.5', collapsed && 'justify-center px-0')}>
-        <AvatarCircle name={projectName ?? 'K'} className="size-9 shrink-0" />
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {projectName ?? '—'}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {projectMeta ?? ''}
-            </p>
-          </div>
-        )}
+      <div className={cn('border-b border-border px-3 py-3.5', collapsed && 'px-2')}>
+        <div className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}>
+          <AvatarCircle name={projectName ?? 'K'} className="size-9 shrink-0" />
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {projectName ?? '—'}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {projectMeta ?? ''}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* The research the orchestrator did before decomposing this project
+            belongs to the project, so it sits under the project's name rather
+            than in the switcher that only chooses between projects. */}
+        <button
+          type="button"
+          onClick={onOpenResearch}
+          title={collapsed ? t.research.openButton : undefined}
+          className={cn(
+            'mt-2.5 flex items-center gap-2 rounded-lg border border-border bg-background/60 text-xs font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground',
+            collapsed ? 'mx-auto size-8 justify-center p-0' : 'w-full px-2.5 py-1.5',
+          )}
+        >
+          <Microscope className="size-3.5 shrink-0" aria-hidden="true" />
+          {!collapsed && <span className="truncate">{t.research.openButton}</span>}
+          {collapsed && <span className="sr-only">{t.research.openButton}</span>}
+        </button>
       </div>
 
       <nav

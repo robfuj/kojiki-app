@@ -15,6 +15,7 @@ import {
   decisions,
   gateRequests,
   kaizenExperiences,
+  myceliumEdges,
   myceliumSignals,
   objectiveProgressHistory,
   objectives,
@@ -22,12 +23,59 @@ import {
   projects,
   subAgentTasks,
 } from '@/lib/db/schema'
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, like, or } from 'drizzle-orm'
 
 const getUserId = requireUserId
 
 export type SignalRow = typeof myceliumSignals.$inferSelect
 export type GateRow = typeof gateRequests.$inferSelect
+
+export interface PathRow {
+  id: string
+  fromAgent: string
+  toAgent: string
+  weight: string
+  reciprocalExchanges: number
+  oneDirectionalExchanges: number
+  lastReinforced: Date | null
+  triggerEvent: string | null
+}
+
+/**
+ * The mycelium paths of one project. Edge endpoints are registry node keys
+ * (`projectId:agentKey`), so the prefix both scopes the read to the project and
+ * strips back down to the agent key the UI displays.
+ */
+export async function getProjectPaths(projectId: string): Promise<PathRow[]> {
+  const userId = await getUserId()
+  const prefix = `${projectId}:`
+
+  const rows = await db
+    .select()
+    .from(myceliumEdges)
+    .where(
+      and(
+        eq(myceliumEdges.userId, userId),
+        or(
+          like(myceliumEdges.fromKr, `${prefix}%`),
+          like(myceliumEdges.toKr, `${prefix}%`),
+        ),
+      ),
+    )
+    .orderBy(desc(myceliumEdges.lastReinforced))
+    .limit(40)
+
+  return rows.map((row) => ({
+    id: row.id,
+    fromAgent: row.fromKr.slice(prefix.length),
+    toAgent: row.toKr.slice(prefix.length),
+    weight: row.weight,
+    reciprocalExchanges: row.reciprocalExchanges,
+    oneDirectionalExchanges: row.oneDirectionalExchanges,
+    lastReinforced: row.lastReinforced,
+    triggerEvent: row.triggerEvent,
+  }))
+}
 export type DecisionRow = typeof decisions.$inferSelect
 export type LearningRow = typeof kaizenExperiences.$inferSelect
 

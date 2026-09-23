@@ -193,7 +193,7 @@ export const ja: Dictionary = {
       functionLine: '機能',
       rights: '決裁権',
       handoffs: 'ハンドオフ先',
-      noSubAgents: 'この機能に登録されたサブエージェントはありません。',
+      noSubAgents: 'この機能に登録されたサブエージ���ントはありません。',
     },
     evidence: {
       subtitle: '信頼できる情報源から検証された情報。',
@@ -228,6 +228,7 @@ export const ja: Dictionary = {
       brand: '古事記',
       ask: '古事記に聞く',
       askHint: 'ヘッダーをドラッグすると会話パネルを移動できます。',
+      popOut: '会話をポップアウト',
       subtitle: '質問し、探索し、行動する。',
       collapse: 'ワークスペースへ戻る',
       runReview: 'プロジェクトレビューを実行',
@@ -347,10 +348,18 @@ export const ja: Dictionary = {
     researchingLead: '',
     researchingMid: 'この目標',
     researchingTail:
-      ' を取り巻く領域（市場・競合・規制・リスク）を調査し、必要なスペシャリストと質問を決め��います。少し時間がかかります。',
+      ' を取り巻く領域（市場・競合��規制・リスク）を調査し、必要なスペシャリストと質問を決め��います。少し時間がかかります。',
     researchError: 'オーケストレーターはこの目標を調査できませんでした',
+    clarifyingNote:
+      '目標を読み、何が未確定かを決めています。未確定がなければそのまま調査を開始します。',
+    clarifyEyebrow: '確認 {current} / {total}',
+    clarifySubmit: 'フィールドを調査',
+    refiningNote:
+      'あなたの回答をもとに領域を再調査し、目標を言い直しています。少し時間がかかります。',
+    refinedEyebrow: '洗練された目標',
+    refinedNoteLabel: '最初のブリーフからの変更点',
     briefEyebrowWeb: 'オーケストレーター · ライブ調査',
-    briefEyebrowModel: 'オーケストレーター · モデル推論',
+    briefEyebrowModel: 'オーケ��トレーター · モデル推論',
     briefPrompt: '調査結果は以下のとおりです。',
     briefWhy:
       '回答する前に読んでください。誤りや古い情報があれば���続く質問で伝えてください。計画はその両方から作られます。',
@@ -386,6 +395,12 @@ export const ja: Dictionary = {
     briefModelNote:
       'ライブウェブ調査が利用できなかったため、このブリーフは現在の情報源ではなくモデル推論に基づいています。数値は目安として扱い、誤りを知っているものは修正してください。',
   },
+  paths: {
+    title: '菌糸パス',
+    empty: 'まだ強化されたパスはありません。エージェント間のシグナル交換でパスが形成されます。',
+    exchanges: '双方向 {reciprocal} · 一方向 {one}',
+  },
+
   research: {
     title: '初期リサーチ',
     summary: 'この作業が分解される前にオーケストレーターが見つけたもの',

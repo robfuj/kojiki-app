@@ -12,8 +12,9 @@ interface GateRailProps {
 }
 
 /**
- * The right-hand gate queue: every pending decision gate stays visible next to
- * whatever view is open, so authority never hides behind a tab.
+ * The gate queue: every pending decision gate, listed where the user can see
+ * authority waiting on them. It fills the right rail whenever the conversation
+ * is popped out of it.
  */
 export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
   const { t } = useLocale()
@@ -25,8 +26,8 @@ export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
   const pending = (gates ?? []).filter((gate) => gate.status === 'pending')
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col border-l border-border bg-card/50 lg:flex">
-      <div className="flex items-center justify-between px-4 py-3.5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between px-4 py-3.5">
         <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
           {t.tabs.decisions.awaiting}
         </p>
@@ -35,7 +36,7 @@ export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
         </span>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-3">
         {pending.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
             {t.tabs.overview.noGates}
@@ -44,7 +45,7 @@ export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
           pending.map((gate) => (
             <div
               key={gate.id}
-              className="rounded-xl border border-border bg-card p-3 shadow-soft"
+              className="rounded-2xl border border-border bg-card p-3 shadow-soft"
             >
               <p className="line-clamp-2 text-sm font-medium text-foreground">
                 {gate.title}
@@ -68,6 +69,6 @@ export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
           ))
         )}
       </div>
-    </aside>
+    </div>
   )
 }
