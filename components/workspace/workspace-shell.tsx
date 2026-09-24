@@ -232,7 +232,6 @@ export function WorkspaceShell({
         <div className="flex min-h-0 flex-1">
           <Sidebar
             projectName={activeProject?.name ?? null}
-            projectMeta={activeProject?.objective ?? null}
             tab={tab}
             onTab={goTo}
             collapsed={sidebarCollapsed}

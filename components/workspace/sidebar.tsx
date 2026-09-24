@@ -33,7 +33,6 @@ interface SidebarCounts {
 
 interface SidebarProps {
   projectName: string | null
-  projectMeta: string | null
   tab: TabKey
   onTab: (tab: TabKey) => void
   collapsed: boolean
@@ -48,7 +47,6 @@ interface SidebarProps {
  */
 export function Sidebar({
   projectName,
-  projectMeta,
   tab,
   onTab,
   collapsed,
@@ -76,18 +74,13 @@ export function Sidebar({
         collapsed ? 'w-14' : 'w-60',
       )}
     >
-      <div className={cn('border-b border-border px-3 py-3.5', collapsed && 'px-2')}>
+      <div className={cn('border-b border-border px-3 py-3', collapsed && 'px-2')}>
         <div className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}>
           <AvatarCircle name={projectName ?? 'K'} className="size-9 shrink-0" />
           {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
-                {projectName ?? '—'}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {projectMeta ?? ''}
-              </p>
-            </div>
+            <p className="truncate text-base leading-snug font-semibold text-foreground">
+              {projectName ?? '—'}
+            </p>
           )}
         </div>
 

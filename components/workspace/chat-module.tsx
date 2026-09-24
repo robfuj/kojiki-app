@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/chat'
 import type { BotRow } from '@/app/actions/projects'
 import { DocumentAttach } from '@/components/workspace/document-attach'
+import { MarbledFluidOrb } from '@/components/workspace/ui/marbled-fluid-orb'
 import { cn } from '@/lib/utils'
 import { SYNAPSIS_STAGES } from '@/lib/ontology/synapsis'
 import { useChat } from '@ai-sdk/react'
@@ -511,8 +512,8 @@ function Conversation({
         ))}
 
         {status === 'submitted' && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          <p className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-card py-1 pr-4 pl-1 text-sm text-muted-foreground shadow-sm">
+            <MarbledFluidOrb size={26} speed={1.6} />
             {agentName} is working
           </p>
         )}

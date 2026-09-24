@@ -7,7 +7,8 @@ import {
   type ChatSeed,
 } from '@/components/workspace/chat-module'
 import { useLocale } from '@/components/i18n/locale-provider'
-import { Minus, Sparkles, X } from 'lucide-react'
+import { MarbledFluidOrb } from '@/components/workspace/ui/marbled-fluid-orb'
+import { Minus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const PANEL_WIDTH = 416
@@ -109,7 +110,7 @@ export function AskKojikiPanel({
         onPointerCancel={onPointerUp}
         className="flex h-11 cursor-grab touch-none items-center gap-2 border-b border-border bg-card/90 px-3 select-none active:cursor-grabbing"
       >
-        <Sparkles className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <MarbledFluidOrb size={24} speed={0.7} />
         <span className="shrink-0 text-sm font-medium text-foreground">
           {t.tabs.orchestrator.ask}
         </span>

@@ -7,7 +7,8 @@ import {
   type ChatSeed,
 } from '@/components/workspace/chat-module'
 import { useLocale } from '@/components/i18n/locale-provider'
-import { ArrowUpRight, Sparkles } from 'lucide-react'
+import { MarbledFluidOrb } from '@/components/workspace/ui/marbled-fluid-orb'
+import { ArrowUpRight } from 'lucide-react'
 
 interface ChatDockProps {
   projectId: string
@@ -38,7 +39,7 @@ export function ChatDock({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
-        <Sparkles className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <MarbledFluidOrb size={24} speed={0.7} />
         <span className="shrink-0 text-sm font-medium text-foreground">
           {t.tabs.orchestrator.ask}
         </span>
