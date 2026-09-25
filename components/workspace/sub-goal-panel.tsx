@@ -5,6 +5,7 @@ import type { BotRow } from '@/app/actions/projects'
 import { GateCard } from '@/components/workspace/gate-card'
 import { MyceliumFeed } from '@/components/workspace/mycelium-feed'
 import { TaskCard } from '@/components/workspace/task-card'
+import { subAgentsOf } from '@/lib/ontology/specialists'
 import { cn } from '@/lib/utils'
 import { ArrowLeft, Loader2, Users } from 'lucide-react'
 import { useState } from 'react'
@@ -164,11 +165,17 @@ export function SubGoalPanel({
           <button
             type="button"
             onClick={dispatch}
-            disabled={busy || !ownerBot}
+            disabled={
+              busy ||
+              !ownerBot ||
+              subAgentsOf(ownerBot.specialistKey).length === 0
+            }
             title={
-              ownerBot
-                ? undefined
-                : 'This sub-goal has no owning department, so no head can dispatch work'
+              !ownerBot
+                ? 'This sub-goal has no owning department, so no head can dispatch work'
+                : subAgentsOf(ownerBot.specialistKey).length === 0
+                  ? `${ownerBot.displayName} has no sub-agents in the ontology, so it handles this sub-goal itself`
+                  : undefined
             }
             className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
@@ -182,9 +189,11 @@ export function SubGoalPanel({
         </div>
 
         <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          {ownerBot
-            ? `${ownerBot.displayName} reads this sub-goal, picks whichever of its sub-agents the work needs, and commits to success criteria before dispatching. Because the criteria exist before the result does, reabsorption is a comparison rather than a judgement call.`
-            : 'Assign an owning department to this sub-goal before work can be dispatched.'}
+          {!ownerBot
+            ? 'Assign an owning department to this sub-goal before work can be dispatched.'
+            : subAgentsOf(ownerBot.specialistKey).length === 0
+              ? `${ownerBot.displayName} has no sub-agents in the ontology, so it handles this sub-goal itself — talk to it in the chat sidebar instead of dispatching.`
+              : `${ownerBot.displayName} reads this sub-goal, picks whichever of its sub-agents the work needs, and commits to success criteria before dispatching. Because the criteria exist before the result does, reabsorption is a comparison rather than a judgement call.`}
         </p>
 
         {error && (

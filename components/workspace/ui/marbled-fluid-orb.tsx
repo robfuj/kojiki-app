@@ -202,7 +202,8 @@ export function MarbledFluidOrb({
     group.add(mesh)
 
     let animationFrameId = 0
-    const clock = new THREE.Clock()
+    // THREE.Clock is deprecated in this three version; Timer is its replacement.
+    const timer = new THREE.Timer()
 
     const renderStill = () => {
       material.uniforms.uTime.value = 3.2
@@ -211,7 +212,8 @@ export function MarbledFluidOrb({
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
-      const elapsedTime = clock.getElapsedTime() * speed
+      timer.update()
+      const elapsedTime = timer.getElapsed() * speed
 
       material.uniforms.uTime.value = elapsedTime * 1.4
 

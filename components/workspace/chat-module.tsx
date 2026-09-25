@@ -7,6 +7,7 @@ import {
   getSessionMessages,
   type SessionRow,
 } from '@/app/actions/chat'
+import { uploadDocument } from '@/app/actions/documents'
 import type { BotRow } from '@/app/actions/projects'
 import { DocumentAttach } from '@/components/workspace/document-attach'
 import { MarbledFluidOrb } from '@/components/workspace/ui/marbled-fluid-orb'
@@ -17,7 +18,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { ArrowLeft, ArrowUp, ChevronDown, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 
 /**
  * Which agent the sidebar is talking to.
@@ -455,6 +456,10 @@ function Conversation({
 }: ConversationProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { mutate: mutateGlobal } = useSWRConfig()
+  const [dragging, setDragging] = useState(false)
+  const [dropping, setDropping] = useState(false)
+  const [dropError, setDropError] = useState<string | null>(null)
 
   // Suggestion chips place their prompt in the composer for the user to edit or
   // send; the nonce makes the same text re-seedable on a second click.
@@ -490,6 +495,31 @@ function Conversation({
     sendMessage({ text })
   }
 
+  // A dropped file uploads through the same path as the paperclip, so it becomes
+  // project context exactly like a picked one — and the chip list refetches
+  // through the shared SWR key rather than a second source of truth.
+  async function onDrop(event: React.DragEvent) {
+    event.preventDefault()
+    setDragging(false)
+    const files = Array.from(event.dataTransfer.files ?? [])
+    if (files.length === 0) return
+
+    setDropping(true)
+    setDropError(null)
+    try {
+      for (const file of files.slice(0, 4)) {
+        await uploadDocument({ file, projectId })
+      }
+      await mutateGlobal(['documents', projectId])
+    } catch (err) {
+      setDropError(
+        err instanceof Error ? err.message : 'Could not read that file',
+      )
+    } finally {
+      setDropping(false)
+    }
+  }
+
   const composerId = `chat-composer-${sessionId}`
 
   return (
@@ -512,10 +542,13 @@ function Conversation({
         ))}
 
         {status === 'submitted' && (
-          <p className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-card py-1 pr-4 pl-1 text-sm text-muted-foreground shadow-sm">
+          <div
+            role="status"
+            className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-card py-1 pr-4 pl-1 text-sm text-muted-foreground shadow-sm"
+          >
             <MarbledFluidOrb size={26} speed={1.6} />
             {agentName} is working
-          </p>
+          </div>
         )}
 
         {error && (
@@ -525,7 +558,25 @@ function Conversation({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card p-3">
+      <div
+        className="relative shrink-0 border-t border-border bg-card p-3"
+        onDragOver={(event) => {
+          event.preventDefault()
+          setDragging(true)
+        }}
+        onDragLeave={(event) => {
+          if (event.currentTarget.contains(event.relatedTarget as Node | null))
+            return
+          setDragging(false)
+        }}
+        onDrop={onDrop}
+      >
+        {dragging && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-seal bg-background/85 text-sm font-medium text-seal">
+            Drop to add files to this project
+          </div>
+        )}
+
         <div className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <label htmlFor={composerId} className="sr-only">
             Message {agentName}
@@ -567,6 +618,18 @@ function Conversation({
             attachment to this one message — so it lives below the composer and
             persists across the conversation. */}
         <DocumentAttach projectId={projectId} />
+
+        {dropping && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            Reading dropped file…
+          </p>
+        )}
+        {dropError && (
+          <p role="alert" className="mt-2 text-sm text-destructive">
+            {dropError}
+          </p>
+        )}
       </div>
     </>
   )
@@ -584,6 +647,14 @@ function MessageBubble({
     .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
     .map((part) => part.text)
     .join('')
+
+  // Recorded server-side when the turn was persisted: which project documents
+  // were in context, so a re-read conversation shows what it reasoned over.
+  const documentNames = message.parts
+    .filter((part) => (part as { type: string }).type === 'data-documents')
+    .flatMap(
+      (part) => (part as { data?: { names?: string[] } }).data?.names ?? [],
+    )
 
   if (!text) return null
 
@@ -610,6 +681,11 @@ function MessageBubble({
       <div className="min-w-0 max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-foreground">
         <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>
         {text}
+        {documentNames.length > 0 && (
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Reasoned over: {documentNames.join(' · ')}
+          </p>
+        )}
       </div>
     </div>
   )

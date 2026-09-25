@@ -253,8 +253,8 @@ export async function POST(request: Request) {
   try {
     documents = await documentsForContext(project.id)
   } catch (error) {
-    console.log(
-      '[v0] chat continuing without document context:',
+    console.error(
+      '[chat] continuing without document context:',
       error instanceof Error ? error.message : String(error),
     )
   }
@@ -293,7 +293,18 @@ export async function POST(request: Request) {
     originalMessages: messages,
     onEnd: async ({ messages: finalMessages }) => {
       // Upsert on message id so a retry or a reconnect cannot duplicate turns.
+      // The assistant turn also records which documents were in context, so a
+      // re-read conversation shows what it reasoned over.
+      const documentNames = documents.map((document) => document.name)
       for (const message of finalMessages) {
+        const parts =
+          message.role === 'assistant' && documentNames.length > 0
+            ? ([
+                ...message.parts,
+                { type: 'data-documents', data: { names: documentNames } },
+              ] as UIMessage['parts'])
+            : message.parts
+
         await db
           .insert(chatMessages)
           .values({
@@ -301,11 +312,11 @@ export async function POST(request: Request) {
             userId,
             sessionId,
             role: message.role,
-            parts: message.parts,
+            parts,
           })
           .onConflictDoUpdate({
             target: chatMessages.id,
-            set: { parts: message.parts, role: message.role },
+            set: { parts, role: message.role },
           })
       }
 
