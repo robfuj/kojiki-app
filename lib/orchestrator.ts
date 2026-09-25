@@ -321,9 +321,24 @@ export async function runProjectIntake(input: {
   goal: string
   userId: string
   locale?: Locale
+  /** Phase one's answers, so research starts from what the user clarified. */
+  clarifyAnswers?: { prompt: string; answer: string }[]
 }): Promise<ProjectIntakeResult> {
   const { orientation, goal, userId, locale = DEFAULT_LOCALE } = input
-  const context = projectContextLines(orientation, goal)
+  const clarified = (input.clarifyAnswers ?? []).filter(
+    (item) => item.answer.trim().length > 0,
+  )
+  const context = [
+    projectContextLines(orientation, goal),
+    ...(clarified.length > 0
+      ? [
+          '',
+          `Answers the user already gave:\n${clarified
+            .map((item) => `- ${item.prompt}: ${item.answer}`)
+            .join('\n')}`,
+        ]
+      : []),
+  ].join('\n')
 
   const research = await researchOnTheWeb(context)
   const researchMethod: ProjectIntakeResult['researchMethod'] = research
@@ -399,5 +414,293 @@ Second, ask the three to five questions whose answers would materially change ho
       required: question.required,
     })),
     researchMethod,
+  }
+}
+
+/**
+ * Phase one of the orientation protocol: adaptive clarification.
+ *
+ * Before the field is researched, the orchestrator reads the goal and asks only
+ * what the goal leaves open — scope, audience, timeframe, constraints. A goal
+ * that is already specific returns no questions and the protocol moves straight
+ * to research, so clarification costs nothing when it has nothing to add.
+ */
+export const clarifySchema = z.object({
+  questions: z
+    .array(
+      z.object({
+        prompt: z.string(),
+        why: z.string(),
+        kind: z.enum(['text', 'textarea']),
+        required: z.boolean(),
+      }),
+    )
+    .max(3),
+})
+
+export interface ClarifyQuestion {
+  id: string
+  prompt: string
+  why: string
+  kind: 'text' | 'textarea'
+  required: boolean
+}
+
+export async function runClarifyPhase(input: {
+  orientation: OrientationAnswers
+  goal: string
+  userId: string
+  locale?: Locale
+}): Promise<ClarifyQuestion[]> {
+  const { orientation, goal, userId, locale = DEFAULT_LOCALE } = input
+  const context = projectContextLines(orientation, goal)
+  const route = await resolveModelForUser(userId)
+
+  const { toolCalls } = await generateText({
+    model: route.model,
+    tools: {
+      clarify: {
+        description:
+          'Return the clarifying questions to ask before researching this goal, or an empty list when the goal is already specific enough to research.',
+        inputSchema: clarifySchema,
+      },
+    },
+    toolChoice: 'required',
+    prompt: `You are the orchestrator for a team of department agents built on the Kojiki ontology.
+
+${context}
+
+Read the project goal. Return the questions whose answers you need before the field can be researched well: the scope, the audience, the timeframe, or the constraints the goal leaves open. Do not ask what the goal already states. If the goal is specific enough to research as written, return an empty array. At most three questions, each optional unless the research would be meaningless without it. Each "why" must say what the answer changes.${
+      languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
+    }`,
+  })
+
+  const call = toolCalls.find((c) => c.toolName === 'clarify')
+  if (!call) throw new Error('The orchestrator returned no clarify plan')
+
+  const plan = clarifySchema.parse(call.input)
+
+  return plan.questions.slice(0, 3).map((question, index) => ({
+    id: `c${index + 1}`,
+    prompt: question.prompt,
+    why: question.why,
+    kind: question.kind,
+    required: question.required,
+  }))
+}
+
+export interface ReResearchResult {
+  brief: ResearchBrief
+  refinedGoal: string
+  refinementNote: string
+  researchMethod: 'web-search' | 'model-reasoning'
+}
+
+export const reResearchSchema = z.object({
+  marketScan: z.string(),
+  competitiveLandscape: z.string(),
+  regulatoryConsiderations: z.string(),
+  keyRisks: z.array(z.string()),
+  sources: z.array(z.string()),
+  refinedGoal: z
+    .string()
+    .describe(
+      'The project goal restated in one or two sentences, sharpened by the answers: scope, audience, timeframe and the criterion for success made explicit wherever the answers supplied them.',
+    ),
+  refinementNote: z
+    .string()
+    .describe(
+      'One or two sentences on what changed versus the first brief, and which answer changed it.',
+    ),
+})
+
+/**
+ * Phases four and five of the orientation protocol: re-research and refine.
+ *
+ * The answers the user gave are folded into the research context and the field
+ * is researched again, so the brief the project is built on reflects what the
+ * user actually said. The same pass restates the goal around those answers —
+ * the refined goal becomes the project's root objective.
+ */
+export async function runReResearchPhase(input: {
+  orientation: OrientationAnswers
+  goal: string
+  clarifyAnswers: { prompt: string; answer: string }[]
+  answers: { prompt: string; answer: string }[]
+  priorBrief: ResearchBrief
+  userId: string
+  locale?: Locale
+}): Promise<ReResearchResult> {
+  const {
+    orientation,
+    goal,
+    clarifyAnswers,
+    answers,
+    priorBrief,
+    userId,
+    locale = DEFAULT_LOCALE,
+  } = input
+
+  const given = [...clarifyAnswers, ...answers].filter(
+    (item) => item.answer.trim().length > 0,
+  )
+  const context = [
+    projectContextLines(orientation, goal),
+    '',
+    given.length > 0
+      ? `Answers the user gave:\n${given.map((item) => `- ${item.prompt}: ${item.answer}`).join('\n')}`
+      : 'The user gave no answers to the follow-up questions.',
+  ].join('\n')
+
+  const research = await researchOnTheWeb(context)
+  const researchMethod: ReResearchResult['researchMethod'] = research
+    ? 'web-search'
+    : 'model-reasoning'
+
+  const route = await resolveModelForUser(userId)
+
+  const { toolCalls } = await generateText({
+    model: route.model,
+    tools: {
+      reresearch: {
+        description:
+          'Return the updated research brief and the refined goal statement after the user answered the follow-up questions.',
+        inputSchema: reResearchSchema,
+      },
+    },
+    toolChoice: 'required',
+    prompt: `You are the orchestrator for a team of department agents built on the Kojiki ontology.
+
+${context}
+
+${
+  research
+    ? `Live web research on this field:\n\n${research}`
+    : 'No live web research was available. Reason from your own knowledge and leave sources empty.'
+}
+
+The first brief, before the answers:
+Market — ${priorBrief.marketScan}
+Competition — ${priorBrief.competitiveLandscape}
+Regulation — ${priorBrief.regulatoryConsiderations}
+
+Do two things.
+
+First, update the brief where the answers change it: a stated audience narrows the market scan, a stated timeframe moves the risks, a stated constraint changes the competitive read. Keep what the answers did not touch.
+
+Second, restate the goal in one or two sentences around the answers, and say in one or two sentences what changed versus the first brief.${
+      languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
+    }`,
+  })
+
+  const call = toolCalls.find((c) => c.toolName === 'reresearch')
+  if (!call) throw new Error('The orchestrator returned no re-research plan')
+
+  const plan = reResearchSchema.parse(call.input)
+
+  return {
+    brief: {
+      marketScan: plan.marketScan,
+      competitiveLandscape: plan.competitiveLandscape,
+      regulatoryConsiderations: plan.regulatoryConsiderations,
+      keyRisks: plan.keyRisks,
+      sources: research ? plan.sources : [],
+    },
+    refinedGoal: plan.refinedGoal,
+    refinementNote: plan.refinementNote,
+    researchMethod,
+  }
+}
+
+/**
+ * The periodic whole-project review.
+ *
+ * The orchestrator reads a digest of the project's real state — objectives,
+ * tasks and their verdicts, open gates, recent agent traffic — and returns what
+ * each department found plus what it recommends doing. It reasons over rows the
+ * runtime already holds rather than over an agent's own claims, so a finding is
+ * only as strong as the record behind it.
+ */
+export const orchestratorReviewSchema = z.object({
+  findings: z
+    .array(
+      z.object({
+        department: z
+          .string()
+          .describe(
+            'Display name of the department this finding belongs to, exactly as written in the digest, or "Orchestrator" for a cross-cutting finding.',
+          ),
+        severity: z.enum(['info', 'attention', 'critical']),
+        summary: z.string().describe('The finding in one line.'),
+        detail: z
+          .string()
+          .describe(
+            'Two or three sentences citing the specific objectives, tasks, gates or signals from the digest that support it.',
+          ),
+      }),
+    )
+    .describe('Three to eight findings, most severe first.'),
+  actions: z
+    .array(
+      z.object({
+        label: z
+          .string()
+          .describe('Short imperative button label, e.g. "Ask Legal about the import licence".'),
+        kind: z.enum(['ask_department', 'create_decision', 'open_objective']),
+        targetId: z
+          .string()
+          .nullable()
+          .describe(
+            'The objective id for open_objective, taken from the digest. Null for the other kinds.',
+          ),
+        departmentName: z
+          .string()
+          .nullable()
+          .describe(
+            'For ask_department, the display name of the department to open a conversation with. Null otherwise.',
+          ),
+      }),
+    )
+    .describe('Two to five recommended actions the user can take right now.'),
+})
+
+export type OrchestratorReview = z.infer<typeof orchestratorReviewSchema>
+
+export async function runOrchestratorReview(input: {
+  digest: string
+  userId: string
+  locale?: Locale
+}): Promise<OrchestratorReview> {
+  const route = await resolveModelForUser(input.userId)
+  const directive = languageDirective(input.locale ?? DEFAULT_LOCALE)
+
+  const { toolCalls } = await generateText({
+    model: route.model,
+    tools: {
+      review: {
+        description:
+          'Return the department findings and recommended actions for this project review.',
+        inputSchema: orchestratorReviewSchema,
+      },
+    },
+    toolChoice: 'required',
+    prompt: `You are the orchestrator for a team of department agents built on the Kojiki ontology. Review the project state below and report what matters.
+
+${input.digest}
+
+Rules:
+- Every finding must cite something that actually appears in the digest — an objective, a task and its verdict, a gate, or a signal. Do not invent work that is not listed.
+- A department only gets a finding when the digest shows work or exposure belonging to it; otherwise the finding belongs to "Orchestrator".
+- Severity: critical means blocked or at risk of failing, attention means slipping or unverified, info means healthy and worth knowing.
+- Recommended actions must be things the user can do in this workspace: open a conversation with a department, record a decision, or open an objective. For open_objective, copy the objective id exactly as written in the digest.${directive ? `\n\n${directive}` : ''}`,
+  })
+
+  const call = toolCalls.find((c) => c.toolName === 'review')
+  if (!call) throw new Error('The orchestrator returned no review')
+
+  const review = orchestratorReviewSchema.parse(call.input)
+  return {
+    findings: review.findings.slice(0, 8),
+    actions: review.actions.slice(0, 5),
   }
 }

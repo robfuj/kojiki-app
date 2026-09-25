@@ -7,8 +7,10 @@ import {
   getSessionMessages,
   type SessionRow,
 } from '@/app/actions/chat'
+import { uploadDocument } from '@/app/actions/documents'
 import type { BotRow } from '@/app/actions/projects'
 import { DocumentAttach } from '@/components/workspace/document-attach'
+import { MarbledFluidOrb } from '@/components/workspace/ui/marbled-fluid-orb'
 import { cn } from '@/lib/utils'
 import { SYNAPSIS_STAGES } from '@/lib/ontology/synapsis'
 import { useChat } from '@ai-sdk/react'
@@ -16,7 +18,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { ArrowLeft, ArrowUp, ChevronDown, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 
 /**
  * Which agent the sidebar is talking to.
@@ -38,6 +40,12 @@ export type ChatFocus =
       objectiveId: string | null
     }
 
+/** A prompt pushed into the composer from outside — suggestion chips use it. */
+export interface ChatSeed {
+  text: string
+  nonce: number
+}
+
 interface ChatModuleProps {
   projectId: string
   projectName: string
@@ -45,6 +53,7 @@ interface ChatModuleProps {
   /** Which agent the sidebar is talking to. The parent owns it so the tree and the sidebar agree. */
   focus?: ChatFocus | null
   onFocusChange: (focus: ChatFocus) => void
+  seed?: ChatSeed | null
 }
 
 export function ChatModule({
@@ -53,6 +62,7 @@ export function ChatModule({
   bots,
   focus,
   onFocusChange,
+  seed,
 }: ChatModuleProps) {
   const [showDetails, setShowDetails] = useState(false)
 
@@ -97,6 +107,7 @@ export function ChatModule({
           key={`${projectId}:${focus.subAgentKey}:${focus.objectiveId ?? 'project'}`}
           projectId={projectId}
           focus={focus}
+          seed={seed}
         />
       </div>
     )
@@ -209,7 +220,11 @@ export function ChatModule({
       </div>
 
       {orchestratorActive ? (
-        <OrchestratorChat key={`orchestrator:${projectId}`} projectId={projectId} />
+        <OrchestratorChat
+          key={`orchestrator:${projectId}`}
+          projectId={projectId}
+          seed={seed}
+        />
       ) : (
         activeBot && (
           <BotChat
@@ -217,6 +232,7 @@ export function ChatModule({
             projectId={projectId}
             botId={activeBot.id}
             botName={activeBot.displayName}
+            seed={seed}
           />
         )
       )}
@@ -230,7 +246,7 @@ function BotDetails({ bot }: { bot: BotRow }) {
   const verbs = ['own', 'recommend', 'consult', 'approve', 'execute', 'escalate', 'automate']
 
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-4 shadow-soft">
+    <div className="mt-3 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
       <dl className="space-y-2">
         {verbs.map((verb) => {
           const items = rights[verb]
@@ -280,9 +296,10 @@ interface BotChatProps {
   projectId: string
   botId: string
   botName: string
+  seed?: ChatSeed | null
 }
 
-function BotChat({ projectId, botId, botName }: BotChatProps) {
+function BotChat({ projectId, botId, botName, seed }: BotChatProps) {
   const { data: session, isLoading: loadingSession } = useSWR(
     ['session', projectId, botId],
     () => getOrCreateSession(projectId, botId),
@@ -295,12 +312,19 @@ function BotChat({ projectId, botId, botName }: BotChatProps) {
       loading={loadingSession}
       agentName={botName}
       projectId={projectId}
+      seed={seed}
       emptyHint={`${botName} is oriented on this project and ready. Ask it to work a decision through the SYNAPSIS cycle, or to take a goal from the OKR tree.`}
     />
   )
 }
 
-function OrchestratorChat({ projectId }: { projectId: string }) {
+function OrchestratorChat({
+  projectId,
+  seed,
+}: {
+  projectId: string
+  seed?: ChatSeed | null
+}) {
   const { data: session, isLoading } = useSWR(
     ['orchestrator-session', projectId],
     () => getOrCreateOrchestratorSession(projectId),
@@ -313,6 +337,7 @@ function OrchestratorChat({ projectId }: { projectId: string }) {
       loading={isLoading}
       agentName="Orchestrator"
       projectId={projectId}
+      seed={seed}
       emptyHint="Ask what is happening across the OKR tree, which sub-agents are working, or what is waiting on your decision. The orchestrator reports recorded state — it does not do departmental work itself."
     />
   )
@@ -321,9 +346,11 @@ function OrchestratorChat({ projectId }: { projectId: string }) {
 function SubAgentChat({
   projectId,
   focus,
+  seed,
 }: {
   projectId: string
   focus: Extract<ChatFocus, { kind: 'sub_agent' }>
+  seed?: ChatSeed | null
 }) {
   const { data: session, isLoading } = useSWR(
     [
@@ -351,6 +378,7 @@ function SubAgentChat({
       loading={isLoading}
       agentName={focus.subAgentTitle}
       projectId={projectId}
+      seed={seed}
       emptyHint={`${focus.subAgentTitle} is here with its own skills, tools and decision rights. Ask it what it is doing, or push back on its report. Anything outside its decision rights goes back to its department head as a recommendation.`}
     />
   )
@@ -361,6 +389,7 @@ interface SessionChatProps {
   loading: boolean
   agentName: string
   projectId: string
+  seed?: ChatSeed | null
   emptyHint: string
 }
 
@@ -369,6 +398,7 @@ function SessionChat({
   loading,
   agentName,
   projectId,
+  seed,
   emptyHint,
 }: SessionChatProps) {
   const { data: stored, isLoading: loadingMessages } = useSWR(
@@ -400,6 +430,7 @@ function SessionChat({
       sessionId={session.id}
       agentName={agentName}
       projectId={projectId}
+      seed={seed}
       emptyHint={emptyHint}
       initialMessages={initialMessages}
     />
@@ -410,6 +441,7 @@ interface ConversationProps {
   sessionId: string
   agentName: string
   projectId: string
+  seed?: ChatSeed | null
   emptyHint: string
   initialMessages: UIMessage[]
 }
@@ -418,11 +450,22 @@ function Conversation({
   sessionId,
   agentName,
   projectId,
+  seed,
   emptyHint,
   initialMessages,
 }: ConversationProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { mutate: mutateGlobal } = useSWRConfig()
+  const [dragging, setDragging] = useState(false)
+  const [dropping, setDropping] = useState(false)
+  const [dropError, setDropError] = useState<string | null>(null)
+
+  // Suggestion chips place their prompt in the composer for the user to edit or
+  // send; the nonce makes the same text re-seedable on a second click.
+  useEffect(() => {
+    if (seed) setInput(seed.text)
+  }, [seed])
 
   const transport = useMemo(
     () =>
@@ -452,6 +495,31 @@ function Conversation({
     sendMessage({ text })
   }
 
+  // A dropped file uploads through the same path as the paperclip, so it becomes
+  // project context exactly like a picked one — and the chip list refetches
+  // through the shared SWR key rather than a second source of truth.
+  async function onDrop(event: React.DragEvent) {
+    event.preventDefault()
+    setDragging(false)
+    const files = Array.from(event.dataTransfer.files ?? [])
+    if (files.length === 0) return
+
+    setDropping(true)
+    setDropError(null)
+    try {
+      for (const file of files.slice(0, 4)) {
+        await uploadDocument({ file, projectId })
+      }
+      await mutateGlobal(['documents', projectId])
+    } catch (err) {
+      setDropError(
+        err instanceof Error ? err.message : 'Could not read that file',
+      )
+    } finally {
+      setDropping(false)
+    }
+  }
+
   const composerId = `chat-composer-${sessionId}`
 
   return (
@@ -474,10 +542,13 @@ function Conversation({
         ))}
 
         {status === 'submitted' && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          <div
+            role="status"
+            className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-card py-1 pr-4 pl-1 text-sm text-muted-foreground shadow-sm"
+          >
+            <MarbledFluidOrb size={26} speed={1.6} />
             {agentName} is working
-          </p>
+          </div>
         )}
 
         {error && (
@@ -487,7 +558,25 @@ function Conversation({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card p-3">
+      <div
+        className="relative shrink-0 border-t border-border bg-card p-3"
+        onDragOver={(event) => {
+          event.preventDefault()
+          setDragging(true)
+        }}
+        onDragLeave={(event) => {
+          if (event.currentTarget.contains(event.relatedTarget as Node | null))
+            return
+          setDragging(false)
+        }}
+        onDrop={onDrop}
+      >
+        {dragging && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-seal bg-background/85 text-sm font-medium text-seal">
+            Drop to add files to this project
+          </div>
+        )}
+
         <div className="flex items-end gap-2 rounded-2xl border border-input bg-background p-2.5 transition-shadow focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <label htmlFor={composerId} className="sr-only">
             Message {agentName}
@@ -516,7 +605,7 @@ function Conversation({
             onClick={submit}
             disabled={busy || !input.trim()}
             aria-label="Send message"
-            className="shrink-0 rounded-full bg-sumi p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="shrink-0 rounded-full bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <ArrowUp className="size-4" aria-hidden="true" />
           </button>
@@ -529,6 +618,18 @@ function Conversation({
             attachment to this one message — so it lives below the composer and
             persists across the conversation. */}
         <DocumentAttach projectId={projectId} />
+
+        {dropping && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            Reading dropped file…
+          </p>
+        )}
+        {dropError && (
+          <p role="alert" className="mt-2 text-sm text-destructive">
+            {dropError}
+          </p>
+        )}
       </div>
     </>
   )
@@ -547,22 +648,44 @@ function MessageBubble({
     .map((part) => part.text)
     .join('')
 
+  // Recorded server-side when the turn was persisted: which project documents
+  // were in context, so a re-read conversation shows what it reasoned over.
+  const documentNames = message.parts
+    .filter((part) => (part as { type: string }).type === 'data-documents')
+    .flatMap(
+      (part) => (part as { data?: { names?: string[] } }).data?.names ?? [],
+    )
+
   if (!text) return null
 
+  // The user speaks in an ink bubble; the agent answers in plain type beside its
+  // mark, the way the workspace's documents read.
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-[1.375rem] rounded-br-lg bg-primary px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
+          {text}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={cn('flex flex-col gap-1.5', isUser && 'items-end')}>
-      <p className="px-1 text-xs font-medium text-muted-foreground">
-        {isUser ? 'You' : agentName}
-      </p>
-      <div
-        className={cn(
-          'max-w-[92%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
-          isUser
-            ? 'rounded-br-md bg-sumi text-primary-foreground'
-            : 'rounded-bl-md border border-border bg-card text-foreground shadow-soft',
-        )}
+    <div className="flex items-start gap-2.5">
+      <span
+        aria-hidden="true"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
       >
+        {agentName.slice(0, 1).toUpperCase()}
+      </span>
+      <div className="min-w-0 max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+        <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>
         {text}
+        {documentNames.length > 0 && (
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Reasoned over: {documentNames.join(' · ')}
+          </p>
+        )}
       </div>
     </div>
   )

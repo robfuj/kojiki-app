@@ -1,6 +1,6 @@
 import { and, eq, ne } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { objectives, subAgentTasks } from '@/lib/db/schema'
+import { objectiveProgressHistory, objectives, subAgentTasks } from '@/lib/db/schema'
 
 /**
  * Shared OKR tree mechanics, used by both the goal actions and the task
@@ -78,10 +78,20 @@ export async function rollupAncestors(userId: string, startId: string | null) {
       const average = Math.round(
         shares.reduce((sum, share) => sum + share, 0) / shares.length,
       )
-      await db
-        .update(objectives)
-        .set({ progress: average, updatedAt: new Date() })
-        .where(and(eq(objectives.id, currentId), eq(objectives.userId, userId)))
+      if (average !== node.progress) {
+        await db
+          .update(objectives)
+          .set({ progress: average, updatedAt: new Date() })
+          .where(and(eq(objectives.id, currentId), eq(objectives.userId, userId)))
+        // Rollups are progress movements too: a parent's sparkline should show
+        // the climb its children caused.
+        await db.insert(objectiveProgressHistory).values({
+          id: crypto.randomUUID(),
+          userId,
+          objectiveId: currentId,
+          progress: average,
+        })
+      }
     }
 
     currentId = node.parentObjectiveId

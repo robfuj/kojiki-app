@@ -2,7 +2,12 @@
 
 import { requireUserId } from '@/lib/session'
 import { db } from '@/lib/db'
-import { objectives, projectBots, projects } from '@/lib/db/schema'
+import {
+  objectiveProgressHistory,
+  objectives,
+  projectBots,
+  projects,
+} from '@/lib/db/schema'
 import { resolveModelForUser } from '@/lib/ai'
 import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
 import { and, asc, eq } from 'drizzle-orm'
@@ -151,6 +156,17 @@ export async function setObjectiveProgress(input: {
     .update(objectives)
     .set({ progress, status, updatedAt: new Date() })
     .where(and(eq(objectives.id, input.id), eq(objectives.userId, userId)))
+
+  // A sample per real movement, so the Home tab sparkline shows the path rather
+  // than only the current number. No-op sets add nothing.
+  if (node.progress !== progress) {
+    await db.insert(objectiveProgressHistory).values({
+      id: crypto.randomUUID(),
+      userId,
+      objectiveId: input.id,
+      progress,
+    })
+  }
 
   await rollupAncestors(userId, node.parentObjectiveId)
   revalidatePath('/')

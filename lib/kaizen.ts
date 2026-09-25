@@ -1,6 +1,12 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { kaizenExperiences, subAgentTasks } from '@/lib/db/schema'
+import {
+  completeChain,
+  findChainByDispatch,
+  recordCausalNode,
+  recordLearning,
+} from '@/lib/engine/causal'
 import { appendSentinelEntry } from '@/lib/sentinel'
 
 /**
@@ -313,6 +319,52 @@ export async function recordExperience(input: RecordExperienceInput) {
     reusable: input.reusable ?? false,
     sentinelEntryId: entry.id,
   })
+
+  // The synapsis learning record: this experience as one JSONB cycle entry, and
+  // the closing node of the task's causal chain when there is one.
+  await recordLearning({
+    userId: input.userId,
+    projectId: input.projectId,
+    learningId: id,
+    experiences: [
+      {
+        experienceId: id,
+        hypothesis: input.hypothesis,
+        action: input.action,
+        expected: input.expected,
+        observed: input.observed,
+      },
+    ],
+    patterns: input.errorClass ? [input.errorClass] : [],
+    reusableInsights: input.reusable && input.insight ? [input.insight] : [],
+    redefinitions: input.redefinition ? { redefinition: input.redefinition } : {},
+    confidence: 'medium',
+    kaizenIteration: 1,
+  })
+
+  if (input.taskId) {
+    const chain = await findChainByDispatch(input.userId, input.taskId)
+    if (chain) {
+      await recordCausalNode({
+        userId: input.userId,
+        chainId: chain.id,
+        stage: 'learn',
+        artifactType: 'learning',
+        artifactId: id,
+        agentId: input.agentKey,
+        content: {
+          hypothesis: input.hypothesis,
+          insight: input.insight ?? null,
+          reusable: input.reusable,
+        },
+      })
+      await completeChain({
+        userId: input.userId,
+        chainId: chain.id,
+        finalLearningId: id,
+      })
+    }
+  }
 
   return { id, entry }
 }

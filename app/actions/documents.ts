@@ -130,6 +130,19 @@ export async function uploadDocument(input: {
   return summarise(row)
 }
 
+/** One document with its extracted text, for the Evidence detail panel. */
+export async function getDocument(documentId: string): Promise<DocumentRow | null> {
+  const userId = await getUserId()
+
+  const [row] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
+    .limit(1)
+
+  return row ?? null
+}
+
 export async function deleteDocument(documentId: string): Promise<void> {
   const userId = await getUserId()
 
