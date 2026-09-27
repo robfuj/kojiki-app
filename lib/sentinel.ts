@@ -53,6 +53,23 @@ export type SentinelEntryType =
   | 'model_proposed'
   | 'model_approved'
   | 'cost_recorded'
+  // MORPHEUS — the nightly reset seals what it snapshotted and what it verified.
+  // Sealing the snapshot hash before anything is cleared is what makes the reset
+  // reversible and stops a reset being used to erase a day's evidence.
+  | 'morpheus_sealed'
+  | 'morpheus_verified'
+  // DECISION RIGHTS — a denied signal is sealed rather than dropped, so an agent
+  // that was refused authority leaves a record of having asked.
+  | 'right_denied'
+  // APPROVAL GATES — the request and the decision, so a result cannot later be
+  // described as approved when the gate rejected it.
+  | 'approval_requested'
+  | 'approval_decided'
+  // HANDOFFS — an obligation between agents, sealed at send and at closure.
+  | 'handoff_sent'
+  | 'handoff_closed'
+  // KAIZEN — a classified learning case, sealed so the lesson cannot be restated.
+  | 'learning_captured'
 
 /** Deterministic JSON: sorted keys at every depth, so a hash is reproducible. */
 export function canonicalJson(value: unknown): string {

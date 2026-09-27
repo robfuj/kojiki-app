@@ -842,3 +842,248 @@ export const deckDnaCache = pgTable('deck_dna_cache', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   expiresAt: timestamp('expiresAt'),
 })
+
+// ---------------------------------------------------------------------------
+// Governance engines (MORPHEUS, decision rights, approval gates, handoffs,
+// Kaizen taxonomy, sub-agent configs).
+//
+// SACCADE framing and the SYNAPSIS stages are NOT duplicated here: the framing
+// record is synapsis_problems and the stage artifacts are the synapsis_* tables
+// created by migrate-engine-schema.mjs. These tables cover the engines that had
+// no persistence at all.
+// ---------------------------------------------------------------------------
+
+// MORPHEUS phase 1 — one row per nightly hibernation of a project's working
+// stores. The snapshot is what makes the reset reversible, so it is written and
+// hashed before anything is cleared.
+export const morpheusSnapshots = pgTable('morpheus_snapshots', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  // sha256 over the canonical JSON of every store below. Sealed in SENTINEL by
+  // the hypnos phase, so a snapshot cannot be quietly replaced afterwards.
+  snapshotHash: text('snapshotHash').notNull(),
+  stores: jsonb('stores').notNull().default([]),
+  storeCount: integer('storeCount').notNull().default(0),
+  rowCount: integer('rowCount').notNull().default(0),
+  // snapshotted -> sealed -> rematerialized -> verified. A run that dies partway
+  // stays at its last completed phase, which is what awaken reports on. Nothing
+  // is cleared before the seal, so 'snapshotted' is the only state a cycle can
+  // safely abandon and retry from.
+  status: text('status').notNull().default('snapshotted'),
+  sentinelEntryId: text('sentinelEntryId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// MORPHEUS phase 2 — the seal itself. Kept separate from the snapshot so the
+// ledger reference survives even if a snapshot row is later pruned.
+export const morpheusSeals = pgTable('morpheus_seals', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  snapshotId: text('snapshotId').notNull(),
+  sealHash: text('sealHash').notNull(),
+  sentinelEntryId: text('sentinelEntryId').notNull(),
+  sequence: integer('sequence').notNull(),
+  sealedAt: timestamp('sealedAt').notNull().defaultNow(),
+})
+
+// MORPHEUS phase 4 — the morning verdict. This is the row a user reads to know
+// whether yesterday's reset left the chain intact.
+export const morpheusVerifications = pgTable('morpheus_verifications', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  snapshotId: text('snapshotId'),
+  chainValid: boolean('chainValid').notNull(),
+  entries: integer('entries').notNull().default(0),
+  brokenAtSequence: integer('brokenAtSequence'),
+  reason: text('reason'),
+  gatesRematerialized: integer('gatesRematerialized').notNull().default(0),
+  storesCleared: jsonb('storesCleared').notNull().default([]),
+  verifiedAt: timestamp('verifiedAt').notNull().defaultNow(),
+})
+
+// Decision rights per project + agent. mycelium_nodes carries a snapshot of the
+// rights a node was registered with; this is the authoritative, grantable copy
+// that the gate reads at propagation time.
+export const agentDecisionRights = pgTable(
+  'agent_decision_rights',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    projectId: text('projectId').notNull(),
+    agentKey: text('agentKey').notNull(),
+    // The seven rights: own, recommend, consult, approve, execute, escalate,
+    // automate. Each is a list of action patterns.
+    rights: jsonb('rights').notNull().default({}),
+    // default | gate | manual — a gate decision is the only path that widens
+    // rights, and recording which path granted them is what makes that auditable.
+    source: text('source').notNull().default('default'),
+    grantedBy: text('grantedBy'),
+    gateRequestId: text('gateRequestId'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('agent_decision_rights_project_agent_unique').on(
+      table.projectId,
+      table.agentKey,
+    ),
+  ],
+)
+
+// Approval gates. gate_requests is the ontology-change gate; this is the
+// orchestration-result gate upstream's approval.py implements, with channels and
+// a retry budget rather than a single blocking prompt.
+export const approvalRequests = pgTable('approval_requests', {
+  // APPR-XXXXXXXXXX
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  orchestrationId: text('orchestrationId'),
+  // webhook | auto | failclosed. Upstream's 'cli' channel has no meaning on
+  // Vercel — there is no terminal to answer it — so it is not offered.
+  channel: text('channel').notNull().default('failclosed'),
+  title: text('title').notNull(),
+  summary: text('summary'),
+  payload: jsonb('payload').notNull().default({}),
+  confidence: doublePrecision('confidence'),
+  retries: integer('retries').notNull().default(0),
+  status: text('status').notNull().default('pending'),
+  webhookUrl: text('webhookUrl'),
+  decision: text('decision'),
+  decisionNote: text('decisionNote'),
+  decidedBy: text('decidedBy'),
+  sentinelEntryId: text('sentinelEntryId'),
+  expiresAt: timestamp('expiresAt'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  decidedAt: timestamp('decidedAt'),
+})
+
+// Kaizen's 14 error classes. Reference data, not tenant data: the taxonomy is
+// fixed by the ontology, so it carries no userId and is seeded once.
+export const kaizenErrorClasses = pgTable('kaizen_error_classes', {
+  // L0 .. L13
+  code: text('code').primaryKey(),
+  label: text('label').notNull(),
+  description: text('description'),
+  // What the class implies for the Check verdict — L3 (governance gap) escalates,
+  // L0 (execution error) usually just retries.
+  defaultVerdict: text('defaultVerdict'),
+  escalates: boolean('escalates').notNull().default(false),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// A LEARNING verdict's reusable case. kaizen_experiences records that an outcome
+// was verified; this records what to do differently next time, classified.
+export const kaizenLearningCases = pgTable('kaizen_learning_cases', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId'),
+  errorClass: text('errorClass').notNull(),
+  problemId: text('problemId'),
+  taskId: text('taskId'),
+  symptom: text('symptom').notNull(),
+  rootCause: text('rootCause'),
+  resolution: text('resolution'),
+  reusableInsight: text('reusableInsight'),
+  verdict: text('verdict').notNull().default('LEARNING'),
+  sentinelEntryId: text('sentinelEntryId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// Agent-to-agent handoffs. A signal says something; a handoff obliges the
+// receiver to do something and tracks it to closure.
+export const handoffRequests = pgTable('handoff_requests', {
+  // HAND-XXXXXXXXXX
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  projectId: text('projectId').notNull(),
+  sourceAgent: text('sourceAgent').notNull(),
+  targetAgent: text('targetAgent').notNull(),
+  trigger: text('trigger').notNull(),
+  // Which handoff schema the payload was validated against.
+  schemaKey: text('schemaKey').notNull(),
+  payload: jsonb('payload').notNull().default({}),
+  // sent -> received -> processing -> completed | closed | rejected
+  status: text('status').notNull().default('sent'),
+  rejectionReason: text('rejectionReason'),
+  signalId: text('signalId'),
+  sentinelEntryId: text('sentinelEntryId'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  closedAt: timestamp('closedAt'),
+})
+
+// The payload contract per handoff type. Reference data: the shapes come from
+// the ontology, so a project cannot invent a looser one.
+export const handoffSchemas = pgTable('handoff_schemas', {
+  // handoff-lead, handoff-landing-page, ...
+  key: text('key').primaryKey(),
+  label: text('label').notNull(),
+  sourceAgent: text('sourceAgent'),
+  targetAgent: text('targetAgent'),
+  // JSON Schema describing the payload; validated with Zod at send time.
+  schema: jsonb('schema').notNull().default({}),
+  version: integer('version').notNull().default(1),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+// Per-project sub-agent configuration. The ontology ships a default per
+// department; a project may override model, skills, tools and handoffs without
+// editing the ontology.
+export const subAgentConfigs = pgTable(
+  'sub_agent_configs',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    projectId: text('projectId').notNull(),
+    department: text('department').notNull(),
+    subAgentKey: text('subAgentKey').notNull(),
+    config: jsonb('config').notNull().default({}),
+    // ontology | project — whether this row overrides or merely materialises the
+    // ontology default.
+    source: text('source').notNull().default('ontology'),
+    enabled: boolean('enabled').notNull().default(true),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('sub_agent_configs_project_dept_agent_unique').on(
+      table.projectId,
+      table.department,
+      table.subAgentKey,
+    ),
+  ],
+)
+
+// Per-node SENTINEL keys, for granular provenance attribution.
+//
+// This does NOT change the signing path. lib/sentinel.ts still holds exactly one
+// keypair per project and no agent can sign — that invariant is what stops an
+// agent minting provenance for its own claims, and it is deliberately preserved.
+// These rows are opt-in attribution material for Phase 4: they let a chain entry
+// be traced to a node's own key without ever handing that node signing authority
+// over the ledger.
+export const sentinelNodeKeys = pgTable(
+  'sentinel_node_keys',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull(),
+    projectId: text('projectId').notNull(),
+    // e.g. "Marketing.Head"
+    nodeId: text('nodeId').notNull(),
+    publicKey: text('publicKey').notNull(),
+    keyStatus: text('keyStatus').notNull().default('active'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    rotatedAt: timestamp('rotatedAt'),
+    revokedAt: timestamp('revokedAt'),
+  },
+  (table) => [
+    uniqueIndex('sentinel_node_keys_project_node_unique').on(
+      table.projectId,
+      table.nodeId,
+    ),
+  ],
+)
