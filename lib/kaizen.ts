@@ -1,12 +1,13 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { kaizenExperiences, subAgentTasks } from '@/lib/db/schema'
+import { kaizenExperiences, kaizenLearningCases, subAgentTasks } from '@/lib/db/schema'
 import {
   completeChain,
   findChainByDispatch,
   recordCausalNode,
   recordLearning,
 } from '@/lib/engine/causal'
+import { KAIZEN_CLASSES, kaizenClassEscalates, type KaizenClass } from '@/lib/schemas/governance'
 import { appendSentinelEntry } from '@/lib/sentinel'
 
 /**
@@ -77,6 +78,37 @@ export interface CheckOutcome {
   breaches: GuardrailBreach[]
   /** Populated for LEARNING: what the attempt taught the department. */
   learningCase: string | null
+  /**
+   * Which of the 14 error classes this failure belongs to, when the caller
+   * classified it. Always null on a PASS — a check that met its criteria had no
+   * error to classify, and carrying a class anyway would make the taxonomy
+   * meaningless.
+   */
+  errorClass: KaizenClass | null
+  /**
+   * Whether the class means the system is wrong rather than the run being
+   * unlucky. An escalating finding is a governance matter, not a retry.
+   */
+  escalates: boolean
+}
+
+/**
+ * Attaches a classification to a verdict.
+ *
+ * A PASS discards its class. That rule is what keeps the taxonomy honest: if a
+ * passing check could still be labelled L3, the class would stop meaning
+ * "something is wrong here" and become decoration.
+ */
+function classify(
+  result: ValidationResult,
+  errorClass: KaizenClass | null | undefined,
+): { errorClass: KaizenClass | null; escalates: boolean } {
+  if (result === 'PASS') return { errorClass: null, escalates: false }
+  const classified = errorClass ?? null
+  return {
+    errorClass: classified,
+    escalates: classified !== null && kaizenClassEscalates(classified),
+  }
 }
 
 /** Weighted score below which an attempt cannot pass. */
@@ -104,12 +136,21 @@ function compare(actual: number, operator: ComparisonOperator, target: number) {
  * only LEARNING produced something reusable. Callers pass it when the attempt
  * yielded an insight, and the verdict follows from that rather than from a
  * separate judgement call.
+ *
+ * `errorClass` is orthogonal to the verdict and deliberately does not change it.
+ * Naming a class does not promote a FAIL to a LEARNING — that would let an agent
+ * earn a passing-ish verdict just by labelling its failure. What the class does
+ * is decide what happens next: an escalating class (L3 governance gap, L4 data
+ * integrity, L8 identity mismatch, L9 deadlock, L12 framing, L13 OKR) means the
+ * system itself is wrong and the finding goes to NEURAXIS, while the rest are
+ * retry-shaped. A FAIL can therefore still be an escalating finding.
  */
 export function runCheck(input: {
   criteria: SuccessCriterion[]
   guardrails: Guardrail[]
   actuals: Record<string, number>
   learningCase?: string | null
+  errorClass?: KaizenClass | null
 }): CheckOutcome {
   const { criteria, guardrails, actuals } = input
   const learningCase = input.learningCase?.trim() || null
@@ -143,23 +184,40 @@ export function runCheck(input: {
   const score = totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0
 
   // A guardrail breach is a hard fail: the means disqualify the result, and no
-  // amount of learning redeems it.
+  // amount of learning redeems it. The classification survives, because a breach
+  // is exactly the kind of failure worth classifying.
   if (breaches.length > 0) {
-    return { result: 'FAIL', score, criteria: evaluated, breaches, learningCase: null }
+    return {
+      result: 'FAIL',
+      score,
+      criteria: evaluated,
+      breaches,
+      learningCase: null,
+      ...classify('FAIL', input.errorClass),
+    }
   }
 
   if (score >= PASS_THRESHOLD) {
-    return { result: 'PASS', score, criteria: evaluated, breaches, learningCase: null }
+    return {
+      result: 'PASS',
+      score,
+      criteria: evaluated,
+      breaches,
+      learningCase: null,
+      ...classify('PASS', input.errorClass),
+    }
   }
 
   // Below threshold. The attempt still counts if it taught the department
   // something it can reuse — that is LEARNING, not FAIL.
+  const result: ValidationResult = learningCase ? 'LEARNING' : 'FAIL'
   return {
-    result: learningCase ? 'LEARNING' : 'FAIL',
+    result,
     score,
     criteria: evaluated,
     breaches,
     learningCase,
+    ...classify(result, input.errorClass),
   }
 }
 
