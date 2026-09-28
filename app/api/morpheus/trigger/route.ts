@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { projects, sentinelKeys } from '@/lib/db/schema'
+import { expireStaleApprovals } from '@/lib/engine/approval-gates'
 import { latestMorpheusStatus, runMorpheusCycle } from '@/lib/engine/morpheus'
 import { getSessionUser } from '@/lib/session'
 
@@ -99,11 +100,23 @@ export async function POST(request: Request) {
     chainValid?: boolean
     entries?: number
     reason?: string | null
+    gatesExpired?: number
     error?: string
   }[] = []
 
   for (const scope of scopes) {
     try {
+      // Gates close before the chain is verified, so a gate that expired tonight
+      // is part of the record the verification then seals. Doing it the other way
+      // round would leave the closure outside the verified chain until tomorrow.
+      //
+      // A failure here must not abort the cycle: an unexpired gate stays pending
+      // and closes on the next run, whereas skipping the reset would lose the
+      // night's verification entirely.
+      const expired = await expireStaleApprovals(scope.userId, scope.projectId).catch(
+        () => [],
+      )
+
       const cycle = await runMorpheusCycle(scope.userId, scope.projectId)
       results.push({
         projectId: scope.projectId,
@@ -111,6 +124,7 @@ export async function POST(request: Request) {
         chainValid: cycle.verification.chainValid,
         entries: cycle.verification.entries,
         reason: cycle.verification.reason,
+        gatesExpired: expired.length,
       })
     } catch (error) {
       // One project failing must not stop the rest of the fleet from resetting.
@@ -126,6 +140,7 @@ export async function POST(request: Request) {
 
   const failed = results.filter((result) => !result.ok).length
   const broken = results.filter((result) => result.ok && result.chainValid === false).length
+  const gatesExpired = results.reduce((total, result) => total + (result.gatesExpired ?? 0), 0)
 
   return NextResponse.json(
     {
@@ -134,6 +149,7 @@ export async function POST(request: Request) {
       projects: results.length,
       failed,
       chainsBroken: broken,
+      gatesExpired,
       results,
     },
     // A broken chain is a finding, not a transport error: the run succeeded at
