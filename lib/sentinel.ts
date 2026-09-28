@@ -70,6 +70,18 @@ export type SentinelEntryType =
   | 'handoff_closed'
   // KAIZEN — a classified learning case, sealed so the lesson cannot be restated.
   | 'learning_captured'
+  // SYNAPSIS — one seal per stage of the reasoning loop. Sealing each stage is
+  // what makes the chain auditable: a reader can see that a conclusion was
+  // reached *after* evidence was gathered, rather than an agent asserting it had
+  // done its reasoning. Without the seals the stages are just notes, and an
+  // agent could write the conclusion first and backfill the justification.
+  | 'synapsis_framed'
+  | 'synapsis_evidenced'
+  | 'synapsis_interpreted'
+  | 'synapsis_strategised'
+  | 'synapsis_output'
+  | 'synapsis_outcome'
+  | 'synapsis_learning'
 
 /** Deterministic JSON: sorted keys at every depth, so a hash is reproducible. */
 export function canonicalJson(value: unknown): string {
