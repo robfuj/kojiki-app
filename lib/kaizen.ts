@@ -295,10 +295,101 @@ export async function persistCheck(input: PersistCheckInput) {
       criteria: outcome.criteria,
       breaches: outcome.breaches,
       learningCase: outcome.learningCase,
+      errorClass: outcome.errorClass,
+      escalates: outcome.escalates,
     },
   })
 
-  return { entry, outcome }
+  const learningCase = await persistLearningCase({
+    userId,
+    projectId,
+    taskId,
+    objectiveId,
+    outcome,
+    agentKey,
+    agentTitle,
+    checkEntryId: entry.id,
+  })
+
+  return { entry, outcome, learningCase }
+}
+
+/**
+ * Keeps the classified failures worth keeping.
+ *
+ * Two conditions, either of which is enough: the attempt produced a reusable
+ * insight, or its class means the system is wrong rather than the run being
+ * unlucky. An unclassified FAIL that taught nothing is not stored — the check
+ * row already records it, and filling this table with undifferentiated failures
+ * would bury the cases that actually change behaviour.
+ *
+ * The row is sealed separately from the check so the lesson outlives the task:
+ * a task can be retried or pruned, but what it taught the department should not
+ * disappear with it.
+ */
+async function persistLearningCase(input: {
+  userId: string
+  projectId: string
+  taskId: string
+  objectiveId: string
+  outcome: CheckOutcome
+  agentKey: string
+  agentTitle: string
+  checkEntryId: string
+}): Promise<string | null> {
+  const { userId, projectId, taskId, objectiveId, outcome, agentKey, agentTitle } =
+    input
+
+  if (outcome.errorClass === null) return null
+  if (!outcome.learningCase && !outcome.escalates) return null
+
+  // The breach carries the numbers, so the root cause records what was exceeded
+  // and by how much rather than just naming a metric.
+  const breached = outcome.breaches
+    .map((breach) => `${breach.metric} ${breach.actual} vs limit ${breach.limit}`)
+    .join('; ')
+  const symptom =
+    outcome.learningCase ??
+    `${outcome.result} at ${outcome.score.toFixed(1)}%` +
+      (breached ? `, guardrails breached: ${breached}` : '')
+
+  const id = crypto.randomUUID()
+
+  await db.insert(kaizenLearningCases).values({
+    id,
+    userId,
+    projectId,
+    errorClass: outcome.errorClass,
+    taskId,
+    symptom,
+    rootCause: breached || null,
+    resolution: null,
+    reusableInsight: outcome.learningCase,
+    verdict: outcome.result,
+  })
+
+  await appendSentinelEntry({
+    userId,
+    projectId,
+    entryType: 'learning_captured',
+    subjectKey: agentKey,
+    subjectTitle: agentTitle,
+    signer: 'kaizen',
+    objectiveId,
+    payloadRef: id,
+    payload: {
+      caseId: id,
+      taskId,
+      errorClass: outcome.errorClass,
+      escalates: outcome.escalates,
+      verdict: outcome.result,
+      symptom,
+      reusableInsight: outcome.learningCase,
+      checkEntryId: input.checkEntryId,
+    },
+  })
+
+  return id
 }
 
 export interface RecordExperienceInput {
