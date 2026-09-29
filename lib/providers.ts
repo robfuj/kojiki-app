@@ -376,15 +376,89 @@ export async function refreshCatalog(): Promise<number> {
 /**
  * Which direct provider could serve a given OpenRouter model ID.
  *
- * OpenRouter namespaces IDs as `vendor/model`, and for Anthropic and OpenAI that
- * vendor segment is exactly the model ID the direct API expects. So a model the
- * head proposes through OpenRouter can also be routed direct when the user holds
- * that provider's key; the resolver strips the prefix when it does.
+ * OpenRouter namespaces IDs as `vendor/model`, and for a provider we connect
+ * directly that vendor segment is exactly the model ID its own API expects. So a
+ * model the head proposes through OpenRouter can also be routed direct when the
+ * user holds that provider's key; the resolver strips the prefix when it does.
+ *
+ * Derived from the provider list rather than a set of literal prefixes, so
+ * supporting a fourth direct provider needs no edit here. OpenRouter is excluded
+ * because it is the router, not a vendor a model ID can name.
  */
 export function vendorOfModelId(modelId: string): ProviderId | null {
-  if (modelId.startsWith('anthropic/')) return 'anthropic'
-  if (modelId.startsWith('openai/')) return 'openai'
-  return null
+  const [vendor] = modelId.split('/')
+  return PROVIDER_IDS.find((id) => id === vendor && id !== 'openrouter') ?? null
+}
+
+// ---------------------------------------------------------------------------
+// Capability filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Which models can actually carry this system's work.
+ *
+ * Derived from the live catalog rather than a named list, so the answer tracks the
+ * market instead of a snapshot of it taken when the code was written. Four
+ * constraints, none of which names a vendor:
+ *   - output must be text; a handful of catalog entries generate images instead
+ *   - context must hold these prompts, which carry ontology text and history
+ *   - the ID must be a real model, not a router pseudo-model that delegates the
+ *     choice and publishes a sentinel price rather than a real one
+ *   - the ID must denote a fixed model, not a rolling alias
+ */
+const MIN_CONTEXT_LENGTH = 32_000
+
+function isCapable(entry: CatalogEntry): boolean {
+  const modality = entry.modality ?? 'text->text'
+  if (!modality.endsWith('->text')) return false
+  if ((entry.contextLength ?? 0) < MIN_CONTEXT_LENGTH) return false
+  if (entry.modelId.startsWith('openrouter/') || entry.modelId.endsWith('/auto')) return false
+  // OpenRouter marks rolling aliases with a leading `~`: the ID resolves to
+  // whichever model the vendor currently ships as "latest". That breaks the
+  // invariant this system is built on — the user approves a specific model and
+  // that model runs. An alias approved today can be a different model next month
+  // with nobody re-approving it, so it is not a candidate however well priced.
+  if (entry.modelId.startsWith('~')) return false
+  return true
+}
+
+function totalPrice(entry: CatalogEntry): number {
+  return entry.inputPricePer1m + entry.outputPricePer1m
+}
+
+function byTotalPrice(a: CatalogEntry, b: CatalogEntry): number {
+  return totalPrice(a) - totalPrice(b)
+}
+
+/** The vendor segment of a catalog ID, which is what a direct provider serves. */
+function vendorOf(entry: CatalogEntry): string {
+  const [vendor] = entry.modelId.split('/')
+  return vendor || entry.modelId
+}
+
+/**
+ * The cheapest model a given provider can serve, derived from the catalog.
+ *
+ * This replaces a hardcoded default model per provider. OpenRouter's catalog is
+ * the whole market, so every capable entry is a candidate for it; a direct
+ * provider can only serve its own vendor's models, so candidates are filtered to
+ * that vendor segment.
+ *
+ * Returns null when the catalog lists nothing for that provider, which tells the
+ * resolver to fall back to the Gateway rather than guess a model name that would
+ * fail at call time.
+ */
+export async function cheapestCapableModelForProvider(
+  provider: ProviderId,
+): Promise<string | null> {
+  const capable = (await getCatalog()).filter(isCapable)
+  const candidates =
+    provider === 'openrouter'
+      ? capable
+      : capable.filter((entry) => vendorOf(entry) === provider)
+
+  if (candidates.length === 0) return null
+  return [...candidates].sort(byTotalPrice)[0].modelId
 }
 
 /**
@@ -393,46 +467,76 @@ export function vendorOfModelId(modelId: string): ProviderId | null {
  * The full catalog is hundreds of models: too many to put in a prompt and too many
  * to reason over. This picks a spread across price tiers so the head's choice is a
  * real trade-off between cost and capability rather than a pick from an
- * undifferentiated list. Preferred IDs drift out of the catalog over time, so a
- * price-sorted spread fills any gaps.
+ * undifferentiated list.
+ *
+ * Nothing here names a model or a vendor. The list is a function of what the
+ * catalog contains today, so a model that leaves the catalog drops out of the
+ * shortlist on its own instead of leaving a dead ID in a prompt.
  */
-const SHORTLIST_PREFERENCES: readonly string[] = [
-  'meta-llama/llama-3.3-70b-instruct',
-  'deepseek/deepseek-chat-v3.1',
-  'google/gemini-2.5-flash',
-  'anthropic/claude-3.5-haiku',
-  'anthropic/claude-sonnet-4.5',
-]
-
 const SHORTLIST_SIZE = 6
 
-export async function shortlistModels(): Promise<CatalogEntry[]> {
-  const catalog = await getCatalog()
-  if (catalog.length === 0) return []
+/**
+ * At most this many models from one vendor.
+ *
+ * Without a cap, a price spread can land entirely inside one vendor's lineup —
+ * which would pin the system to that vendor by accident, the very thing deriving
+ * the list was meant to prevent. No vendor is named here; the cap applies to
+ * whichever vendors the catalog happens to contain.
+ */
+const MAX_PER_VENDOR = 2
 
-  const chosen: CatalogEntry[] = []
-  for (const modelId of SHORTLIST_PREFERENCES) {
-    const entry = catalog.find((candidate) => candidate.modelId === modelId)
-    if (entry) chosen.push(entry)
+/**
+ * The shortlist's price ceiling, as a percentile of the capable market.
+ *
+ * The market's price tail is extreme: a handful of specialty models cost orders of
+ * magnitude more than everything else. Spreading across the full range puts the
+ * top rung on the single dearest model in existence, which no user will approve
+ * and which therefore wastes a slot better spent on a frontier model someone
+ * might actually authorise.
+ *
+ * Expressed as a percentile rather than a dollar figure so the ceiling stays
+ * derived: it moves when the market moves, and names neither a vendor nor a price.
+ */
+const PRICE_CEILING_PERCENTILE = 0.95
+
+export async function shortlistModels(): Promise<CatalogEntry[]> {
+  const capable = (await getCatalog()).filter(isCapable).sort(byTotalPrice)
+  if (capable.length === 0) return []
+  if (capable.length <= SHORTLIST_SIZE) return capable
+
+  const ceilingIndex = Math.min(
+    capable.length - 1,
+    Math.floor(capable.length * PRICE_CEILING_PERCENTILE),
+  )
+  const ceiling = totalPrice(capable[ceilingIndex])
+  const usable = capable.filter((entry) => totalPrice(entry) <= ceiling)
+
+  // Evenly spaced indices across the usable range: the cheapest, the dearest that
+  // is still plausible, and a ladder between them. Spacing by index rather than by
+  // price follows the market's own density, so rungs land where models actually
+  // cluster instead of in empty price bands.
+  const step = (usable.length - 1) / (SHORTLIST_SIZE - 1)
+  const picked: CatalogEntry[] = []
+  const perVendor = new Map<string, number>()
+
+  for (let i = 0; i < SHORTLIST_SIZE; i++) {
+    const entry = usable[Math.round(i * step)]
+    if (picked.some((chosen) => chosen.id === entry.id)) continue
+    const vendor = vendorOf(entry)
+    if ((perVendor.get(vendor) ?? 0) >= MAX_PER_VENDOR) continue
+    picked.push(entry)
+    perVendor.set(vendor, (perVendor.get(vendor) ?? 0) + 1)
   }
 
-  if (chosen.length >= SHORTLIST_SIZE - 1) return chosen.slice(0, SHORTLIST_SIZE)
+  // The vendor cap can leave gaps. Fill from the cheapest not yet chosen,
+  // relaxing the cap rather than handing the head a short list.
+  for (const entry of usable) {
+    if (picked.length >= SHORTLIST_SIZE) break
+    if (picked.some((chosen) => chosen.id === entry.id)) continue
+    picked.push(entry)
+  }
 
-  // Fill from the cheapest usable models, skipping anything already chosen. A
-  // model with a tiny context window cannot carry these prompts, so it is not a
-  // candidate however cheap it is.
-  const fillers = catalog
-    .filter(
-      (candidate) =>
-        !chosen.some((entry) => entry.id === candidate.id) &&
-        (candidate.contextLength ?? 0) >= 32_000,
-    )
-    .sort(
-      (a, b) =>
-        a.inputPricePer1m + a.outputPricePer1m - (b.inputPricePer1m + b.outputPricePer1m),
-    )
-
-  return [...chosen, ...fillers].slice(0, SHORTLIST_SIZE)
+  return picked.sort(byTotalPrice)
 }
 
 /**
