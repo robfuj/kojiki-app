@@ -83,6 +83,7 @@ export const ja: Dictionary = {
     noObjective: '目標未設定',
     newProject: '新規プロジェクト',
     deleteAria: '{name} を削除',
+    renameAria: '{name} の名前を変更',
   },
 
   nav: {

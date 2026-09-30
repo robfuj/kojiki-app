@@ -66,35 +66,39 @@ export const ONTOLOGY_MANIFEST = {
     },
     {
       "path": "ontology/specialists/ai-intelligence/config.yaml",
-      "sha256": "701da2506901a69d"
+      "sha256": "071b2db00110e260"
     },
     {
       "path": "ontology/specialists/engineering-platform/config.yaml",
-      "sha256": "2c5afda15ea46950"
+      "sha256": "e369f42d2015daab"
     },
     {
       "path": "ontology/specialists/finance-accounting/config.yaml",
-      "sha256": "fe64ffadf41800c0"
+      "sha256": "d74241a1b9bf758b"
     },
     {
       "path": "ontology/specialists/legal-compliance/config.yaml",
-      "sha256": "cda06b1cab136096"
+      "sha256": "2767dfa4db8dbd26"
     },
     {
       "path": "ontology/specialists/marketing-brand/config.yaml",
-      "sha256": "356219b2655f4888"
+      "sha256": "ae083b8dd2bb4b1a"
     },
     {
       "path": "ontology/specialists/operations-ops/config.yaml",
-      "sha256": "c7686885ef290e91"
+      "sha256": "65407cb7c1a77a21"
+    },
+    {
+      "path": "ontology/specialists/orchestrator/config.yaml",
+      "sha256": "ea0c0521e33d1e95"
     },
     {
       "path": "ontology/specialists/people-hr/config.yaml",
-      "sha256": "21245578a7b68db4"
+      "sha256": "8b02eb76ab46b5a3"
     },
     {
       "path": "ontology/specialists/sales-outbound/config.yaml",
-      "sha256": "077bbc8e6fd77a42"
+      "sha256": "cdf501b484e3f112"
     }
   ]
 } as const
@@ -180,7 +184,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.2,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "nvidia/nemotron-3-ultra-550b-a55b:free",
     "decisionRights": {
       "own": [
         "model_selection",
@@ -250,8 +254,163 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/ai-intelligence/config.yaml",
-    "sha256": "701da2506901a69d",
-    "subAgents": []
+    "sha256": "071b2db00110e260",
+    "subAgents": [
+      {
+        "key": "mcp-builder",
+        "title": "Mcp Builder",
+        "parentSpecialistKey": "ai-intelligence",
+        "parentDepartment": "AI Intelligence",
+        "description": "Model Context Protocol servers, AI agent tooling, building MCP servers that extend AI agent capabilities",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "mcp_server_generator",
+          "tool_schema_generator",
+          "resource_exposer",
+          "prompt_template_builder",
+          "integration_tester"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "nex-agi/nex-n2.5-pro:free",
+        "decisionRights": {
+          "own": [
+            "mcp_architecture",
+            "tool_design",
+            "resource_modeling",
+            "prompt_templates"
+          ],
+          "recommend": [
+            "integration_patterns",
+            "authentication_methods",
+            "rate_limiting"
+          ],
+          "consult": [
+            "security_review",
+            "product_requirements",
+            "agent_capabilities"
+          ],
+          "approve": [
+            "mcp_deployment",
+            "tool_registry_updates",
+            "version_releases"
+          ],
+          "execute": [
+            "server_development",
+            "tool_implementation",
+            "resource_exposure",
+            "integration_testing"
+          ],
+          "escalate": [
+            "security_vulnerability",
+            "data_exposure",
+            "protocol_violation",
+            "agent_misuse"
+          ],
+          "automate": [
+            "schema_validation",
+            "regression_testing",
+            "performance_benchmarking",
+            "compliance_checking"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "agentic-search-optimizer",
+            "trigger": "agent_tool_requirement",
+            "payloadSchema": "schemas/handoff-agent-tool.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "ai-engineer",
+            "trigger": "mcp_integration_needed",
+            "payloadSchema": "schemas/handoff-mcp-integration.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/ai-intelligence/sub-agents/mcp-builder/config.yaml",
+        "sha256": "0086e8ecef48d4db"
+      },
+      {
+        "key": "prompt-engineer",
+        "title": "Prompt Engineer",
+        "parentSpecialistKey": "ai-intelligence",
+        "parentDepartment": "AI Intelligence",
+        "description": "LLM prompt design & optimization, turning vague instructions into reliable AI behaviors",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "prompt_optimizer",
+          "few_shot_selector",
+          "instruction_refiner",
+          "chain_of_thought_builder",
+          "evaluation_framework"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
+        "decisionRights": {
+          "own": [
+            "prompt_templates",
+            "optimization_strategies",
+            "evaluation_criteria",
+            "prompt_versioning"
+          ],
+          "recommend": [
+            "model_selection",
+            "temperature_settings",
+            "context_window_management"
+          ],
+          "consult": [
+            "task_requirements",
+            "output_format_constraints",
+            "latency_budget"
+          ],
+          "approve": [
+            "production_prompts",
+            "prompt_library_releases",
+            "ab_test_variants"
+          ],
+          "execute": [
+            "prompt_optimization",
+            "ab_testing",
+            "regression_testing",
+            "performance_tracking"
+          ],
+          "escalate": [
+            "prompt_injection_risk",
+            "hallucination_spike",
+            "quality_regression",
+            "cost_overrun"
+          ],
+          "automate": [
+            "prompt_ab_testing",
+            "quality_monitoring",
+            "template_updates",
+            "performance_reporting"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "rag-pipeline",
+            "trigger": "retrieval_prompt_needed",
+            "payloadSchema": "schemas/handoff-retrieval-prompt.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "ai-engineer",
+            "trigger": "model_finetuning_prompt",
+            "payloadSchema": "schemas/handoff-finetuning-prompt.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/ai-intelligence/sub-agents/prompt-engineer/config.yaml",
+        "sha256": "aacb28bc15d8e232"
+      }
+    ]
   },
   {
     "key": "engineering-platform",
@@ -272,7 +431,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.2,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "poolside/laguna-s-2.1:free",
     "decisionRights": {
       "own": [
         "technical_architecture",
@@ -340,8 +499,175 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/engineering-platform/config.yaml",
-    "sha256": "2c5afda15ea46950",
-    "subAgents": []
+    "sha256": "e369f42d2015daab",
+    "subAgents": [
+      {
+        "key": "backend-architect",
+        "title": "Backend Architect",
+        "parentSpecialistKey": "engineering-platform",
+        "parentDepartment": "Engineering",
+        "description": "API design, database architecture, scalability, microservices",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "api_designer",
+          "schema_validator",
+          "performance_profiler",
+          "microservice_generator",
+          "migration_planner"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "poolside/laguna-s-2.1:free",
+        "decisionRights": {
+          "own": [
+            "api_contracts",
+            "database_schema",
+            "service_boundaries",
+            "scaling_strategy"
+          ],
+          "recommend": [
+            "technology_choices",
+            "infrastructure_patterns",
+            "data_modeling"
+          ],
+          "consult": [
+            "product_requirements",
+            "security_requirements",
+            "team_capacity"
+          ],
+          "approve": [
+            "schema_migrations",
+            "service_deployments",
+            "breaking_changes"
+          ],
+          "execute": [
+            "api_implementation",
+            "database_optimization",
+            "service_decomposition",
+            "performance_tuning"
+          ],
+          "escalate": [
+            "architectural_debt",
+            "scaling_crisis",
+            "data_integrity_risk",
+            "team_blocker"
+          ],
+          "automate": [
+            "schema_validation",
+            "performance_monitoring",
+            "deployment_verification",
+            "contract_testing"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "api-engineer",
+            "trigger": "gateway_integration",
+            "payloadSchema": "schemas/handoff-gateway-integration.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "database-optimizer",
+            "trigger": "query_performance_issue",
+            "payloadSchema": "schemas/handoff-query-optimization.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "devops-automator",
+            "trigger": "deployment_pipeline_needed",
+            "payloadSchema": "schemas/handoff-deployment-pipeline.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/engineering-platform/sub-agents/backend-architect/config.yaml",
+        "sha256": "da7743923116742e"
+      },
+      {
+        "key": "devops-automator",
+        "title": "Devops Automator",
+        "parentSpecialistKey": "engineering-platform",
+        "parentDepartment": "Engineering",
+        "description": "CI/CD, infrastructure automation, cloud ops, pipeline development",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "pipeline_builder",
+          "infra_provisioner",
+          "deployment_orchestrator",
+          "monitoring_setup",
+          "rollback_automator"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "nex-agi/nex-n2.5-pro:free",
+        "decisionRights": {
+          "own": [
+            "pipeline_architecture",
+            "infrastructure_as_code",
+            "deployment_strategy",
+            "monitoring_stack"
+          ],
+          "recommend": [
+            "cloud_provider",
+            "kubernetes_config",
+            "security_hardening"
+          ],
+          "consult": [
+            "application_requirements",
+            "compliance_requirements",
+            "cost_optimization"
+          ],
+          "approve": [
+            "production_deployments",
+            "infrastructure_changes",
+            "release_windows"
+          ],
+          "execute": [
+            "pipeline_creation",
+            "environment_provisioning",
+            "incident_response",
+            "capacity_planning"
+          ],
+          "escalate": [
+            "production_outage",
+            "security_incident",
+            "cost_anomaly",
+            "deployment_failure"
+          ],
+          "automate": [
+            "ci_cd_pipelines",
+            "infrastructure_provisioning",
+            "health_checks",
+            "cost_monitoring"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "backend-architect",
+            "trigger": "service_deployment_needed",
+            "payloadSchema": "schemas/handoff-service-deployment.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "sre",
+            "trigger": "reliability_requirements",
+            "payloadSchema": "schemas/handoff-reliability-requirements.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "platform-engineer",
+            "trigger": "developer_experience_improvement",
+            "payloadSchema": "schemas/handoff-developer-experience.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/engineering-platform/sub-agents/devops-automator/config.yaml",
+        "sha256": "1a1257aaf25e23b6"
+      }
+    ]
   },
   {
     "key": "finance-accounting",
@@ -360,7 +686,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.3,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "qwen/qwen3.8-27b:free",
     "decisionRights": {
       "own": [
         "budget_allocation",
@@ -418,8 +744,93 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/finance-accounting/config.yaml",
-    "sha256": "fe64ffadf41800c0",
-    "subAgents": []
+    "sha256": "d74241a1b9bf758b",
+    "subAgents": [
+      {
+        "key": "cfo",
+        "title": "Cfo",
+        "parentSpecialistKey": "finance-accounting",
+        "parentDepartment": "Finance",
+        "description": "Capital allocation & financial strategy, treasury, FP&A, M&A finance",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "capital_allocator",
+          "treasury_manager",
+          "m_a_modeler",
+          "risk_assessor",
+          "board_report_generator"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "qwen/qwen3.8-27b:free",
+        "decisionRights": {
+          "own": [
+            "capital_allocation",
+            "treasury_policy",
+            "financial_strategy",
+            "m_a_approval"
+          ],
+          "recommend": [
+            "investment_thesis",
+            "hedging_strategy",
+            "funding_structure"
+          ],
+          "consult": [
+            "business_unit_strategy",
+            "market_conditions",
+            "regulatory_environment"
+          ],
+          "approve": [
+            "capital_expenditure",
+            "acquisition_offers",
+            "dividend_policy",
+            "debt_issuance"
+          ],
+          "execute": [
+            "cash_management",
+            "forecasting",
+            "investor_relations",
+            "board_materials"
+          ],
+          "escalate": [
+            "liquidity_crisis",
+            "covenant_breach",
+            "material_misstatement",
+            "fraud_indicator"
+          ],
+          "automate": [
+            "cash_position_reporting",
+            "covenant_monitoring",
+            "scenario_modeling",
+            "variance_analysis"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "fp-a-analyst",
+            "trigger": "budget_reforecast_needed",
+            "payloadSchema": "schemas/handoff-budget-reforecast.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "investment-researcher",
+            "trigger": "m_a_target_analysis",
+            "payloadSchema": "schemas/handoff-m-a-target.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "treasury",
+            "trigger": "liquidity_management",
+            "payloadSchema": "schemas/handoff-liquidity-management.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/finance-accounting/sub-agents/cfo/config.yaml",
+        "sha256": "d8cd125a5ffe99f7"
+      }
+    ]
   },
   {
     "key": "legal-compliance",
@@ -439,7 +850,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.2,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "google/gemma-4-26b-a4b-it:free",
     "decisionRights": {
       "own": [
         "contract_templates",
@@ -507,8 +918,92 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/legal-compliance/config.yaml",
-    "sha256": "cda06b1cab136096",
-    "subAgents": []
+    "sha256": "2767dfa4db8dbd26",
+    "subAgents": [
+      {
+        "key": "compliance-auditor",
+        "title": "Compliance Auditor",
+        "parentSpecialistKey": "legal-compliance",
+        "parentDepartment": "Legal",
+        "description": "SOC 2, ISO 27001, HIPAA, PCI-DSS, guiding organizations through compliance certification",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "framework_mapper",
+          "evidence_collector",
+          "gap_analyzer",
+          "policy_generator",
+          "audit_tracker"
+        ],
+        "temperature": 0.2,
+        "maxTokens": 4000,
+        "upstreamModel": "google/gemma-4-26b-a4b-it:free",
+        "decisionRights": {
+          "own": [
+            "compliance_scope",
+            "framework_selection",
+            "control_design",
+            "audit_readiness"
+          ],
+          "recommend": [
+            "tool_selection",
+            "vendor_assessment",
+            "timeline_estimation"
+          ],
+          "consult": [
+            "engineering_capacity",
+            "product_roadmap",
+            "business_priorities"
+          ],
+          "approve": [
+            "audit_engagement",
+            "certification_submission",
+            "exception_requests"
+          ],
+          "execute": [
+            "gap_assessment",
+            "evidence_collection",
+            "policy_creation",
+            "control_implementation"
+          ],
+          "escalate": [
+            "audit_failure_risk",
+            "critical_gap",
+            "deadline_risk",
+            "scope_creep"
+          ],
+          "automate": [
+            "evidence_collection",
+            "control_monitoring",
+            "policy_updates",
+            "compliance_dashboard"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "data-privacy",
+            "trigger": "privacy_regulation_overlap",
+            "payloadSchema": "schemas/handoff-privacy-overlap.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "security-architect",
+            "trigger": "technical_control_gap",
+            "payloadSchema": "schemas/handoff-technical-control.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "devops-automator",
+            "trigger": "automation_requirement",
+            "payloadSchema": "schemas/handoff-automation-requirement.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/legal-compliance/sub-agents/compliance-auditor/config.yaml",
+        "sha256": "55266762f613cfbf"
+      }
+    ]
   },
   {
     "key": "marketing-brand",
@@ -529,7 +1024,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.4,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
     "decisionRights": {
       "own": [
         "brand_strategy",
@@ -591,7 +1086,7 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/marketing-brand/config.yaml",
-    "sha256": "356219b2655f4888",
+    "sha256": "ae083b8dd2bb4b1a",
     "subAgents": [
       {
         "key": "aeo-specialist",
@@ -611,7 +1106,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.3,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "google/gemma-4-31b-it:free",
         "decisionRights": {
           "own": [
             "aeo_strategy",
@@ -667,7 +1162,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/aeo-specialist/config.yaml",
-        "sha256": "6b3c43ece9157abe"
+        "sha256": "44f9561e32f92b6c"
       },
       {
         "key": "agentic-search-optimizer",
@@ -687,7 +1182,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.3,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "nex-agi/nex-n2.5-pro:free",
         "decisionRights": {
           "own": [
             "mcp_architecture",
@@ -743,7 +1238,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/agentic-search-optimizer/config.yaml",
-        "sha256": "d3eaca457f2f6239"
+        "sha256": "cec5848d506287df"
       },
       {
         "key": "brand-guardian",
@@ -764,7 +1259,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.2,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "google/gemma-4-26b-a4b-it:free",
         "decisionRights": {
           "own": [
             "brand_guidelines",
@@ -822,7 +1317,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/brand-guardian/config.yaml",
-        "sha256": "8c11c0891ef97575"
+        "sha256": "6fee6bdb34a8acd7"
       },
       {
         "key": "carousel-growth",
@@ -843,7 +1338,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.5,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
         "decisionRights": {
           "own": [
             "carousel_concepts",
@@ -897,7 +1392,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/carousel-growth/config.yaml",
-        "sha256": "702d0e95f56fde30"
+        "sha256": "768c471a2a3e6023"
       },
       {
         "key": "content-creator",
@@ -918,7 +1413,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.5,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
         "decisionRights": {
           "own": [
             "content_topics",
@@ -971,7 +1466,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/content-creator/config.yaml",
-        "sha256": "ad11b59da9953459"
+        "sha256": "31ede441a48fb84b"
       },
       {
         "key": "email-strategist",
@@ -991,7 +1486,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.3,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "thinkingmachines/inkling:free",
         "decisionRights": {
           "own": [
             "email_calendar",
@@ -1046,7 +1541,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/email-strategist/config.yaml",
-        "sha256": "17c03a72253f60b6"
+        "sha256": "0b32a8a87f503da2"
       },
       {
         "key": "growth-hacker",
@@ -1067,7 +1562,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.4,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
         "decisionRights": {
           "own": [
             "experiment_roadmap",
@@ -1120,7 +1615,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/growth-hacker/config.yaml",
-        "sha256": "b9735625073f1496"
+        "sha256": "4bda9179bff66771"
       },
       {
         "key": "paid-social-specialist",
@@ -1140,7 +1635,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.4,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
         "decisionRights": {
           "own": [
             "campaign_structure",
@@ -1195,7 +1690,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/paid-social-specialist/config.yaml",
-        "sha256": "88d5a1a3bd0eb7e2"
+        "sha256": "fcf73a9bde543a3f"
       },
       {
         "key": "pr-communications",
@@ -1216,7 +1711,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.4,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "thinkingmachines/inkling:free",
         "decisionRights": {
           "own": [
             "media_strategy",
@@ -1272,7 +1767,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/pr-communications/config.yaml",
-        "sha256": "f86de14184ae415b"
+        "sha256": "9a56d27c15c66485"
       },
       {
         "key": "seo-specialist",
@@ -1292,7 +1787,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.3,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "google/gemma-4-26b-a4b-it:free",
         "decisionRights": {
           "own": [
             "keyword_strategy",
@@ -1339,7 +1834,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/seo-specialist/config.yaml",
-        "sha256": "5ad21a7f209e3d33"
+        "sha256": "e1d7bb8330f8edea"
       },
       {
         "key": "video-optimizer",
@@ -1360,7 +1855,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.4,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "inclusionai/ling-3.0-flash-vl:free",
         "decisionRights": {
           "own": [
             "video_strategy",
@@ -1417,7 +1912,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/video-optimizer/config.yaml",
-        "sha256": "3c04946af7df9a19"
+        "sha256": "2221c7cc9eb66aa2"
       },
       {
         "key": "visual-storyteller",
@@ -1438,7 +1933,7 @@ export const SPECIALISTS: Specialist[] = [
         ],
         "temperature": 0.5,
         "maxTokens": 4000,
-        "upstreamModel": "anthropic/claude-3-haiku:beta",
+        "upstreamModel": "inclusionai/ling-3.0-flash-vl:free",
         "decisionRights": {
           "own": [
             "visual_narratives",
@@ -1494,7 +1989,7 @@ export const SPECIALISTS: Specialist[] = [
           }
         ],
         "source": "ontology/specialists/marketing-brand/sub-agents/visual-storyteller/config.yaml",
-        "sha256": "1f4c396a03f1e1aa"
+        "sha256": "fb9f198220ff8ae2"
       }
     ]
   },
@@ -1516,7 +2011,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.3,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "nex-agi/nex-n2.5-pro:free",
     "decisionRights": {
       "own": [
         "vendor_selection",
@@ -1580,7 +2075,116 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/operations-ops/config.yaml",
-    "sha256": "c7686885ef290e91",
+    "sha256": "65407cb7c1a77a21",
+    "subAgents": [
+      {
+        "key": "supply-chain-strategist",
+        "title": "Supply Chain Strategist",
+        "parentSpecialistKey": "operations-ops",
+        "parentDepartment": "Operations",
+        "description": "Supply chain management, procurement strategy, optimization and procurement planning",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "demand_forecaster",
+          "inventory_optimizer",
+          "supplier_scorer",
+          "logistics_planner",
+          "risk_assessor"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "nex-agi/nex-n2.5-pro:free",
+        "decisionRights": {
+          "own": [
+            "supply_chain_strategy",
+            "supplier_selection",
+            "inventory_policy",
+            "procurement_rules"
+          ],
+          "recommend": [
+            "technology_stack",
+            "warehouse_locations",
+            "transport_modes"
+          ],
+          "consult": [
+            "sales_forecast",
+            "product_roadmap",
+            "financial_constraints"
+          ],
+          "approve": [
+            "supplier_contracts",
+            "major_purchase_orders",
+            "inventory_writeoffs"
+          ],
+          "execute": [
+            "demand_planning",
+            "supplier_negotiation",
+            "inventory_rebalancing",
+            "logistics_coordination"
+          ],
+          "escalate": [
+            "supply_disruption",
+            "quality_crisis",
+            "cost_overrun",
+            "regulatory_violation"
+          ],
+          "automate": [
+            "reorder_points",
+            "supplier_monitoring",
+            "demand_sensing",
+            "exception_alerts"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "finance-accounting",
+            "trigger": "procurement_budget_impact",
+            "payloadSchema": "schemas/handoff-procurement-budget.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "engineering-platform",
+            "trigger": "supplier_integration_needed",
+            "payloadSchema": "schemas/handoff-supplier-integration.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "sales-outbound",
+            "trigger": "demand_signal_change",
+            "payloadSchema": "schemas/handoff-demand-signal.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/operations-ops/sub-agents/supply-chain-strategist/config.yaml",
+        "sha256": "85328127f9c17873"
+      }
+    ]
+  },
+  {
+    "key": "orchestrator",
+    "department": "orchestrator",
+    "description": "Chief of Staff - goal decomposition, department selection, OKR decomposition, parallel dispatch",
+    "skills": [
+      "github-autodiscovery"
+    ],
+    "tools": [],
+    "temperature": null,
+    "maxTokens": null,
+    "upstreamModel": null,
+    "decisionRights": {
+      "own": [],
+      "recommend": [],
+      "consult": [],
+      "approve": [],
+      "execute": [],
+      "escalate": [],
+      "automate": []
+    },
+    "handoffs": [],
+    "source": "ontology/specialists/orchestrator/config.yaml",
+    "sha256": "ea0c0521e33d1e95",
     "subAgents": []
   },
   {
@@ -1601,7 +2205,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.4,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "thinkingmachines/inkling:free",
     "decisionRights": {
       "own": [
         "org_structure",
@@ -1672,7 +2276,7 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/people-hr/config.yaml",
-    "sha256": "21245578a7b68db4",
+    "sha256": "8b02eb76ab46b5a3",
     "subAgents": []
   },
   {
@@ -1694,7 +2298,7 @@ export const SPECIALISTS: Specialist[] = [
     ],
     "temperature": 0.3,
     "maxTokens": 4000,
-    "upstreamModel": "anthropic/claude-3-haiku:beta",
+    "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
     "decisionRights": {
       "own": [
         "outbound_strategy",
@@ -1758,8 +2362,238 @@ export const SPECIALISTS: Specialist[] = [
       }
     ],
     "source": "ontology/specialists/sales-outbound/config.yaml",
-    "sha256": "077bbc8e6fd77a42",
-    "subAgents": []
+    "sha256": "cdf501b484e3f112",
+    "subAgents": [
+      {
+        "key": "deal-strategist",
+        "title": "Deal Strategist",
+        "parentSpecialistKey": "sales-outbound",
+        "parentDepartment": "Sales",
+        "description": "MEDDPICC qualification, competitive positioning, win planning",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "meddpicc_scorer",
+          "competitive_mapper",
+          "win_plan_builder",
+          "stakeholder_mapper",
+          "pricing_calculator"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "qwen/qwen3.8-27b:free",
+        "decisionRights": {
+          "own": [
+            "deal_strategy",
+            "qualification_framework",
+            "win_themes",
+            "pricing_approach"
+          ],
+          "recommend": [
+            "discount_authority",
+            "contract_terms",
+            "timeline_acceleration"
+          ],
+          "consult": [
+            "legal_terms",
+            "product_capability",
+            "implementation_capacity"
+          ],
+          "approve": [
+            "deal_approval",
+            "pricing_exceptions",
+            "custom_terms"
+          ],
+          "execute": [
+            "meddpicc_assessment",
+            "battlecard_creation",
+            "roi_modeling",
+            "proposal_generation"
+          ],
+          "escalate": [
+            "deal_stall",
+            "competitive_threat",
+            "legal_blocker",
+            "executive_intervention_needed"
+          ],
+          "automate": [
+            "meddpicc_tracking",
+            "win_plan_updates",
+            "competitive_alerts",
+            "stakeholder_reminders"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "proposal-strategist",
+            "trigger": "proposal_needed",
+            "payloadSchema": "schemas/handoff-proposal-request.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "account-strategist",
+            "trigger": "post_sale_expansion",
+            "payloadSchema": "schemas/handoff-expansion-opportunity.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/sales-outbound/sub-agents/deal-strategist/config.yaml",
+        "sha256": "f7ecabaef0826afc"
+      },
+      {
+        "key": "discovery-coach",
+        "title": "Discovery Coach",
+        "parentSpecialistKey": "sales-outbound",
+        "parentDepartment": "Sales",
+        "description": "SPIN, Gap Selling, Sandler — question design and call structure",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "question_designer",
+          "framework_mapper",
+          "call_analyzer",
+          "objection_handler",
+          "coaching_playbook"
+        ],
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "upstreamModel": "thinkingmachines/inkling-small:free",
+        "decisionRights": {
+          "own": [
+            "question_frameworks",
+            "call_structures",
+            "coaching_methodology",
+            "discovery_templates"
+          ],
+          "recommend": [
+            "talk_tracks",
+            "objection_responses",
+            "qualification_criteria"
+          ],
+          "consult": [
+            "product_knowledge",
+            "competitive_positioning",
+            "pricing_strategy"
+          ],
+          "approve": [
+            "playbook_updates",
+            "certification_programs"
+          ],
+          "execute": [
+            "call_reviews",
+            "roleplay_sessions",
+            "skill_assessments",
+            "feedback_delivery"
+          ],
+          "escalate": [
+            "rep_performance_crisis",
+            "methodology_conflict",
+            "ethical_concern"
+          ],
+          "automate": [
+            "call_scoring",
+            "framework_compliance",
+            "progress_tracking",
+            "certification_management"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "outbound-strategist",
+            "trigger": "discovery_gaps_identified",
+            "payloadSchema": "schemas/handoff-discovery-gaps.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "deal-strategist",
+            "trigger": "qualification_complete",
+            "payloadSchema": "schemas/handoff-qualification-complete.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/sales-outbound/sub-agents/discovery-coach/config.yaml",
+        "sha256": "5f7dc0f4cf9a9685"
+      },
+      {
+        "key": "outbound-strategist",
+        "title": "Outbound Strategist",
+        "parentSpecialistKey": "sales-outbound",
+        "parentDepartment": "Sales",
+        "description": "Signal-based prospecting, multi-channel sequences, ICP targeting",
+        "skills": [
+          "github-autodiscovery"
+        ],
+        "tools": [
+          "signal_analyzer",
+          "sequence_builder",
+          "icp_refiner",
+          "channel_optimizer",
+          "prospecting_automator"
+        ],
+        "temperature": 0.4,
+        "maxTokens": 4000,
+        "upstreamModel": "nvidia/nemotron-3.5-lightning:free",
+        "decisionRights": {
+          "own": [
+            "outbound_strategy",
+            "sequence_design",
+            "icp_definition",
+            "channel_mix"
+          ],
+          "recommend": [
+            "budget_allocation",
+            "tool_stack",
+            "hiring_plan"
+          ],
+          "consult": [
+            "brand_messaging",
+            "product_positioning",
+            "legal_compliance"
+          ],
+          "approve": [
+            "sequence_launch",
+            "list_purchase",
+            "vendor_contracts"
+          ],
+          "execute": [
+            "list_building",
+            "sequence_deployment",
+            "a/b_testing",
+            "performance_tracking"
+          ],
+          "escalate": [
+            "deliverability_crisis",
+            "complaint_spike",
+            "legal_risk",
+            "budget_overrun"
+          ],
+          "automate": [
+            "list_enrichment",
+            "sequence_optimization",
+            "a/b_testing",
+            "reporting"
+          ]
+        },
+        "handoffs": [
+          {
+            "target": "discovery-coach",
+            "trigger": "meeting_booked",
+            "payloadSchema": "schemas/handoff-meeting-booked.json",
+            "payloadSchemaResolved": false
+          },
+          {
+            "target": "deal-strategist",
+            "trigger": "qualified_opportunity",
+            "payloadSchema": "schemas/handoff-qualified-opportunity.json",
+            "payloadSchemaResolved": false
+          }
+        ],
+        "source": "ontology/specialists/sales-outbound/sub-agents/outbound-strategist/config.yaml",
+        "sha256": "6ac0028bb546ff47"
+      }
+    ]
   }
 ]
 

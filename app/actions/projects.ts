@@ -96,3 +96,18 @@ export async function deleteProject(projectId: string): Promise<void> {
 
   revalidatePath('/')
 }
+
+export async function renameProject(
+  projectId: string,
+  name: string,
+): Promise<void> {
+  const userId = await getUserId()
+  const trimmed = name.trim().slice(0, 120)
+  if (!trimmed) throw new Error('Project name cannot be empty')
+
+  await db
+    .update(projects)
+    .set({ name: trimmed })
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+  revalidatePath('/')
+}

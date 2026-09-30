@@ -104,7 +104,7 @@ export function Sidebar({
 
       <nav
         aria-label={t.nav.label}
-        className="flex-1 space-y-5 overflow-y-auto px-2 pb-4"
+        className="mt-5 flex-1 space-y-5 overflow-y-auto border-t border-border px-2 pt-4 pb-4"
       >
         <div>
           {!collapsed && (
