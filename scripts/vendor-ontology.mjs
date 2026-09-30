@@ -2,120 +2,98 @@
 /**
  * Vendors the definitional content of robfuj/kojiki-ontology into ./ontology.
  *
- * The reference repo is mounted read-only by the v0 reference workspace. This
- * script copies only ontology *definitions* — specialist configs, prompts, and
- * JSON schemas — and deliberately skips runtime artifacts (causal_chains
- * execution logs, __pycache__, .hidden scratch dirs) that are not part of the
- * ontology contract.
+ * The upstream repo is mounted read-only by the v0 reference workspace. This
+ * script copies the ontology *definitions* (YAML configs, prompt markdown,
+ * JSON schemas) and deliberately skips Python implementation, __pycache__,
+ * runtime causal_chains logs, and hidden scratch dirs.
  *
- * Usage: node scripts/vendor-ontology.mjs [--check]
- *   --check  report drift without writing (exit 1 if the vendor is stale)
+ * One local divergence is preserved on purpose: the `model:` line in each
+ * specialist config.yaml. Model selection in this app is owned by
+ * lib/providers.ts (free-first routing), so a blind overwrite would silently
+ * regress routing on every re-vendor.
+ *
+ * Usage:
+ *   node scripts/vendor-ontology.mjs           # copy upstream -> ./ontology
+ *   node scripts/vendor-ontology.mjs --check   # report drift, exit 1 if any
  */
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, statSync, existsSync } from 'node:fs'
+import { join, relative, dirname } from 'node:path'
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const UPSTREAM =
-  process.env.KOJIKI_ONTOLOGY_PATH ??
-  '/vercel/share/v0-reference-workspace-sources/robfuj/kojiki-ontology/main'
-const CORE = join(UPSTREAM, 'engine/kojiki_core')
-const DEST = join(ROOT, 'ontology')
+  process.env.KOJIKI_ONTOLOGY_SRC ??
+  '/vercel/share/v0-reference-workspace-sources/robfuj/kojiki-ontology/main/engine/kojiki_core'
 
+const DEST = join(process.cwd(), 'ontology')
 const CHECK = process.argv.includes('--check')
 
-/** Directories that hold runtime output rather than ontology definitions. */
-const SKIP_DIRS = new Set(['__pycache__', 'causal_chains', '.hidden', '.git'])
-
-/** File extensions that carry ontology definitions. */
 const KEEP_EXT = new Set(['.yaml', '.yml', '.md', '.json'])
+const SKIP_DIR = (name) =>
+  name === '__pycache__' ||
+  name === 'causal_chains' ||
+  name.startsWith('.hidden') ||
+  name.startsWith('.')
 
+/** Walk a directory, yielding files whose extension we vendor. */
 function* walk(dir) {
-  if (!existsSync(dir)) return
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP_DIRS.has(entry.name)) continue
+    if (SKIP_DIR(entry.name)) continue
     const full = join(dir, entry.name)
     if (entry.isDirectory()) yield* walk(full)
     else if (KEEP_EXT.has(entry.name.slice(entry.name.lastIndexOf('.')))) yield full
   }
 }
 
-/** Upstream definition root -> vendored destination root. */
-const MAPPINGS = [
-  { from: join(CORE, 'specialists'), to: join(DEST, 'specialists') },
-  { from: join(CORE, 'prompts'), to: join(DEST, 'prompts') },
-]
-
-const plan = []
-for (const { from, to } of MAPPINGS) {
-  for (const src of walk(from)) {
-    const rel = relative(from, src)
-    plan.push({ src, dest: join(to, rel), rel: `${relative(CORE, from)}/${rel}` })
-  }
+/**
+ * Upstream ships a `model:` per specialist, but this app routes models itself.
+ * Keep whatever we already have so re-vendoring cannot change routing.
+ */
+function preserveModelOverride(destPath, incoming) {
+  if (!destPath.endsWith('config.yaml') || !existsSync(destPath)) return incoming
+  const current = readFileSync(destPath, 'utf8')
+  const currentModel = current.match(/^model:.*$/m)
+  if (!currentModel) return incoming
+  return incoming.replace(/^model:.*$/m, currentModel[0])
 }
+
+const SOURCES = [
+  { from: join(UPSTREAM, 'specialists'), to: join(DEST, 'specialists') },
+  { from: join(UPSTREAM, 'prompts'), to: join(DEST, 'prompts') },
+]
 
 let copied = 0
 let unchanged = 0
-const stale = []
+const drift = []
 
-for (const { src, dest, rel } of plan) {
-  const content = readFileSync(src)
-  if (existsSync(dest) && readFileSync(dest).equals(content)) {
-    unchanged++
-    continue
+for (const { from, to } of SOURCES) {
+  if (!existsSync(from)) {
+    console.error(`[vendor] missing upstream source: ${from}`)
+    process.exit(2)
   }
-  stale.push(rel)
-  if (CHECK) continue
-  mkdirSync(dirname(dest), { recursive: true })
-  writeFileSync(dest, content)
-  copied++
-}
+  for (const src of walk(from)) {
+    const rel = relative(from, src)
+    const destPath = join(to, rel)
+    const incoming = preserveModelOverride(destPath, readFileSync(src, 'utf8'))
+    const existing = existsSync(destPath) ? readFileSync(destPath, 'utf8') : null
 
-// Drop vendored files that no longer exist upstream so the vendor cannot drift
-// by accumulation after an upstream rename or deletion.
-const vendored = new Set(plan.map((p) => p.dest))
-let removed = 0
-for (const { to } of MAPPINGS) {
-  for (const existing of walk(to)) {
-    if (vendored.has(existing)) continue
-    if (CHECK) {
-      stale.push(`REMOVED ${relative(DEST, existing)}`)
+    if (existing === incoming) {
+      unchanged++
       continue
     }
-    rmSync(existing)
-    removed++
+    drift.push(`${existing === null ? 'MISSING' : 'STALE'} ${rel}`)
+    if (!CHECK) {
+      mkdirSync(dirname(destPath), { recursive: true })
+      writeFileSync(destPath, incoming)
+    }
+    copied++
   }
-}
-
-const specialists = existsSync(join(DEST, 'specialists'))
-  ? readdirSync(join(DEST, 'specialists'), { withFileTypes: true })
-      .filter((e) => e.isDirectory())
-      .map((e) => e.name)
-      .sort()
-  : []
-
-const summary = {
-  upstream: UPSTREAM,
-  definitions: plan.length,
-  specialists,
-  copied,
-  unchanged,
-  removed,
-  stale: stale.length,
 }
 
 if (CHECK) {
-  console.log(JSON.stringify(summary, null, 2))
-  if (stale.length) {
-    console.log(`\nDRIFT: ${stale.length} file(s) differ from upstream`)
-    for (const s of stale.slice(0, 40)) console.log(`  ${s}`)
-    process.exit(1)
-  }
-  console.log('\nVendor is in sync with upstream.')
-} else {
-  console.log(JSON.stringify(summary, null, 2))
-  if (stale.length) {
-    console.log(`\nVendored ${stale.length} changed file(s):`)
-    for (const s of stale.slice(0, 40)) console.log(`  ${s}`)
-  }
+  console.log(`[vendor] ${unchanged} in sync, ${drift.length} drifted`)
+  for (const line of drift.slice(0, 40)) console.log('  ' + line)
+  if (drift.length > 40) console.log(`  ... and ${drift.length - 40} more`)
+  process.exit(drift.length === 0 ? 0 : 1)
 }
+
+console.log(`[vendor] wrote ${copied} files, ${unchanged} already in sync`)
+console.log(`[vendor] next: node scripts/generate-ontology.mjs`)
