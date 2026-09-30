@@ -54,6 +54,8 @@ interface WorkspaceShellProps {
   userName: string | null
   /** The accent the server resolved for this user, so the picker shows the truth. */
   accentKey: string
+  /** The stored free-first preference, so the switch shows the truth. */
+  freeFirst: boolean
 }
 
 export function WorkspaceShell({
@@ -61,6 +63,7 @@ export function WorkspaceShell({
   projects,
   userName,
   accentKey,
+  freeFirst,
 }: WorkspaceShellProps) {
   const { t } = useLocale()
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -333,6 +336,7 @@ export function WorkspaceShell({
       {settingsOpen && (
         <SettingsPanel
           accentKey={accentKey}
+          freeFirst={freeFirst}
           projectId={activeId}
           onClose={() => setSettingsOpen(false)}
         />

@@ -524,6 +524,10 @@ export const userPreferences = pgTable('user_preferences', {
   // BCP-47 tag constrained to LOCALES in lib/i18n/locales.ts. Unknown values are
   // resolved to the default on read, so a retired language cannot break a render.
   locale: text('locale').notNull().default('en'),
+  // Prefer the $0 tier whenever the default provider offers one. On by default:
+  // most of this system's work is drafting and evaluation, which rarely needs a
+  // paid model. Off means the cheapest paid model becomes the default instead.
+  freeFirst: boolean('freeFirst').notNull().default(true),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })
 

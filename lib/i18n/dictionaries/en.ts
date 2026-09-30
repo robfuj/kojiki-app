@@ -251,12 +251,15 @@ export const en = {
 
   settings: {
     title: 'Settings',
-    summary: 'providers · appearance · language · files',
+    summary: 'integrations · appearance · language · files',
     closeAria: 'Close settings',
     providersTitle: 'Model providers',
     providersDescription:
       'Which provider runs the agents, and what it costs to run them.',
     connectedProviders: 'Connected providers',
+    freeFirstTitle: 'Prefer free models',
+    freeFirstDescription:
+      'With OpenRouter connected, agents default to its $0 tier. A paid model runs only when you approve one for a task.',
     appearanceTitle: 'Appearance',
     appearanceDescription:
       'The accent colour. The only part of the palette you change.',
@@ -267,12 +270,72 @@ export const en = {
     filesDescription:
       'Documents the agents read as context. Anything here informs every agent, not just the one you are messaging.',
     addFile: 'Add a file',
+    filesEmpty: 'No files yet. Add one from the chat composer, or with the button above.',
     readingFile: 'Reading…',
     scopedProject: 'scoped to this project',
     scopedAll: 'available to all projects',
     readError: 'Could not read that file',
     uploadedProject: '{name} is now context for this project.',
     uploadedAll: '{name} is now context for all your projects.',
+  },
+
+  integrations: {
+    title: 'Integrations',
+    description:
+      'What the agents can reach. Model providers run the work; the rest extends what they can read.',
+    searchPlaceholder: 'Search by name',
+    searchAria: 'Search integrations',
+    empty: 'Nothing matches that search.',
+    filterAll: 'All',
+    filterConnected: 'Connected',
+    categories: {
+      'model-providers': 'Model providers',
+      'built-in': 'Built-in',
+      'file-sources': 'File sources',
+    },
+    recommended: 'Recommended',
+    connect: 'Connect',
+    connected: 'Connected',
+    manage: 'Manage',
+    close: 'Close',
+    builtInNote:
+      'Zero configuration. Its free tier runs any work while no key is connected.',
+    seamNote: 'Connector seam reserved. Not connected yet.',
+    apiKeyLabel: 'API key',
+    keyPrefixLead: 'starts with ',
+    storedNote: 'Encrypted at rest. Only a mask is ever shown back.',
+    getKeyLink: 'Get a {label} key',
+    saving: 'Saving…',
+    saveError: 'Could not save that key',
+    connectedNotice: '{label} connected as {maskedKey}.',
+    disconnect: 'Disconnect',
+    disconnectedNotice: '{label} disconnected.',
+    makeDefault: 'Make default',
+    defaultBadge: 'Default',
+    defaultError: 'Could not change the default',
+    disconnectError: 'Could not disconnect',
+    items: {
+      openrouter: {
+        name: 'OpenRouter',
+        blurb: 'One key routes to hundreds of models, including a $0 tier.',
+      },
+      'ai-gateway': {
+        name: 'Vercel AI Gateway',
+        blurb: 'The zero-configuration route. Free models run any work with no key at all.',
+      },
+      anthropic: {
+        name: 'Anthropic',
+        blurb: 'Claude models, direct from the API.',
+      },
+      openai: {
+        name: 'OpenAI',
+        blurb: 'GPT models, direct from the API.',
+      },
+      'google-drive': {
+        name: 'Google Drive',
+        blurb: 'Files from your Drive as agent context.',
+      },
+    },
   },
 
   /** Chrome of the one-question-per-screen surface, shared by both intakes. */

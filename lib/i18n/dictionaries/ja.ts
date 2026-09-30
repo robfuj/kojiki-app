@@ -227,7 +227,7 @@ export const ja: Dictionary = {
     orchestrator: {
       brand: '古事記',
       ask: '古事記に聞く',
-      askHint: 'ヘッダーをドラッグすると会話パネルを移動できます。',
+      askHint: 'ヘッダーをドラッグすると会話パネルを移動でき���す。',
       popOut: '会話をポップアウト',
       subtitle: '質問し、探索し、行動する。',
       collapse: 'ワークスペースへ戻る',
@@ -254,12 +254,15 @@ export const ja: Dictionary = {
 
   settings: {
     title: '設定',
-    summary: 'プロバイダー · 外観 · 言語 · ファイル',
+    summary: '統合 · 外観 · 言語 · ファイル',
     closeAria: '設定を閉じる',
     providersTitle: 'モデルプロバイダー',
     providersDescription:
       'どのプロバイダーがエージェントを実行し、実行にいくらかかるか。',
     connectedProviders: '接続済みプロバイダー',
+    freeFirstTitle: '無料モデルを優先',
+    freeFirstDescription:
+      'OpenRouter接続時、エージェントは既定で$0ティアを使用します。有料モデルはタスクごとに承認したときのみ実行されます。',
     appearanceTitle: '外観',
     appearanceDescription:
       'アクセントカラー。パレットの中であなたが変更できる唯一の部分です。',
@@ -270,12 +273,71 @@ export const ja: Dictionary = {
     filesDescription:
       'エージェントがコンテキストとして読むドキュメント。ここにあるものは、メッセージを送っているエージェントだけでなく、すべてのエージェントに反映されます。',
     addFile: 'ファイルを追加',
+    filesEmpty: 'まだファイルはありません。チャットの入力欄か、上のボタンから追加してください。',
     readingFile: '読み込み中…',
     scopedProject: 'このプロジェクトに限定',
     scopedAll: 'すべてのプロジェクトで利用可能',
     readError: 'そのファイルを読み込めませんでした',
     uploadedProject: '{name} はこのプロジェクトのコンテキストになりました。',
     uploadedAll: '{name} はすべてのプロジェクトのコンテキストになりました。',
+  },
+
+  integrations: {
+    title: '統合',
+    description:
+      'エージェントが到達できるもの。モデルプロバイダーが作業を実行し、それ以外が読めるものを拡張します。',
+    searchPlaceholder: '名前で検索',
+    searchAria: '統合を検索',
+    empty: '検索に一致するものはありません。',
+    filterAll: 'すべて',
+    filterConnected: '接続済み',
+    categories: {
+      'model-providers': 'モデルプロバイダー',
+      'built-in': '組み込み',
+      'file-sources': 'ファイルソース',
+    },
+    recommended: '推奨',
+    connect: '接続',
+    connected: '接続済み',
+    manage: '管理',
+    close: '閉じる',
+    builtInNote: '設定不要。キー未接続の間は無料ティアがすべての作業を実行します。',
+    seamNote: 'コネクタの継ぎ目は予約済み。まだ接続されていません。',
+    apiKeyLabel: 'APIキー',
+    keyPrefixLead: '先頭: ',
+    storedNote: '保存時に暗号化。マスクのみが表示されます。',
+    getKeyLink: '{label}のキーを取得',
+    saving: '保存中…',
+    saveError: 'キーを保存できませんでした',
+    connectedNotice: '{label} を {maskedKey} として接続しました。',
+    disconnect: '切断',
+    disconnectedNotice: '{label} を切断しました。',
+    makeDefault: '既定にする',
+    defaultBadge: '既定',
+    defaultError: '既定を変更できませんでした',
+    disconnectError: '切断できませんでした',
+    items: {
+      openrouter: {
+        name: 'OpenRouter',
+        blurb: '一つのキーで$0ティアを含む数百のモデルへルーティング。',
+      },
+      'ai-gateway': {
+        name: 'Vercel AI Gateway',
+        blurb: '設定不要の経路。キーがなくても無料モデルが作業を実行します。',
+      },
+      anthropic: {
+        name: 'Anthropic',
+        blurb: 'ClaudeモデルをAPIから直接。',
+      },
+      openai: {
+        name: 'OpenAI',
+        blurb: 'GPTモデルをAPIから直接。',
+      },
+      'google-drive': {
+        name: 'Google Drive',
+        blurb: 'ドライブのファイルをエージェントのコンテキストに。',
+      },
+    },
   },
 
   intake: {
