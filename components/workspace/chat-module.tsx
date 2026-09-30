@@ -136,7 +136,7 @@ export function ChatModule({
         </div>
 
         <div
-          className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1"
+          className="mt-2.5 flex flex-wrap gap-1.5"
           role="tablist"
           aria-label="Agents"
         >

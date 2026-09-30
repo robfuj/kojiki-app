@@ -115,7 +115,7 @@ export function WorkTab({
                       )}
                       aria-hidden="true"
                     />
-                    <span className="min-w-0 flex-1 truncate text-left">
+                    <span className="line-clamp-2 min-w-0 flex-1 text-left">
                       {node.title}
                     </span>
                     <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">

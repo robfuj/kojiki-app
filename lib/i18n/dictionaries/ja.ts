@@ -193,7 +193,7 @@ export const ja: Dictionary = {
       functionLine: '機能',
       rights: '決裁権',
       handoffs: 'ハンドオフ先',
-      noSubAgents: 'この機能に登録されたサブエージ���ントはありません。',
+      noSubAgents: 'この機能に登録されたサブエージェントはありません。',
     },
     evidence: {
       subtitle: '信頼できる情報源から検証された情報。',
@@ -209,7 +209,7 @@ export const ja: Dictionary = {
       close: '閉じる',
       empty: 'ドキュメントを選択すると内容が表示されます。',
       none:
-        'ドキュメントはまだありません。アップロードするとエー���ェントの根拠あるコンテキストになります。',
+        'ドキュメントはまだありません。アップロードするとエージェントの根拠あるコンテキストになります。',
       library: 'ライブラリ',
     },
     learning: {
@@ -227,7 +227,7 @@ export const ja: Dictionary = {
     orchestrator: {
       brand: '古事記',
       ask: '古事記に聞く',
-      askHint: 'ヘッダーをドラッグすると会話パネルを移動でき���す。',
+      askHint: 'ヘッダーをドラッグすると会話パネルを移動できます。',
       popOut: '会話をポップアウト',
       subtitle: '質問し、探索し、行動する。',
       collapse: 'ワークスペースへ戻る',
@@ -382,7 +382,7 @@ export const ja: Dictionary = {
     geography: {
       eyebrow: 'コンテキスト',
       prompt: '現在どの市場にいて、次にどこへ進みますか？',
-      why: '成長とマーケティングは、実際に対応している市場と参入しようとしている市場に計画を限定し、人員を確���できない全球戦略を提案しません。',
+      why: '成長とマーケティングは、実際に対応している市場と参入しようとしている市場に計画を限定し、人員を確保できない全球戦略を提案しません。',
       label: '地理',
       placeholder: '例：現在は日本国内、次にAPAC',
     },
@@ -410,7 +410,7 @@ export const ja: Dictionary = {
     researchingLead: '',
     researchingMid: 'この目標',
     researchingTail:
-      ' を取り巻く領域（市場・競合��規制・リスク）を調査し、必要なスペシャリストと質問を決め��います。少し時間がかかります。',
+      ' を取り巻く領域（市場・競合・規制・リスク）を調査し、必要なスペシャリストと質問を決めています。少し時間がかかります。',
     researchError: 'オーケストレーターはこの目標を調査できませんでした',
     clarifyingNote:
       '目標を読み、何が未確定かを決めています。未確定がなければそのまま調査を開始します。',
@@ -421,10 +421,10 @@ export const ja: Dictionary = {
     refinedEyebrow: '洗練された目標',
     refinedNoteLabel: '最初のブリーフからの変更点',
     briefEyebrowWeb: 'オーケストレーター · ライブ調査',
-    briefEyebrowModel: 'オーケ��トレーター · モデル推論',
+    briefEyebrowModel: 'オーケストレーター · モデル推論',
     briefPrompt: '調査結果は以下のとおりです。',
     briefWhy:
-      '回答する前に読んでください。誤りや古い情報があれば���続く質問で伝えてください。計画はその両方から作られます。',
+      '回答する前に読んでください。誤りや古い情報があれば、続く質問で伝えてください。計画はその両方から作られます。',
     briefSubmit: '質問に回答',
     questionEyebrow: '質問 {current} / {total}',
     answerLabel: 'あなたの回答',
@@ -434,7 +434,7 @@ export const ja: Dictionary = {
     namingEyebrow: '最終ステップ',
     namingPrompt: 'このプロジェクトを何と呼びますか？',
     namingWhy:
-      '目標はOKRツリーのルートにな���、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
+      '目標はOKRツリーのルートになり、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
     nameLabel: 'プロジェクト名',
     namePlaceholder: '例：パートナーチャネル',
     nameRequired: 'プロジェクトに名前を付けてください。',
@@ -525,7 +525,7 @@ export const ja: Dictionary = {
     saving: '保存中…',
     replaceKey: 'キーを置き換え',
     connect: '接続',
-    saveError: '���のキーを保存できませんでした',
+    saveError: 'そのキーを保存できませんでした',
     defaultError: '既定を変更できませんでした',
     disconnectError: '切断できませんでした',
     blurbs: {
