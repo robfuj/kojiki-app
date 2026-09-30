@@ -1,6 +1,6 @@
 'use client'
 
-import { deleteProject } from '@/app/actions/projects'
+import { deleteProject, renameProject } from '@/app/actions/projects'
 import type { ProjectRow } from '@/app/actions/projects'
 import { listProjectGates } from '@/app/actions/workspace'
 import { LanguageSelector } from '@/components/i18n/language-selector'
@@ -14,6 +14,7 @@ import {
   Bell,
   ChevronDown,
   PanelLeft,
+  Pencil,
   Plus,
   Search,
   Settings,
@@ -61,6 +62,21 @@ export function TopBar({
   const { t } = useLocale()
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [names, setNames] = useState<Record<string, string>>({})
+
+  async function commitRename(project: ProjectRow, value: string) {
+    setEditingId(null)
+    const next = value.trim()
+    const current = names[project.id] ?? project.name
+    if (!next || next === current) return
+    setNames((prev) => ({ ...prev, [project.id]: next }))
+    try {
+      await renameProject(project.id, next)
+    } catch {
+      setNames((prev) => ({ ...prev, [project.id]: current }))
+    }
+  }
 
   async function remove(projectId: string) {
     setDeleting(true)
@@ -163,22 +179,53 @@ export function TopBar({
                       name={project.name}
                       className="size-6 shrink-0 bg-muted text-[10px] text-foreground"
                     />
-                    <span className="truncate text-sm font-semibold text-foreground">
-                      {project.name}
-                    </span>
-                    {active && (
+                    {editingId === project.id ? (
+                      <input
+                        autoFocus
+                        defaultValue={names[project.id] ?? project.name}
+                        aria-label={format(t.projects.renameAria, {
+                          name: names[project.id] ?? project.name,
+                        })}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyUp={(e) => e.preventDefault()}
+                        onBlur={(e) => commitRename(project, e.currentTarget.value)}
+                        onKeyDown={(e) => {
+                          e.stopPropagation()
+                          if (e.key === 'Enter') {
+                            if (e.nativeEvent.isComposing || e.keyCode === 229) return
+                            e.currentTarget.blur()
+                          } else if (e.key === 'Escape') {
+                            setEditingId(null)
+                          }
+                        }}
+                        className="w-40 rounded-md border border-border bg-background px-1.5 py-0.5 text-sm font-semibold text-foreground outline-none focus:border-foreground/50"
+                      />
+                    ) : (
+                      <span className="max-w-52 truncate pr-5 text-sm font-semibold text-foreground">
+                        {names[project.id] ?? project.name}
+                      </span>
+                    )}
+                    {active && editingId !== project.id && (
                       <ChevronDown
                         className="size-3 shrink-0 text-muted-foreground/60"
                         aria-hidden="true"
                       />
                     )}
                   </span>
-                  {!active && (
-                    <span className="mt-1 block max-w-52 truncate text-xs text-muted-foreground">
-                      {project.objective}
-                    </span>
-                  )}
                 </button>
+
+                {editingId !== project.id && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(project.id)}
+                    aria-label={format(t.projects.renameAria, {
+                      name: names[project.id] ?? project.name,
+                    })}
+                    className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground focus-visible:opacity-100"
+                  >
+                    <Pencil className="size-3.5" aria-hidden="true" />
+                  </button>
+                )}
 
                 <button
                   type="button"
