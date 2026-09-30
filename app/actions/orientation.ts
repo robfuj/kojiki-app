@@ -37,6 +37,14 @@ function normalize(answers: OrientationAnswers): OrientationAnswers {
     goal,
     industry,
     jurisdiction: answers.jurisdiction?.trim() || null,
+    country: answers.country?.trim().slice(0, 200) || null,
+    region: answers.region?.trim().slice(0, 200) || null,
+    regulatoryRegime: answers.regulatoryRegime?.trim().slice(0, 300) || null,
+    groupId: answers.groupId?.trim().slice(0, 100) || null,
+    siblingAgents: (answers.siblingAgents ?? [])
+      .map((s) => String(s).trim().slice(0, 100))
+      .filter(Boolean)
+      .slice(0, 20),
     geography: answers.geography?.trim() || null,
     businessModel: answers.businessModel?.trim() || null,
   }
@@ -68,6 +76,11 @@ export async function completeOrientation(
       goal: normalized.goal,
       industry: normalized.industry,
       jurisdiction: normalized.jurisdiction,
+      country: normalized.country,
+      region: normalized.region,
+      regulatoryRegime: normalized.regulatoryRegime,
+      groupId: normalized.groupId,
+      siblingAgents: normalized.siblingAgents ?? [],
       geography: normalized.geography,
       businessModel: normalized.businessModel,
       researchBrief: orchestrated.brief,
@@ -103,6 +116,11 @@ export async function updateOrientation(
       goal: normalized.goal,
       industry: normalized.industry,
       jurisdiction: normalized.jurisdiction,
+      country: normalized.country,
+      region: normalized.region,
+      regulatoryRegime: normalized.regulatoryRegime,
+      groupId: normalized.groupId,
+      siblingAgents: normalized.siblingAgents ?? [],
       geography: normalized.geography,
       businessModel: normalized.businessModel,
       researchBrief: orchestrated.brief,

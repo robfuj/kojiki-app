@@ -12,12 +12,13 @@ import {
   runClarifyPhase,
   runProjectIntake,
   runReResearchPhase,
-  type ClarifyQuestion,
+  type ClarifyResult,
   type ProjectIntakeResult,
   type ReResearchResult,
   type ResearchBrief,
 } from '@/lib/orchestrator'
-import { desc, eq } from 'drizzle-orm'
+import { appendSentinelEntry } from '@/lib/sentinel'
+import { and, desc, eq, ne } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 const getUserId = requireUserId
@@ -84,7 +85,7 @@ export async function researchProjectGoal(input: {
  */
 export async function clarifyProjectGoal(input: {
   goal: string
-}): Promise<ClarifyQuestion[]> {
+}): Promise<ClarifyResult> {
   const userId = await getUserId()
   const goal = input.goal.trim()
 
@@ -175,6 +176,13 @@ export async function createProjectFromIntake(input: {
   /** Phase five's restatement; becomes the root objective when present. */
   refinedGoal?: string
   refinementNote?: string
+  stakeholders?: string[]
+  outOfScope?: string[]
+  confidence?: number
+  thinkAloud?: string
+  reResearched?: boolean
+  /** Phases the client actually ran, sealed into the orientation signature. */
+  phasesCompleted?: string[]
 }): Promise<ProjectRow> {
   const userId = await getUserId()
 
@@ -203,6 +211,24 @@ export async function createProjectFromIntake(input: {
   // objective must never be empty or unbounded.
   const refinedObjective = (input.refinedGoal?.trim() || goal).slice(0, 2000)
 
+  const capList = (list: string[] | undefined) =>
+    (list ?? [])
+      .map((s) => String(s).trim().slice(0, 300))
+      .filter(Boolean)
+      .slice(0, 10)
+  const stakeholders = capList(input.stakeholders)
+  const outOfScope = capList(input.outOfScope)
+  const confidence =
+    typeof input.confidence === 'number' && Number.isFinite(input.confidence)
+      ? Math.min(1, Math.max(0, input.confidence))
+      : null
+  const thinkAloud = input.thinkAloud?.slice(0, 2000) ?? null
+  const allowedPhases = ['clarify', 'research', 'follow-ups', 'answers', 're-research', 'build']
+  const phasesCompleted = Array.from(
+    new Set((input.phasesCompleted ?? []).filter((p) => allowedPhases.includes(p))),
+  )
+  if (!phasesCompleted.includes('build')) phasesCompleted.push('build')
+
   const projectId = crypto.randomUUID()
 
   const [project] = await db
@@ -217,6 +243,12 @@ export async function createProjectFromIntake(input: {
         goal,
         refinedGoal: refinedObjective,
         refinementNote: input.refinementNote?.slice(0, 1000) ?? null,
+        stakeholders,
+        outOfScope,
+        confidence,
+        thinkAloud,
+        reResearched: Boolean(input.reResearched),
+        phasesCompleted,
         brief: input.brief,
         answers,
         rosterRationale: input.rosterRationale,
@@ -246,6 +278,74 @@ export async function createProjectFromIntake(input: {
   // The registry is the engine's authority on who exists: the orchestrator node
   // plus every head beneath it, carrying its ontology decision rights.
   await bootstrapProjectRegistry({ userId, projectId, roster })
+
+  // Canonical orientation_protocol.py seals orientation with signer=registry
+  // and an ORIENT-<ts> id. Signing is best-effort so a chain hiccup cannot
+  // discard a project that was otherwise built.
+  const orientId = `ORIENT-${Date.now()}`
+  try {
+    await appendSentinelEntry({
+      userId,
+      projectId,
+      entryType: 'orientation_signed',
+      subjectKey: 'orchestrator/orientation',
+      subjectTitle: orientId,
+      signer: 'registry',
+      payload: {
+        orientationId: orientId,
+        phasesCompleted,
+        refinedGoal: refinedObjective,
+        stakeholders,
+        outOfScope,
+        confidence,
+        researchTimestamp: input.brief?.timestamp ?? null,
+        roster: roster.map((bot) => bot.specialistKey),
+        groupId: orientation.groupId ?? null,
+      },
+    })
+
+    // Orientation's "Then": announce the new project to registered siblings.
+    const siblings = orientation.siblingAgents ?? []
+    if (orientation.groupId || siblings.length > 0) {
+      const announcement = {
+        orientationId: orientId,
+        projectId,
+        projectName: name,
+        groupId: orientation.groupId ?? null,
+        goal: refinedObjective,
+      }
+      await appendSentinelEntry({
+        userId,
+        projectId,
+        entryType: 'sibling_announced',
+        subjectKey: 'orchestrator/orientation',
+        subjectTitle: `Announced to ${siblings.length} sibling(s)`,
+        signer: 'registry',
+        payload: { ...announcement, siblings },
+      })
+      const peers = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(and(eq(projects.userId, userId), ne(projects.id, projectId)))
+        .limit(20)
+      for (const peer of peers) {
+        await appendSentinelEntry({
+          userId,
+          projectId: peer.id,
+          entryType: 'sibling_announced',
+          subjectKey: 'orchestrator/orientation',
+          subjectTitle: `New sibling project: ${name}`.slice(0, 200),
+          signer: 'registry',
+          payload: announcement,
+        })
+      }
+    }
+  } catch (error) {
+    console.log(
+      '[v0] orientation signing deferred:',
+      error instanceof Error ? error.message : String(error),
+    )
+  }
 
   const [root] = await db
     .insert(objectives)

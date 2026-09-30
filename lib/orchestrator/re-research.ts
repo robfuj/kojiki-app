@@ -8,11 +8,58 @@ import { z } from 'zod'
 import { researchOnTheWeb, projectContextLines } from './shared'
 import { ResearchBrief } from './roster'
 
+export interface ReFollowUp {
+  id: string
+  prompt: string
+  why: string
+  researchBasis: string
+}
+
 export interface ReResearchResult {
   brief: ResearchBrief
   refinedGoal: string
   refinementNote: string
+  stakeholders: string[]
+  outOfScope: string[]
+  confidence: number
+  thinkAloud: string
+  /** Whether an answer tripped the canonical re-research trigger. */
+  reResearched: boolean
+  /** Up to two re-follow-ups, only when re-research ran. */
+  reFollowUps: ReFollowUp[]
   researchMethod: 'web-search' | 'model-reasoning'
+}
+
+/**
+ * Canonical trigger keywords (orientation_protocol.py) plus Japanese
+ * equivalents, since answers arrive in the user's locale.
+ */
+const TRIGGER_KEYWORDS = [
+  'new market',
+  'different regulation',
+  'budget changed',
+  'timeline shifted',
+  'stakeholder added',
+  'scope expanded',
+  'country',
+  'jurisdiction',
+  '新市場',
+  '新しい市場',
+  '規制',
+  '予算',
+  '期限',
+  'スケジュール',
+  '関係者',
+  '範囲',
+  '国',
+  '管轄',
+]
+
+export function shouldReResearch(answers: { answer: string }[]): boolean {
+  return answers.some((a) => {
+    const text = a.answer.toLowerCase()
+    return TRIGGER_KEYWORDS.some((k) => text.includes(k))
+  })
 }
 
 export const reResearchSchema = z.object({
@@ -24,22 +71,44 @@ export const reResearchSchema = z.object({
   refinedGoal: z
     .string()
     .describe(
-      'The project goal restated in one or two sentences, sharpened by the answers: scope, audience, timeframe and the criterion for success made explicit wherever the answers supplied them.',
+      'The goal restated in one or two sentences: scope, audience, timeframe and the success criterion made explicit wherever the answers supplied them.',
     ),
   refinementNote: z
     .string()
-    .describe(
-      'One or two sentences on what changed versus the first brief, and which answer changed it.',
-    ),
+    .describe('One or two sentences on what changed and which answer changed it.'),
+  stakeholders: z
+    .array(z.string())
+    .describe('Who cares about, signs off on, or may push back on this outcome.'),
+  outOfScope: z
+    .array(z.string())
+    .describe('What is explicitly outside this project.'),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe('0–1: how well the refined goal is grounded in the answers and research.'),
+  thinkAloud: z.string().describe('One or two sentences of your reasoning.'),
+  reFollowUps: z
+    .array(
+      z.object({
+        prompt: z.string(),
+        why: z.string(),
+        researchBasis: z
+          .string()
+          .describe('The specific new finding that prompted this question.'),
+      }),
+    )
+    .max(2)
+    .describe('At most two questions raised by the new research. Empty if none.'),
 })
 
 /**
- * Phases four and five of the orientation protocol: re-research and refine.
+ * Phases four and five of the orientation protocol.
  *
- * The answers the user gave are folded into the research context and the field
- * is researched again, so the brief the project is built on reflects what the
- * user actually said. The same pass restates the goal around those answers —
- * the refined goal becomes the project's root objective.
+ * As in the canonical protocol, the field is only researched again when an
+ * answer signals a material change (new market, regulation, budget, timeline,
+ * stakeholders, scope, jurisdiction). Then up to two re-follow-ups may be asked.
+ * Otherwise the prior brief stands and only the goal is synthesised.
  */
 export async function runReResearchPhase(input: {
   orientation: OrientationAnswers
@@ -63,6 +132,7 @@ export async function runReResearchPhase(input: {
   const given = [...clarifyAnswers, ...answers].filter(
     (item) => item.answer.trim().length > 0,
   )
+  const triggered = shouldReResearch(given)
   const context = [
     projectContextLines(orientation, goal),
     '',
@@ -71,19 +141,23 @@ export async function runReResearchPhase(input: {
       : 'The user gave no answers to the follow-up questions.',
   ].join('\n')
 
-  const research = await researchOnTheWeb(context)
+  const research = triggered ? await researchOnTheWeb(context) : null
   const researchMethod: ReResearchResult['researchMethod'] = research
     ? 'web-search'
-    : 'model-reasoning'
+    : triggered
+      ? 'model-reasoning'
+      : (priorBrief.sources.length > 0 ? 'web-search' : 'model-reasoning')
 
   const route = await resolveModelForUser(userId)
+  const directive = languageDirective(locale)
 
   const { toolCalls } = await generateText({
     model: route.model,
+    ...(directive ? { system: directive } : {}),
     tools: {
       reresearch: {
         description:
-          'Return the updated research brief and the refined goal statement after the user answered the follow-up questions.',
+          'Return the updated brief, the refined goal, stakeholders, boundaries and confidence.',
         inputSchema: reResearchSchema,
       },
     },
@@ -93,22 +167,22 @@ export async function runReResearchPhase(input: {
 ${context}
 
 ${
-  research
-    ? `Live web research on this field:\n\n${research}`
-    : 'No live web research was available. Reason from your own knowledge and leave sources empty.'
+  triggered
+    ? research
+      ? `An answer signals a material change, so the field was researched again:\n\n${research}`
+      : 'An answer signals a material change. No live web research was available; reason from your own knowledge and leave sources empty.'
+    : 'No answer signals a material change. Keep the brief below as it is (copy it through, including sources) and return no reFollowUps.'
 }
 
 The first brief, before the answers:
 Market — ${priorBrief.marketScan}
 Competition — ${priorBrief.competitiveLandscape}
 Regulation — ${priorBrief.regulatoryConsiderations}
+Risks — ${priorBrief.keyRisks.join('; ')}
+Sources — ${priorBrief.sources.join(', ') || 'none'}
 
-Do two things.
-
-First, update the brief where the answers change it: a stated audience narrows the market scan, a stated timeframe moves the risks, a stated constraint changes the competitive read. Keep what the answers did not touch.
-
-Second, restate the goal in one or two sentences around the answers, and say in one or two sentences what changed versus the first brief.${
-      languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
+Then synthesise the refined goal: clarify scope and constraints, state measurable success criteria, identify key stakeholders, and note boundaries/out-of-scope. Say what changed and give your confidence.${
+      directive ? `\n\n${directive}` : ''
     }`,
   })
 
@@ -118,15 +192,29 @@ Second, restate the goal in one or two sentences around the answers, and say in 
   const plan = reResearchSchema.parse(call.input)
 
   return {
-    brief: {
-      marketScan: plan.marketScan,
-      competitiveLandscape: plan.competitiveLandscape,
-      regulatoryConsiderations: plan.regulatoryConsiderations,
-      keyRisks: plan.keyRisks,
-      sources: research ? plan.sources : [],
-    },
+    brief: triggered
+      ? {
+          marketScan: plan.marketScan,
+          competitiveLandscape: plan.competitiveLandscape,
+          regulatoryConsiderations: plan.regulatoryConsiderations,
+          keyRisks: plan.keyRisks,
+          sources: research ? plan.sources : [],
+          timestamp: new Date().toISOString(),
+        }
+      : priorBrief,
     refinedGoal: plan.refinedGoal,
     refinementNote: plan.refinementNote,
+    stakeholders: plan.stakeholders.slice(0, 10),
+    outOfScope: plan.outOfScope.slice(0, 10),
+    confidence: plan.confidence,
+    thinkAloud: plan.thinkAloud,
+    reResearched: triggered,
+    reFollowUps: triggered
+      ? plan.reFollowUps.slice(0, 2).map((q, i) => ({
+          id: `r${i + 1}`,
+          ...q,
+        }))
+      : [],
     researchMethod,
   }
 }

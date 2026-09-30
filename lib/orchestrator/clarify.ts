@@ -10,22 +10,110 @@ import { projectContextLines } from './shared'
 /**
  * Phase one of the orientation protocol: adaptive clarification.
  *
- * Before the field is researched, the orchestrator reads the goal and asks only
- * what the goal leaves open — scope, audience, timeframe, constraints. A goal
- * that is already specific returns no questions and the protocol moves straight
- * to research, so clarification costs nothing when it has nothing to add.
+ * Mirrors kojiki_core/orientation_protocol.py: questions come from a fixed bank
+ * of eight, each tagged with a category. Required questions are always asked;
+ * optional ones are asked only when the goal leaves their category unknown. The
+ * model never invents questions — it only reports which categories the goal
+ * already covers and adapts the bank wording to the goal and locale.
  */
+export type ClarifyCategory =
+  | 'scope'
+  | 'constraints'
+  | 'stakeholders'
+  | 'success'
+  | 'context'
+
+const CATEGORIES = [
+  'scope',
+  'constraints',
+  'stakeholders',
+  'success',
+  'context',
+] as const
+
+interface BankQuestion {
+  id: string
+  prompt: string
+  category: ClarifyCategory
+  required: boolean
+}
+
+export const CLARIFY_BANK: BankQuestion[] = [
+  {
+    id: 'c_goal_meaning',
+    prompt:
+      "You said: '{raw_goal}'. What specifically does that involve? Give a concrete example.",
+    category: 'scope',
+    required: true,
+  },
+  {
+    id: 'c_goal_trigger',
+    prompt: 'What happened recently that made this a priority now?',
+    category: 'context',
+    required: false,
+  },
+  {
+    id: 'c_success_criteria',
+    prompt:
+      "Six months from now, what specific metrics or outcomes mean 'this succeeded'?",
+    category: 'success',
+    required: true,
+  },
+  {
+    id: 'c_constraints',
+    prompt:
+      "What's absolutely non-negotiable? (Hard budget cap? Regulatory deadline? Team capacity?)",
+    category: 'constraints',
+    required: true,
+  },
+  {
+    id: 'c_stakeholders',
+    prompt:
+      'Who else cares about this outcome? Who must sign off? Who might push back?',
+    category: 'stakeholders',
+    required: true,
+  },
+  {
+    id: 'c_boundaries',
+    prompt:
+      "What's explicitly OUT of scope? What would make you say 'that's a different project'?",
+    category: 'scope',
+    required: false,
+  },
+  {
+    id: 'c_decision_context',
+    prompt:
+      'Is this a one-time decision or ongoing capability? Will you repeat this analysis?',
+    category: 'context',
+    required: false,
+  },
+  {
+    id: 'c_existing_data',
+    prompt:
+      'What data or reports do you already have? (CRM, analytics, financials, customer feedback?)',
+    category: 'context',
+    required: false,
+  },
+]
+
+const MAX_CLARIFY = 4
+
 export const clarifySchema = z.object({
-  questions: z
+  thinkAloud: z
+    .string()
+    .describe('One or two sentences on what the goal already makes clear.'),
+  knownCategories: z
+    .array(z.enum(CATEGORIES))
+    .describe('Categories the goal already answers explicitly.'),
+  wording: z
     .array(
       z.object({
+        id: z.string(),
         prompt: z.string(),
         why: z.string(),
-        kind: z.enum(['text', 'textarea']),
-        required: z.boolean(),
       }),
     )
-    .max(3),
+    .describe('Every bank question, reworded for this goal, with why it matters.'),
 })
 
 export interface ClarifyQuestion {
@@ -34,6 +122,12 @@ export interface ClarifyQuestion {
   why: string
   kind: 'text' | 'textarea'
   required: boolean
+  category: ClarifyCategory
+}
+
+export interface ClarifyResult {
+  questions: ClarifyQuestion[]
+  thinkAloud: string
 }
 
 export async function runClarifyPhase(input: {
@@ -41,17 +135,21 @@ export async function runClarifyPhase(input: {
   goal: string
   userId: string
   locale?: Locale
-}): Promise<ClarifyQuestion[]> {
+}): Promise<ClarifyResult> {
   const { orientation, goal, userId, locale = DEFAULT_LOCALE } = input
   const context = projectContextLines(orientation, goal)
   const route = await resolveModelForUser(userId)
+  const bank = CLARIFY_BANK.map((q) => ({
+    ...q,
+    prompt: q.prompt.replace('{raw_goal}', goal.slice(0, 200)),
+  }))
 
   const { toolCalls } = await generateText({
     model: route.model,
     tools: {
       clarify: {
         description:
-          'Return the clarifying questions to ask before researching this goal, or an empty list when the goal is already specific enough to research.',
+          'Report which question categories the goal already covers, and reword each bank question for this goal.',
         inputSchema: clarifySchema,
       },
     },
@@ -60,21 +158,36 @@ export async function runClarifyPhase(input: {
 
 ${context}
 
-Read the project goal. Return the questions whose answers you need before the field can be researched well: the scope, the audience, the timeframe, or the constraints the goal leaves open. Do not ask what the goal already states. If the goal is specific enough to research as written, return an empty array. At most three questions, each optional unless the research would be meaningless without it. Each "why" must say what the answer changes.${
+Question bank (id — category — question):
+${bank.map((q) => `${q.id} — ${q.category} — ${q.prompt}`).join('\n')}
+
+List the categories the goal already answers explicitly. Then reword every bank question so it refers to this goal concretely, keeping its intent and id. Each "why" says in one sentence what the answer changes.${
       languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
     }`,
   })
 
   const call = toolCalls.find((c) => c.toolName === 'clarify')
   if (!call) throw new Error('The orchestrator returned no clarify plan')
-
   const plan = clarifySchema.parse(call.input)
 
-  return plan.questions.slice(0, 3).map((question, index) => ({
-    id: `c${index + 1}`,
-    prompt: question.prompt,
-    why: question.why,
-    kind: question.kind,
-    required: question.required,
-  }))
+  const known = new Set(plan.knownCategories)
+  const wording = new Map(plan.wording.map((w) => [w.id, w]))
+
+  const questions = bank
+    .filter((q) => q.required || !known.has(q.category))
+    .sort((a, b) => Number(b.required) - Number(a.required))
+    .slice(0, MAX_CLARIFY)
+    .map((q) => {
+      const worded = wording.get(q.id)
+      return {
+        id: q.id,
+        prompt: worded?.prompt || q.prompt,
+        why: worded?.why || '',
+        kind: 'textarea' as const,
+        required: q.required,
+        category: q.category,
+      }
+    })
+
+  return { questions, thinkAloud: plan.thinkAloud }
 }
