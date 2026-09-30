@@ -67,6 +67,7 @@ export function ProjectIntake({
   const [questionStep, setQuestionStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [refined, setRefined] = useState<ReResearchResult | null>(null)
+  const [reFollowUpsAsked, setReFollowUpsAsked] = useState(false)
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -142,8 +143,8 @@ export function ProjectIntake({
     // stranding the user on a broken step.
     try {
       const clarify = await clarifyProjectGoal({ goal: goal.trim() })
-      if (clarify.length > 0) {
-        setClarifyQuestions(clarify)
+      if (clarify.questions.length > 0) {
+        setClarifyQuestions(clarify.questions)
         setClarifyStep(0)
         goTo('clarify')
         return
@@ -195,6 +196,8 @@ export function ProjectIntake({
     if (questionStep + 1 < questions.length) {
       setQuestionStep((s) => s + 1)
       setDirection('forward')
+    } else if (reFollowUpsAsked) {
+      goTo('naming')
     } else {
       void reResearch()
     }
@@ -212,16 +215,32 @@ export function ProjectIntake({
         answers: answersPayload(),
         brief: result.brief,
       })
+      const reFollowUps = next.reResearched ? next.reFollowUps.slice(0, 2) : []
       setResult((current) =>
         current
           ? {
               ...current,
               brief: next.brief,
               researchMethod: next.researchMethod,
+              questions: [
+                ...current.questions,
+                ...reFollowUps.map((q) => ({
+                  ...q,
+                  kind: 'textarea' as const,
+                  required: false,
+                })),
+              ],
             }
           : current,
       )
       setRefined(next)
+      // Canonical phase 5: a triggered re-research may ask up to two more questions.
+      if (reFollowUps.length > 0) {
+        setReFollowUpsAsked(true)
+        setQuestionStep(result.questions.length)
+        goTo('questions')
+        return
+      }
       goTo('naming')
     } catch {
       setError(tp.researchError)
@@ -250,6 +269,17 @@ export function ProjectIntake({
         answers: answersPayload(),
         refinedGoal: refined?.refinedGoal,
         refinementNote: refined?.refinementNote,
+        stakeholders: refined?.stakeholders,
+        outOfScope: refined?.outOfScope,
+        confidence: refined?.confidence,
+        thinkAloud: refined?.thinkAloud,
+        reResearched: refined?.reResearched,
+        phasesCompleted: [
+          ...(clarifyQuestions.length > 0 ? ['clarify'] : []),
+          'research',
+          ...(result.questions.length > 0 ? ['follow-ups', 'answers'] : []),
+          ...(refined?.reResearched ? ['re-research'] : []),
+        ],
       })
 
       router.refresh()

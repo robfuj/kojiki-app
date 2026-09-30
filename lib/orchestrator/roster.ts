@@ -52,6 +52,8 @@ export interface ResearchBrief {
   regulatoryConsiderations: string
   keyRisks: string[]
   sources: string[]
+  /** ISO time the brief was produced (canonical ResearchBrief.timestamp). */
+  timestamp?: string
 }
 
 export interface OrchestratorResult {

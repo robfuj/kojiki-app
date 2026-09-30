@@ -25,6 +25,11 @@ const EMPTY: Answers = {
   goal: '',
   industry: '',
   jurisdiction: '',
+  country: '',
+  region: '',
+  regulatoryRegime: '',
+  groupId: '',
+  siblingAgents: '',
   geography: '',
   businessModel: '',
 }
@@ -137,6 +142,14 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
         goal: answers.goal.trim(),
         industry: answers.industry.trim(),
         jurisdiction: answers.jurisdiction.trim() || null,
+        country: answers.country.trim() || null,
+        region: answers.region.trim() || null,
+        regulatoryRegime: answers.regulatoryRegime.trim() || null,
+        groupId: answers.groupId.trim() || null,
+        siblingAgents: answers.siblingAgents
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
         geography: answers.geography.trim() || null,
         businessModel: answers.businessModel.trim() || null,
       }

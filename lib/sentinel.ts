@@ -58,6 +58,10 @@ export type SentinelEntryType =
   // reversible and stops a reset being used to erase a day's evidence.
   | 'morpheus_sealed'
   | 'morpheus_verified'
+  // ORIENTATION — the protocol seal (ORIENT-<ts>) and the announcement to
+  // sibling agents, so a project's founding context has provenance.
+  | 'orientation_signed'
+  | 'sibling_announced'
   // DECISION RIGHTS — a denied signal is sealed rather than dropped, so an agent
   // that was refused authority leaves a record of having asked.
   | 'right_denied'

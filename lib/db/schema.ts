@@ -75,6 +75,12 @@ export const orientationProfiles = pgTable('orientation_profiles', {
   industry: text('industry').notNull(),
   // Optional context that sharpens the orchestrator's research.
   jurisdiction: text('jurisdiction'),
+  country: text('country'),
+  region: text('region'),
+  regulatoryRegime: text('regulatoryRegime'),
+  // Q5: the agent group and the siblings announced to when orientation signs.
+  groupId: text('groupId'),
+  siblingAgents: jsonb('siblingAgents').$type<string[]>().notNull().default([]),
   geography: text('geography'),
   businessModel: text('businessModel'),
   // Orchestrator output.

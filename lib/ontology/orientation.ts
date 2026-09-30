@@ -92,13 +92,31 @@ export const ORIENTATION_QUESTIONS: OrientationQuestion[] = [
     why: 'Sharper research and better specialist selection. Skip anything that does not apply.',
     fields: [
       {
-        name: 'jurisdiction',
-        label: 'Jurisdiction',
+        name: 'country',
+        label: 'Country',
         kind: 'text',
-        placeholder: 'e.g. Japan, expanding into Singapore',
-        screenPrompt: 'Where are you regulated?',
+        placeholder: 'e.g. Japan',
+        screenPrompt: 'Which country are you based in?',
         screenWhy:
-          'Legal and finance read this before they advise. A recommendation that is sound in one jurisdiction can be unlawful in another, so naming it stops the agents reasoning from the wrong default.',
+          'Legal and finance anchor their advice to this country before anything else.',
+      },
+      {
+        name: 'region',
+        label: 'Region',
+        kind: 'text',
+        placeholder: 'e.g. Kanto, expanding into Singapore',
+        screenPrompt: 'Which region or state, and where are you expanding?',
+        screenWhy:
+          'Local rules, labour markets and logistics differ inside a country; the region stops the agents assuming a national average.',
+      },
+      {
+        name: 'regulatoryRegime',
+        label: 'Regulatory regime',
+        kind: 'text',
+        placeholder: 'e.g. APPI, FSA-regulated, GDPR for EU customers',
+        screenPrompt: 'Which regulatory regime applies to you?',
+        screenWhy:
+          'A recommendation that is sound under one regime can be unlawful under another, so naming it stops the agents reasoning from the wrong default.',
       },
       {
         name: 'geography',
@@ -120,15 +138,59 @@ export const ORIENTATION_QUESTIONS: OrientationQuestion[] = [
       },
     ],
   },
+  {
+    id: 'q5',
+    label: 'Q5 — Group',
+    prompt: 'Which group do your agents belong to, and who are their siblings?',
+    why: 'Agents in the same group share context. Each new project announces itself to its registered siblings when orientation is signed.',
+    fields: [
+      {
+        name: 'groupId',
+        label: 'Group ID',
+        kind: 'text',
+        placeholder: 'e.g. acme-apac',
+        screenPrompt: 'Which group do your agents belong to?',
+        screenWhy:
+          'The group ID ties this workspace to other Kojiki agents so they can exchange signals.',
+      },
+      {
+        name: 'siblingAgents',
+        label: 'Sibling agents',
+        kind: 'text',
+        placeholder: 'e.g. finance-bot, ops-bot (comma-separated)',
+        screenPrompt: 'Which sibling agents should be told when a project starts?',
+        screenWhy:
+          'Each is sent an announcement, sealed on the project chain, when orientation completes.',
+      },
+    ],
+  },
 ]
 
 export interface OrientationAnswers {
   userName: string
   goal: string
   industry: string
+  /** Legacy single field; superseded by country / region / regulatoryRegime. */
   jurisdiction?: string | null
+  country?: string | null
+  region?: string | null
+  regulatoryRegime?: string | null
+  groupId?: string | null
+  siblingAgents?: string[] | null
   geography?: string | null
   businessModel?: string | null
+}
+
+/** Country / region / regime lines, falling back to the legacy field. */
+export function jurisdictionLines(o: OrientationAnswers): string[] {
+  const lines: string[] = []
+  if (o.country) lines.push(`Country: ${o.country}`)
+  if (o.region) lines.push(`Region: ${o.region}`)
+  if (o.regulatoryRegime) lines.push(`Regulatory regime: ${o.regulatoryRegime}`)
+  if (lines.length === 0 && o.jurisdiction) {
+    lines.push(`Jurisdiction: ${o.jurisdiction}`)
+  }
+  return lines
 }
 
 export interface DerivedBot {
@@ -206,9 +268,7 @@ export function orientationContext(orientation: OrientationAnswers): string {
     `Goal: ${orientation.goal}`,
     `Industry: ${orientation.industry}`,
   ]
-  if (orientation.jurisdiction) {
-    lines.push(`Jurisdiction: ${orientation.jurisdiction}`)
-  }
+  lines.push(...jurisdictionLines(orientation))
   if (orientation.geography) lines.push(`Geography: ${orientation.geography}`)
   if (orientation.businessModel) {
     lines.push(`Business model: ${orientation.businessModel}`)

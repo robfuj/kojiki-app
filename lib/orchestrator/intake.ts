@@ -69,6 +69,11 @@ export const projectIntakeSchema = z.object({
           .describe(
             'One sentence on how the answer changes the plan. Never a restatement of the question.',
           ),
+        researchBasis: z
+          .string()
+          .describe(
+            'The specific research finding that prompted this question.',
+          ),
         kind: z.enum(['text', 'textarea']),
         required: z.boolean(),
       }),
@@ -84,6 +89,7 @@ export interface IntakeQuestion {
   id: string
   prompt: string
   why: string
+  researchBasis: string
   kind: 'text' | 'textarea'
   required: boolean
 }
@@ -182,6 +188,7 @@ Second, ask the three to five questions whose answers would materially change ho
       regulatoryConsiderations: plan.regulatoryConsiderations,
       keyRisks: plan.keyRisks,
       sources: research ? plan.sources : [],
+      timestamp: new Date().toISOString(),
     },
     rosterKeys,
     rosterRationale: plan.rosterRationale,
@@ -190,6 +197,7 @@ Second, ask the three to five questions whose answers would materially change ho
       id: `q${index + 1}`,
       prompt: question.prompt,
       why: question.why,
+      researchBasis: question.researchBasis,
       kind: question.kind,
       required: question.required,
     })),

@@ -1,4 +1,7 @@
-import type { OrientationAnswers } from '@/lib/ontology/orientation'
+import {
+  jurisdictionLines,
+  type OrientationAnswers,
+} from '@/lib/ontology/orientation'
 import { generateText } from 'ai'
 
 export const RESEARCH_MODEL =
@@ -10,7 +13,7 @@ export function contextLines(answers: OrientationAnswers): string {
     `Goal: ${answers.goal}`,
     `Industry: ${answers.industry}`,
   ]
-  if (answers.jurisdiction) lines.push(`Jurisdiction: ${answers.jurisdiction}`)
+  lines.push(...jurisdictionLines(answers))
   if (answers.geography) lines.push(`Geography: ${answers.geography}`)
   if (answers.businessModel) {
     lines.push(`Business model: ${answers.businessModel}`)
@@ -60,9 +63,7 @@ export function projectContextLines(
     `Company goal: ${orientation.goal}`,
     `Industry: ${orientation.industry}`,
   ]
-  if (orientation.jurisdiction) {
-    lines.push(`Jurisdiction: ${orientation.jurisdiction}`)
-  }
+  lines.push(...jurisdictionLines(orientation))
   if (orientation.geography) lines.push(`Geography: ${orientation.geography}`)
   if (orientation.businessModel) {
     lines.push(`Business model: ${orientation.businessModel}`)
