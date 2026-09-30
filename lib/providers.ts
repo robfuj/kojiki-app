@@ -430,6 +430,18 @@ function byTotalPrice(a: CatalogEntry, b: CatalogEntry): number {
   return totalPrice(a) - totalPrice(b)
 }
 
+/**
+ * Free models first, then price.
+ *
+ * The ordering a free-first user wants: every $0 model the catalog offers,
+ * cheapest paid models after. Kept as a comparator rather than a partition so the
+ * ladder logic below stays one pass over one ordered list.
+ */
+function byFreeThenPrice(a: CatalogEntry, b: CatalogEntry): number {
+  if (a.isFree !== b.isFree) return a.isFree ? -1 : 1
+  return totalPrice(a) - totalPrice(b)
+}
+
 /** The vendor segment of a catalog ID, which is what a direct provider serves. */
 function vendorOf(entry: CatalogEntry): string {
   const [vendor] = entry.modelId.split('/')
@@ -450,6 +462,7 @@ function vendorOf(entry: CatalogEntry): string {
  */
 export async function cheapestCapableModelForProvider(
   provider: ProviderId,
+  options: { freeFirst?: boolean } = {},
 ): Promise<string | null> {
   const capable = (await getCatalog()).filter(isCapable)
   const candidates =
@@ -458,6 +471,17 @@ export async function cheapestCapableModelForProvider(
       : capable.filter((entry) => vendorOf(entry) === provider)
 
   if (candidates.length === 0) return null
+
+  // Free-first asks for the $0 tier before anything else. Only OpenRouter's
+  // marketplace has one — a direct provider bills for every call — so for
+  // Anthropic and OpenAI this changes nothing and the cheapest model still wins.
+  // When the free tier is empty the cheapest paid model is the default rather
+  // than nothing: free-first is a preference, not a requirement that work stops.
+  if (options.freeFirst) {
+    const free = candidates.filter((entry) => entry.isFree)
+    if (free.length > 0) return [...free].sort(byTotalPrice)[0].modelId
+  }
+
   return [...candidates].sort(byTotalPrice)[0].modelId
 }
 
@@ -499,17 +523,26 @@ const MAX_PER_VENDOR = 2
  */
 const PRICE_CEILING_PERCENTILE = 0.95
 
-export async function shortlistModels(): Promise<CatalogEntry[]> {
+export async function shortlistModels(
+  options: { freeFirst?: boolean } = {},
+): Promise<CatalogEntry[]> {
   const capable = (await getCatalog()).filter(isCapable).sort(byTotalPrice)
   if (capable.length === 0) return []
-  if (capable.length <= SHORTLIST_SIZE) return capable
 
+  const order = options.freeFirst ? byFreeThenPrice : byTotalPrice
+  if (capable.length <= SHORTLIST_SIZE) return [...capable].sort(order)
+
+  // The ceiling is always computed on the price-sorted list, whatever the
+  // ordering shown: it exists to cut the extreme price tail, which is a property
+  // of the market, not of the user's free-first preference.
   const ceilingIndex = Math.min(
     capable.length - 1,
     Math.floor(capable.length * PRICE_CEILING_PERCENTILE),
   )
   const ceiling = totalPrice(capable[ceilingIndex])
-  const usable = capable.filter((entry) => totalPrice(entry) <= ceiling)
+  const usable = capable
+    .filter((entry) => totalPrice(entry) <= ceiling)
+    .sort(order)
 
   // Evenly spaced indices across the usable range: the cheapest, the dearest that
   // is still plausible, and a ladder between them. Spacing by index rather than by
@@ -528,7 +561,7 @@ export async function shortlistModels(): Promise<CatalogEntry[]> {
     perVendor.set(vendor, (perVendor.get(vendor) ?? 0) + 1)
   }
 
-  // The vendor cap can leave gaps. Fill from the cheapest not yet chosen,
+  // The vendor cap can leave gaps. Fill from the front of the ordered list,
   // relaxing the cap rather than handing the head a short list.
   for (const entry of usable) {
     if (picked.length >= SHORTLIST_SIZE) break
@@ -536,7 +569,7 @@ export async function shortlistModels(): Promise<CatalogEntry[]> {
     picked.push(entry)
   }
 
-  return picked.sort(byTotalPrice)
+  return picked.sort(order)
 }
 
 /**

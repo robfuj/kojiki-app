@@ -193,7 +193,7 @@ export const ja: Dictionary = {
       functionLine: '機能',
       rights: '決裁権',
       handoffs: 'ハンドオフ先',
-      noSubAgents: 'この機能に登録されたサブエージ���ントはありません。',
+      noSubAgents: 'この機能に登録されたサブエージェントはありません。',
     },
     evidence: {
       subtitle: '信頼できる情報源から検証された情報。',
@@ -209,7 +209,7 @@ export const ja: Dictionary = {
       close: '閉じる',
       empty: 'ドキュメントを選択すると内容が表示されます。',
       none:
-        'ドキュメントはまだありません。アップロードするとエー���ェントの根拠あるコンテキストになります。',
+        'ドキュメントはまだありません。アップロードするとエージェントの根拠あるコンテキストになります。',
       library: 'ライブラリ',
     },
     learning: {
@@ -254,12 +254,15 @@ export const ja: Dictionary = {
 
   settings: {
     title: '設定',
-    summary: 'プロバイダー · 外観 · 言語 · ファイル',
+    summary: '統合 · 外観 · 言語 · ファイル',
     closeAria: '設定を閉じる',
     providersTitle: 'モデルプロバイダー',
     providersDescription:
       'どのプロバイダーがエージェントを実行し、実行にいくらかかるか。',
     connectedProviders: '接続済みプロバイダー',
+    freeFirstTitle: '無料モデルを優先',
+    freeFirstDescription:
+      'OpenRouter接続時、エージェントは既定で$0ティアを使用します。有料モデルはタスクごとに承認したときのみ実行されます。',
     appearanceTitle: '外観',
     appearanceDescription:
       'アクセントカラー。パレットの中であなたが変更できる唯一の部分です。',
@@ -270,12 +273,71 @@ export const ja: Dictionary = {
     filesDescription:
       'エージェントがコンテキストとして読むドキュメント。ここにあるものは、メッセージを送っているエージェントだけでなく、すべてのエージェントに反映されます。',
     addFile: 'ファイルを追加',
+    filesEmpty: 'まだファイルはありません。チャットの入力欄か、上のボタンから追加してください。',
     readingFile: '読み込み中…',
     scopedProject: 'このプロジェクトに限定',
     scopedAll: 'すべてのプロジェクトで利用可能',
     readError: 'そのファイルを読み込めませんでした',
     uploadedProject: '{name} はこのプロジェクトのコンテキストになりました。',
     uploadedAll: '{name} はすべてのプロジェクトのコンテキストになりました。',
+  },
+
+  integrations: {
+    title: '統合',
+    description:
+      'エージェントが到達できるもの。モデルプロバイダーが作業を実行し、それ以外が読めるものを拡張します。',
+    searchPlaceholder: '名前で検索',
+    searchAria: '統合を検索',
+    empty: '検索に一致するものはありません。',
+    filterAll: 'すべて',
+    filterConnected: '接続済み',
+    categories: {
+      'model-providers': 'モデルプロバイダー',
+      'built-in': '組み込み',
+      'file-sources': 'ファイルソース',
+    },
+    recommended: '推奨',
+    connect: '接続',
+    connected: '接続済み',
+    manage: '管理',
+    close: '閉じる',
+    builtInNote: '設定不要。キー未接続の間は無料ティアがすべての作業を実行します。',
+    seamNote: 'コネクタの継ぎ目は予約済み。まだ接続されていません。',
+    apiKeyLabel: 'APIキー',
+    keyPrefixLead: '先頭: ',
+    storedNote: '保存時に暗号化。マスクのみが表示されます。',
+    getKeyLink: '{label}のキーを取得',
+    saving: '保存中…',
+    saveError: 'キーを保存できませんでした',
+    connectedNotice: '{label} を {maskedKey} として接続しました。',
+    disconnect: '切断',
+    disconnectedNotice: '{label} を切断しました。',
+    makeDefault: '既定にする',
+    defaultBadge: '既定',
+    defaultError: '既定を変更できませんでした',
+    disconnectError: '切断できませんでした',
+    items: {
+      openrouter: {
+        name: 'OpenRouter',
+        blurb: '一つのキーで$0ティアを含む数百のモデルへルーティング。',
+      },
+      'ai-gateway': {
+        name: 'Vercel AI Gateway',
+        blurb: '設定不要の経路。キーがなくても無料モデルが作業を実行します。',
+      },
+      anthropic: {
+        name: 'Anthropic',
+        blurb: 'ClaudeモデルをAPIから直接。',
+      },
+      openai: {
+        name: 'OpenAI',
+        blurb: 'GPTモデルをAPIから直接。',
+      },
+      'google-drive': {
+        name: 'Google Drive',
+        blurb: 'ドライブのファイルをエージェントのコンテキストに。',
+      },
+    },
   },
 
   intake: {
@@ -320,7 +382,7 @@ export const ja: Dictionary = {
     geography: {
       eyebrow: 'コンテキスト',
       prompt: '現在どの市場にいて、次にどこへ進みますか？',
-      why: '成長とマーケティングは、実際に対応している市場と参入しようとしている市場に計画を限定し、人員を確���できない全球戦略を提案しません。',
+      why: '成長とマーケティングは、実際に対応している市場と参入しようとしている市場に計画を限定し、人員を確保できない全球戦略を提案しません。',
       label: '地理',
       placeholder: '例：現在は日本国内、次にAPAC',
     },
@@ -348,7 +410,7 @@ export const ja: Dictionary = {
     researchingLead: '',
     researchingMid: 'この目標',
     researchingTail:
-      ' を取り巻く領域（市場・競合��規制・リスク）を調査し、必要なスペシャリストと質問を決め��います。少し時間がかかります。',
+      ' を取り巻く領域（市場・競合・規制・リスク）を調査し、必要なスペシャリストと質問を決めています。少し時間がかかります。',
     researchError: 'オーケストレーターはこの目標を調査できませんでした',
     clarifyingNote:
       '目標を読み、何が未確定かを決めています。未確定がなければそのまま調査を開始します。',
@@ -359,10 +421,10 @@ export const ja: Dictionary = {
     refinedEyebrow: '洗練された目標',
     refinedNoteLabel: '最初のブリーフからの変更点',
     briefEyebrowWeb: 'オーケストレーター · ライブ調査',
-    briefEyebrowModel: 'オーケ��トレーター · モデル推論',
+    briefEyebrowModel: 'オーケストレーター · モデル推論',
     briefPrompt: '調査結果は以下のとおりです。',
     briefWhy:
-      '回答する前に読んでください。誤りや古い情報があれば���続く質問で伝えてください。計画はその両方から作られます。',
+      '回答する前に読んでください。誤りや古い情報があれば、続く質問で伝えてください。計画はその両方から作られます。',
     briefSubmit: '質問に回答',
     questionEyebrow: '質問 {current} / {total}',
     answerLabel: 'あなたの回答',
@@ -372,7 +434,7 @@ export const ja: Dictionary = {
     namingEyebrow: '最終ステップ',
     namingPrompt: 'このプロジェクトを何と呼びますか？',
     namingWhy:
-      '目標はOKRツリーのルートにな���、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
+      '目標はOKRツリーのルートになり、下のスペシャリストはすでに選ばれています。名前はレールで探す手がかりになります。',
     nameLabel: 'プロジェクト名',
     namePlaceholder: '例：パートナーチャネル',
     nameRequired: 'プロジェクトに名前を付けてください。',
@@ -463,7 +525,7 @@ export const ja: Dictionary = {
     saving: '保存中…',
     replaceKey: 'キーを置き換え',
     connect: '接続',
-    saveError: '���のキーを保存できませんでした',
+    saveError: 'そのキーを保存できませんでした',
     defaultError: '既定を変更できませんでした',
     disconnectError: '切断できませんでした',
     blurbs: {

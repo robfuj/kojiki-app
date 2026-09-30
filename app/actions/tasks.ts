@@ -24,6 +24,7 @@ import {
   type SuccessCriterion,
 } from '@/lib/kaizen'
 import { propagateSignal, signalsForObjective } from '@/lib/mycelium'
+import { readFreeFirst } from '@/lib/preferences'
 import {
   findCatalogEntry,
   getDefaultProvider,
@@ -226,8 +227,10 @@ export async function assignSubAgents(input: {
 
   // The head picks a model per task from a priced shortlist. It proposes; the user
   // authorises. Nothing spends money until that approval exists, so the task is
-  // created as `proposed` rather than `dispatched`.
-  const shortlist = await shortlistModels()
+  // created as `proposed` rather than `dispatched`. The shortlist follows the
+  // user's free-first preference, so a free-first user is never shown a paid-only
+  // ladder.
+  const shortlist = await shortlistModels({ freeFirst: await readFreeFirst(userId) })
   const headRoute = await resolveModelForUser(userId)
   const modelText =
     shortlist.length > 0

@@ -169,40 +169,42 @@ export function OverviewTab({
           ) : (
             <ul className="divide-y divide-border border-t border-border">
               {objectives.slice(0, 7).map((objective) => (
-                <li
-                  key={objective.id}
-                  className="flex items-center gap-3 px-5 py-3"
-                >
-                  <span
-                    className={cn(
-                      'size-2 shrink-0 rounded-full',
-                      DOT_TONE[toneForStatus(objective.status)],
-                    )}
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
+                <li key={objective.id} className="px-5 py-3">
+                  {/* Two lines: the title owns the full card width on the first,
+                      so objective names never collapse to an ellipsis while the
+                      progress meta shares the second line with the owner. */}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        'size-2 shrink-0 rounded-full',
+                        DOT_TONE[toneForStatus(objective.status)],
+                      )}
+                      aria-hidden="true"
+                    />
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                       {objective.title}
                     </p>
-                    <p className="truncate text-[11px] text-muted-foreground">
+                    <StatusPill tone={toneForStatus(objective.status)}>
+                      {objective.status.replace(/_/g, ' ')}
+                    </StatusPill>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-3 pl-5">
+                    <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
                       {objective.ownerName ?? '—'}
                     </p>
+                    <div className="w-24 shrink-0">
+                      <ProgressBar value={objective.progress} />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                      {objective.progress}%
+                    </span>
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      {format(labels.tasksDone, {
+                        done: String(objective.doneTaskCount),
+                        total: String(objective.taskCount),
+                      })}
+                    </span>
                   </div>
-                  <div className="hidden w-24 shrink-0 sm:block">
-                    <ProgressBar value={objective.progress} />
-                  </div>
-                  <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-                    {objective.progress}%
-                  </span>
-                  <span className="hidden shrink-0 text-[11px] tabular-nums text-muted-foreground md:block">
-                    {format(labels.tasksDone, {
-                      done: String(objective.doneTaskCount),
-                      total: String(objective.taskCount),
-                    })}
-                  </span>
-                  <StatusPill tone={toneForStatus(objective.status)}>
-                    {objective.status.replace(/_/g, ' ')}
-                  </StatusPill>
                 </li>
               ))}
             </ul>

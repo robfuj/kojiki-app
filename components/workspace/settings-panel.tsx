@@ -3,8 +3,8 @@
 import { deleteDocument, uploadDocument } from '@/app/actions/documents'
 import { LanguageSelector } from '@/components/i18n/language-selector'
 import { useLocale } from '@/components/i18n/locale-provider'
-import { ProviderConnect } from '@/components/providers/provider-connect'
 import { AccentPicker } from '@/components/settings/accent-picker'
+import { IntegrationsCatalog } from '@/components/settings/integrations-catalog'
 import { DocumentLibrary } from '@/components/workspace/document-attach'
 import { SUPPORTED_MIME_LABEL } from '@/lib/documents'
 import { format } from '@/lib/i18n'
@@ -25,10 +25,12 @@ import { useEffect, useId, useRef, useState } from 'react'
  */
 export function SettingsPanel({
   accentKey,
+  freeFirst,
   projectId,
   onClose,
 }: {
   accentKey: string
+  freeFirst: boolean
   projectId: string | null
   onClose: () => void
 }) {
@@ -72,11 +74,11 @@ export function SettingsPanel({
 
         <div className="divide-y divide-border">
           <SettingsSection
-            id="providers"
-            title={t.settings.providersTitle}
-            description={t.settings.providersDescription}
+            id="integrations"
+            title={t.integrations.title}
+            description={t.integrations.description}
           >
-            <ProviderConnect title={t.settings.connectedProviders} />
+            <IntegrationsCatalog freeFirst={freeFirst} />
           </SettingsSection>
 
           <SettingsSection

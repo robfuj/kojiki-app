@@ -3,6 +3,7 @@
 import { ACCENTS, DEFAULT_ACCENT_KEY } from '@/lib/accents'
 import { db } from '@/lib/db'
 import { userPreferences } from '@/lib/db/schema'
+import { DEFAULT_FREE_FIRST, readFreeFirst, writeFreeFirst } from '@/lib/preferences'
 import {
   DEFAULT_LOCALE,
   isLocale,
@@ -62,6 +63,31 @@ export async function setAccentKey(accentKey: string): Promise<string> {
   // re-read for the change to appear anywhere other than the picker itself.
   revalidatePath('/')
   return accentKey
+}
+
+/**
+ * Whether this user prefers free models.
+ *
+ * Model resolution reads the same fact through lib/preferences on every call;
+ * this action is only the settings surface for changing it.
+ */
+export async function getFreeFirst(): Promise<boolean> {
+  try {
+    const userId = await getUserId()
+    return await readFreeFirst(userId)
+  } catch {
+    return DEFAULT_FREE_FIRST
+  }
+}
+
+export async function setFreeFirst(freeFirst: boolean): Promise<boolean> {
+  const userId = await getUserId()
+  await writeFreeFirst(userId, freeFirst)
+
+  // The default model is resolved server-side wherever work starts, so the tree
+  // re-reads rather than waiting for the next navigation to notice.
+  revalidatePath('/')
+  return freeFirst
 }
 
 /**

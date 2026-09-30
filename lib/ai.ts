@@ -2,6 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import type { LanguageModel } from 'ai'
+import { readFreeFirst } from '@/lib/preferences'
 import {
   cheapestCapableModelForProvider,
   getDefaultProvider,
@@ -245,7 +246,13 @@ export async function resolveModelForUser(
   const key = await getProviderKey(userId, provider)
   if (!key) return gatewayRoute()
 
-  const modelId = preferredModelId ?? (await cheapestCapableModelForProvider(provider))
+  // The user's free-first preference decides the default model. An explicitly
+  // preferred model still wins: a caller that names a model has already made the
+  // choice this preference exists to make on their behalf.
+  const freeFirst = await readFreeFirst(userId)
+  const modelId =
+    preferredModelId ??
+    (await cheapestCapableModelForProvider(provider, { freeFirst }))
   if (!modelId) {
     return gatewayRoute(
       `The catalog lists no model ${PROVIDERS[provider].label} can serve, so the free tier ran it.`,

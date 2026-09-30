@@ -16,7 +16,8 @@
     "db:migrate-locale": "node scripts/migrate-locale.mjs",
     "db:migrate-workspace-tabs": "node scripts/migrate-workspace-tabs.mjs",
     "db:migrate-engine": "node scripts/migrate-engine-schema.mjs",
-    "db:migrate-governance": "node scripts/migrate-governance.mjs"
+    "db:migrate-governance": "node scripts/migrate-governance.mjs",
+    "db:migrate-free-first": "node scripts/migrate-free-first.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.54",

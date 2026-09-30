@@ -1,6 +1,6 @@
 import { getOrientation } from '@/app/actions/orientation'
 import { listProjects } from '@/app/actions/projects'
-import { getAccentKey } from '@/app/actions/settings'
+import { getAccentKey, getFreeFirst } from '@/app/actions/settings'
 import { OrientationFlow } from '@/components/orientation/orientation-flow'
 import { WorkspaceShell } from '@/components/workspace/workspace-shell'
 import { accentByKey, accentStyle } from '@/lib/accents'
@@ -14,10 +14,11 @@ export default async function HomePage() {
   // Read in parallel. These are independent, and serialising them is what kept the
   // first paint slow enough for a dev HMR refresh to arrive before the client
   // router had been constructed.
-  const [orientation, projects, accentKey] = await Promise.all([
+  const [orientation, projects, accentKey, freeFirst] = await Promise.all([
     getOrientation(),
     listProjects(),
     getAccentKey(),
+    getFreeFirst(),
   ])
 
   // The Orientation Protocol activates immediately, before any decision work. Both
@@ -31,6 +32,7 @@ export default async function HomePage() {
           projects={projects}
           userName={user.name ?? null}
           accentKey={accentKey}
+          freeFirst={freeFirst}
         />
       ) : (
         <OrientationFlow userName={user.name ?? null} />

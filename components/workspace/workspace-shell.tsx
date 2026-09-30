@@ -54,6 +54,8 @@ interface WorkspaceShellProps {
   userName: string | null
   /** The accent the server resolved for this user, so the picker shows the truth. */
   accentKey: string
+  /** The stored free-first preference, so the switch shows the truth. */
+  freeFirst: boolean
 }
 
 export function WorkspaceShell({
@@ -61,6 +63,7 @@ export function WorkspaceShell({
   projects,
   userName,
   accentKey,
+  freeFirst,
 }: WorkspaceShellProps) {
   const { t } = useLocale()
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -189,18 +192,23 @@ export function WorkspaceShell({
               </button>
             </div>
 
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-              <ReviewCard
-                projectId={activeId}
-                bots={workspace.bots}
-                onAskDepartment={(botId) =>
-                  openConversation({ kind: 'bot', botId }, true)
-                }
-                onOpenObjective={(objectiveId) => {
-                  setWorkObjectiveId(objectiveId)
-                  setTab('work')
-                }}
-              />
+            {/* my-auto centres the card while the region has spare height and
+                collapses to zero once the review list overflows, so a long
+                list still scrolls from its first row. */}
+            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto">
+              <div className="my-auto w-full">
+                <ReviewCard
+                  projectId={activeId}
+                  bots={workspace.bots}
+                  onAskDepartment={(botId) =>
+                    openConversation({ kind: 'bot', botId }, true)
+                  }
+                  onOpenObjective={(objectiveId) => {
+                    setWorkObjectiveId(objectiveId)
+                    setTab('work')
+                  }}
+                />
+              </div>
             </div>
 
             <div className="mt-3 flex shrink-0 flex-wrap items-center gap-1.5">
@@ -333,6 +341,7 @@ export function WorkspaceShell({
       {settingsOpen && (
         <SettingsPanel
           accentKey={accentKey}
+          freeFirst={freeFirst}
           projectId={activeId}
           onClose={() => setSettingsOpen(false)}
         />

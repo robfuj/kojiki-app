@@ -5,6 +5,7 @@ import {
   uploadDocument,
   type DocumentSummary,
 } from '@/app/actions/documents'
+import { useLocale } from '@/components/i18n/locale-provider'
 import { SUPPORTED_MIME_LABEL } from '@/lib/documents'
 import { cn } from '@/lib/utils'
 import { FileText, Loader2, Paperclip, X } from 'lucide-react'
@@ -141,6 +142,7 @@ export function DocumentLibrary({
    */
   refreshKey?: number
 }) {
+  const { t } = useLocale()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -168,7 +170,7 @@ export function DocumentLibrary({
   if (documents.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-        No files yet. Add one from the chat composer, or with the button above.
+        {t.settings.filesEmpty}
       </p>
     )
   }
