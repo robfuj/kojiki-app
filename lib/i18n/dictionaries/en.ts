@@ -82,6 +82,7 @@ export const en = {
     noObjective: 'no objective set',
     newProject: 'New project',
     deleteAria: 'Delete {name}',
+    renameAria: 'Rename {name}',
   },
 
   nav: {

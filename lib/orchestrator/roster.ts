@@ -85,6 +85,9 @@ export async function runOrchestrator(
 
   const { toolCalls } = await generateText({
     model: route.model,
+    // A trailing directive loses to pages of English web research, so the
+    // output language is also pinned as the system instruction.
+    system: languageDirective(locale) ?? undefined,
     tools: {
       orchestrate: {
         description:

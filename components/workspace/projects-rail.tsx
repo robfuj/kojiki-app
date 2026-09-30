@@ -1,12 +1,12 @@
 'use client'
 
-import { deleteProject } from '@/app/actions/projects'
+import { deleteProject, renameProject } from '@/app/actions/projects'
 import type { ProjectRow } from '@/app/actions/projects'
 import { useLocale } from '@/components/i18n/locale-provider'
 import { ProjectIntake } from '@/components/intake/project-intake'
 import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 interface ProjectsRailProps {
@@ -25,6 +25,21 @@ export function ProjectsRail({
   const { t } = useLocale()
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [names, setNames] = useState<Record<string, string>>({})
+
+  async function commitRename(project: ProjectRow, value: string) {
+    setEditingId(null)
+    const next = value.trim()
+    const current = names[project.id] ?? project.name
+    if (!next || next === current) return
+    setNames((prev) => ({ ...prev, [project.id]: next }))
+    try {
+      await renameProject(project.id, next)
+    } catch {
+      setNames((prev) => ({ ...prev, [project.id]: current }))
+    }
+  }
 
   async function remove(projectId: string) {
     setBusy(true)
@@ -70,18 +85,49 @@ export function ProjectsRail({
                       : 'border-border bg-card/50 hover:border-sumi/40 hover:bg-card',
                   )}
                 >
-                  <span
-                    className={cn(
-                      'truncate text-sm font-medium',
-                      active ? 'text-foreground' : 'text-muted-foreground',
-                    )}
-                  >
-                    {project.name}
-                  </span>
-                  <span className="mt-1 truncate text-xs text-muted-foreground">
-                    {project.objective ?? t.projects.noObjective}
-                  </span>
+                  {editingId === project.id ? (
+                    <input
+                      autoFocus
+                      defaultValue={project.name}
+                      aria-label={format(t.projects.renameAria, {
+                        name: project.name,
+                      })}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={(e) => commitRename(project, e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (e.nativeEvent.isComposing || e.keyCode === 229) return
+                          e.currentTarget.blur()
+                        } else if (e.key === 'Escape') {
+                          setEditingId(null)
+                        }
+                      }}
+                      className="w-full rounded-md border border-border bg-background px-1.5 py-0.5 text-sm font-medium text-foreground outline-none focus:border-sumi"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        'truncate pr-6 text-sm font-medium',
+                        active ? 'text-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      {names[project.id] ?? project.name}
+                    </span>
+                  )}
                 </button>
+
+                {editingId !== project.id && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(project.id)}
+                    aria-label={format(t.projects.renameAria, {
+                      name: names[project.id] ?? project.name,
+                    })}
+                    className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground focus-visible:opacity-100"
+                  >
+                    <Pencil className="size-3.5" aria-hidden="true" />
+                  </button>
+                )}
 
                 <button
                   type="button"
