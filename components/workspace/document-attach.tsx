@@ -71,7 +71,7 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors',
+            'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
             uploading
               ? 'cursor-wait text-muted-foreground'
               : 'text-muted-foreground hover:border-sumi hover:text-foreground',

@@ -74,26 +74,18 @@ export function Sidebar({
         collapsed ? 'w-14' : 'w-60',
       )}
     >
-      <div className={cn('border-b border-border px-3 py-3', collapsed && 'px-2')}>
-        <div className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}>
-          <AvatarCircle name={projectName ?? 'K'} className="size-9 shrink-0" />
-          {!collapsed && (
-            <p className="truncate text-base leading-snug font-semibold text-foreground">
-              {projectName ?? '—'}
-            </p>
-          )}
-        </div>
-
+      <div className={cn('px-2 pt-3', !projectName && 'hidden')}>
         {/* The research the orchestrator did before decomposing this project
             belongs to the project, so it sits under the project's name rather
-            than in the switcher that only chooses between projects. */}
+            than in the switcher that only chooses between projects. The name
+            itself already shows in the projects bar and the page heading. */}
         <button
           type="button"
           onClick={onOpenResearch}
           title={collapsed ? t.research.openButton : undefined}
           className={cn(
-            'mt-2.5 flex items-center gap-2 rounded-lg border border-border bg-background/60 text-xs font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground',
-            collapsed ? 'mx-auto size-8 justify-center p-0' : 'w-full px-2.5 py-1.5',
+            'flex items-center gap-2.5 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+            collapsed ? 'mx-auto size-9 justify-center p-0' : 'w-full px-2.5 py-2',
           )}
         >
           <Microscope className="size-3.5 shrink-0" aria-hidden="true" />

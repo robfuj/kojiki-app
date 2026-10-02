@@ -155,7 +155,84 @@ export function OverviewTab({
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="p-0 lg:col-span-2">
+        <div className="rounded-2xl bg-foreground p-6 text-background shadow-soft lg:col-span-2">
+          <p className="text-[11px] font-medium tracking-[0.14em] text-background/60 uppercase">
+            {labels.companyObjective}
+          </p>
+          <p className="mt-2.5 max-w-xl text-xl leading-snug font-semibold text-balance">
+            {home.root?.title ?? projectObjective ?? '—'}
+          </p>
+          <div className="mt-5 flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-background/20">
+              <div
+                className="h-full rounded-full bg-background"
+                style={{ width: `${home.root?.progress ?? 0}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-xs tabular-nums text-background/70">
+              {format(labels.overallProgress, {
+                percent: String(home.root?.progress ?? report.averageProgress),
+              })}
+            </span>
+          </div>
+          {Object.values(report.objectivesByStatus).some((count) => count > 0) && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {Object.entries(report.objectivesByStatus)
+                .filter(([, count]) => count > 0)
+                .map(([status, count]) => (
+                  <span
+                    key={status}
+                    className="rounded-full bg-background/10 px-2 py-0.5 text-[10px] font-medium tabular-nums"
+                  >
+                    {status.replace(/_/g, ' ')} · {count}
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+
+        <Card className="p-0">
+          <div className="flex items-center justify-between px-5 py-4">
+            <p className="text-sm font-medium text-foreground">{labels.gateQueue}</p>
+            {pendingGates.length > 0 && (
+              <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-status-review">
+                {pendingGates.length}
+              </span>
+            )}
+          </div>
+          {pendingGates.length === 0 ? (
+            <p className="border-t border-border px-5 py-6 text-sm text-muted-foreground">
+              {labels.noGates}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border border-t border-border">
+              {pendingGates.slice(0, 5).map((gate) => (
+                <li key={gate.id} className="flex items-center gap-3 px-5 py-3">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-status-review-soft text-status-review">
+                    <Scale className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {gate.title}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {gate.requestedByTitle} · {relative(gate.createdAt)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenDecisions}
+                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
+                  >
+                    {labels.viewDetails}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className={cn('p-0', bubbles.length > 0 || stages.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3')}>
           <div className="flex items-center justify-between px-5 py-4">
             <p className="text-sm font-medium text-foreground">{labels.liveWork}</p>
             <span className="text-[11px] tabular-nums text-muted-foreground">
@@ -211,77 +288,13 @@ export function OverviewTab({
           )}
         </Card>
 
-        <Card className="p-5">
-          <p className="text-sm font-medium text-foreground">{labels.stageLoad}</p>
-          {stages.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">{labels.noGates}</p>
-          ) : (
-            <div className="mt-5 flex h-36 items-end gap-2">
-              {stages.map(([status, count]) => (
-                <div
-                  key={status}
-                  className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
-                >
-                  <span className="text-[10px] tabular-nums text-muted-foreground">
-                    {count}
-                  </span>
-                  <div
-                    className={cn(
-                      'w-full rounded-full',
-                      count === maxStage ? 'bg-primary' : 'bg-muted',
-                    )}
-                    style={{ height: `${Math.max(8, (count / maxStage) * 100)}%` }}
-                  />
-                  <span className="w-full truncate text-center text-[10px] text-muted-foreground">
-                    {status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <div className="rounded-2xl bg-foreground p-5 text-background shadow-soft">
-          <p className="text-[11px] font-medium tracking-[0.14em] text-background/60 uppercase">
-            {labels.companyObjective}
-          </p>
-          <p className="mt-2.5 text-lg leading-snug font-semibold text-balance">
-            {home.root?.title ?? projectObjective ?? '—'}
-          </p>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-background/20">
-            <div
-              className="h-full rounded-full bg-background"
-              style={{ width: `${home.root?.progress ?? 0}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-background/70">
-            {format(labels.overallProgress, {
-              percent: String(home.root?.progress ?? report.averageProgress),
-            })}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {Object.entries(report.objectivesByStatus)
-              .filter(([, count]) => count > 0)
-              .map(([status, count]) => (
-                <span
-                  key={status}
-                  className="rounded-full bg-background/10 px-2 py-0.5 text-[10px] font-medium tabular-nums"
-                >
-                  {status.replace(/_/g, ' ')} · {count}
-                </span>
-              ))}
-          </div>
-        </div>
-
-        <Card className="p-5">
-          <p className="text-sm font-medium text-foreground">
-            {labels.departmentLoad}
-          </p>
-          {bubbles.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              {labels.emptyDepartments}
-            </p>
-          ) : (
+        {(bubbles.length > 0 || stages.length > 0) && (
+          <div className="flex flex-col gap-4">
+            {bubbles.length > 0 && (
+              <Card className="p-5">
+                <p className="text-sm font-medium text-foreground">
+                  {labels.departmentLoad}
+                </p>
             <>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 {bubbles.map((bubble, index) => {
@@ -320,58 +333,37 @@ export function OverviewTab({
                 ))}
               </div>
             </>
-          )}
-        </Card>
-
-        <Card className="p-0">
-          <div className="flex items-center justify-between px-5 py-4">
-            <p className="text-sm font-medium text-foreground">{labels.gateQueue}</p>
-            <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-status-review">
-              {pendingGates.length}
-            </span>
-          </div>
-          {pendingGates.length === 0 ? (
-            <p className="border-t border-border px-5 py-6 text-sm text-muted-foreground">
-              {labels.noGates}
-            </p>
-          ) : (
-            <ul className="divide-y divide-border border-t border-border">
-              {pendingGates.slice(0, 5).map((gate) => (
-                <li key={gate.id} className="flex items-center gap-3 px-5 py-3">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-status-review-soft text-status-review">
-                    <Scale className="size-3.5" aria-hidden="true" />
+              </Card>
+            )}
+            {stages.length > 0 && (
+              <Card className="p-5">
+                <p className="text-sm font-medium text-foreground">{labels.stageLoad}</p>
+            <div className="mt-5 flex h-36 items-end gap-2">
+              {stages.map(([status, count]) => (
+                <div
+                  key={status}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                >
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {count}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {gate.title}
-                    </p>
-                    <p className="truncate text-[11px] text-muted-foreground">
-                      {gate.requestedByTitle} · {relative(gate.createdAt)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onOpenDecisions}
-                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
-                  >
-                    {labels.viewDetails}
-                  </button>
-                </li>
+                  <div
+                    className={cn(
+                      'w-full rounded-full',
+                      count === maxStage ? 'bg-primary' : 'bg-muted',
+                    )}
+                    style={{ height: `${Math.max(8, (count / maxStage) * 100)}%` }}
+                  />
+                  <span className="w-full truncate text-center text-[10px] text-muted-foreground">
+                    {status.replace(/_/g, ' ')}
+                  </span>
+                </div>
               ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="flex items-center gap-4 p-5">
-          <AvatarCircle name={projectName} className="size-12 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">{labels.active}</p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {format(labels.gates, { count: String(report.gatesPending) })} ·{' '}
-              {format(labels.signals, {})}
-            </p>
+            </div>
+              </Card>
+            )}
           </div>
-        </Card>
+        )}
       </div>
     </div>
   )
