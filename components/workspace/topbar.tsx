@@ -132,7 +132,7 @@ export function TopBar({
         <AccountMenu userName={userName} onOpenSettings={onOpenSettings} />
       </header>
 
-      <div className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-3">
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card/60 px-3">
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -143,18 +143,11 @@ export function TopBar({
           <PanelLeft className="size-4" aria-hidden="true" />
         </button>
 
-        <div className="shrink-0 pl-1">
-          <p className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
-            {t.projects.label}
-          </p>
-          <p className="text-sm font-semibold tabular-nums text-foreground">
-            {projects.length}
-          </p>
-        </div>
+        <span className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
 
         <nav
           aria-label={t.projects.label}
-          className="flex min-w-0 flex-1 items-stretch gap-2.5 overflow-x-auto py-0.5"
+          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-1 py-1.5"
         >
           {projects.map((project) => {
             const active = project.id === activeId
@@ -162,22 +155,27 @@ export function TopBar({
               <div
                 key={project.id}
                 className={cn(
-                  'group relative shrink-0 rounded-2xl border transition-colors',
+                  'group relative shrink-0 rounded-full border transition-colors',
                   active
-                    ? 'border-foreground/50 bg-card shadow-soft'
-                    : 'border-border bg-card/60 hover:border-foreground/25',
+                    ? 'border-border bg-card shadow-soft'
+                    : 'border-transparent hover:bg-muted/70',
                 )}
               >
                 <button
                   type="button"
                   onClick={() => onSelect(project.id)}
                   aria-current={active ? 'true' : undefined}
-                  className="block w-full px-4 py-2.5 text-left"
+                  className="block w-full py-1 pr-3 pl-1 text-left"
                 >
                   <span className="flex items-center gap-2">
                     <AvatarCircle
                       name={project.name}
-                      className="size-6 shrink-0 bg-muted text-[10px] text-foreground"
+                      className={cn(
+                        'size-6 shrink-0 text-[10px]',
+                        active
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted text-muted-foreground',
+                      )}
                     />
                     {editingId === project.id ? (
                       <input
@@ -201,7 +199,14 @@ export function TopBar({
                         className="w-40 rounded-md border border-border bg-background px-1.5 py-0.5 text-sm font-semibold text-foreground outline-none focus:border-foreground/50"
                       />
                     ) : (
-                      <span className="max-w-52 truncate pr-5 text-sm font-semibold text-foreground">
+                      <span
+                        className={cn(
+                          'max-w-52 truncate pr-5 text-sm',
+                          active
+                            ? 'font-semibold text-foreground'
+                            : 'font-medium text-muted-foreground group-hover:text-foreground',
+                        )}
+                      >
                         {names[project.id] ?? project.name}
                       </span>
                     )}
@@ -243,9 +248,9 @@ export function TopBar({
           <button
             type="button"
             onClick={() => setIntakeOpen(true)}
-            className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-dashed border-border px-4 py-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
           >
-            <Plus className="size-4" aria-hidden="true" />
+            <Plus className="size-3.5" aria-hidden="true" />
             {t.projects.newProject}
           </button>
         </nav>
