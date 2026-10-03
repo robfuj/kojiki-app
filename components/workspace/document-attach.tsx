@@ -87,8 +87,9 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
 
         <p
           id={`${inputId}-hint`}
-          className="truncate font-mono text-[11px] text-muted-foreground"
-        >
+className="truncate font-mono text-[11px] text-muted-foreground"
+  title={SUPPORTED_MIME_LABEL}
+  >
           {SUPPORTED_MIME_LABEL}
         </p>
       </div>

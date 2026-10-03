@@ -338,7 +338,7 @@ function OrchestratorChat({
       agentName="Orchestrator"
       projectId={projectId}
       seed={seed}
-      emptyHint="Ask what is happening across the OKR tree, which sub-agents are working, or what is waiting on your decision. The orchestrator reports recorded state — it does not do departmental work itself."
+      emptyHint="Try: “What is blocked right now?” or “Which agents are working?”"
     />
   )
 }

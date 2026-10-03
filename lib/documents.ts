@@ -44,7 +44,7 @@ export function isSupportedMimeType(mimeType: string): boolean {
   )
 }
 
-export const SUPPORTED_MIME_LABEL = 'PDF, DOCX, TXT, MD, CSV or JSON'
+export const SUPPORTED_MIME_LABEL = 'PDF, DOCX, TXT, MD, CSV, JSON'
 
 /**
  * Extracts readable text from an upload.
