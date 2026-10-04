@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   Coins,
   GitBranch,
   Lightbulb,
@@ -84,6 +85,8 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [escalating, setEscalating] = useState(false)
+  const [open, setOpen] = useState(!task.reabsorbedAt)
+  const detailsId = `task-details-${task.id}`
 
   const criteria = task.successCriteria as SuccessCriterion[]
   const guardrails = task.guardrails as Guardrail[]
@@ -124,7 +127,24 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
       )}
     >
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <h4 className="text-base font-medium text-balance text-foreground">{task.title}</h4>
+        <h4 className="min-w-0 text-base font-medium text-balance text-foreground">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls={detailsId}
+            className="inline-flex items-center gap-1.5 text-left hover:text-sumi"
+          >
+            <ChevronDown
+              className={cn(
+                'size-4 shrink-0 text-muted-foreground transition-transform',
+                !open && '-rotate-90',
+              )}
+              aria-hidden="true"
+            />
+            {task.title}
+          </button>
+        </h4>
 
         <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
           {task.subAgentTitle}
@@ -166,10 +186,12 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
       </div>
 
       <div className="space-y-4 p-4 sm:p-5">
+        {open && (
+        <div id={detailsId} className="space-y-4">
         {/* PLAN — criteria fixed before the work started. */}
         <section>
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            Plan · success criteria fixed before dispatch
+            Targets · set before the work started
           </p>
 
           {criteria.length === 0 ? (
@@ -177,36 +199,48 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
               No criteria were recorded, so there is nothing to check against.
             </p>
           ) : (
-            <ul className="mt-1.5 space-y-1">
-              {criteria.map((criterion) => {
-                const actual = actuals[criterion.metric]
-                const measured = actual !== undefined
-                return (
-                  <li
-                    key={criterion.metric}
-                    className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-xs"
-                  >
-                    <span className="text-foreground">{criterion.metric}</span>
-                    <span className="text-muted-foreground/70">
-                      {OPERATOR_LABEL[criterion.operator] ?? criterion.operator}{' '}
-                      {criterion.target}
-                      {criterion.unit ? ` ${criterion.unit}` : ''}
-                    </span>
-                    <span className="text-muted-foreground/50">w{criterion.weight}</span>
-                    {measured && (
-                      <span
+            <table className="mt-2 w-full font-mono text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th scope="col" className="pb-1 pr-3 font-normal">Metric</th>
+                  <th scope="col" className="pb-1 pr-3 font-normal">Target</th>
+                  <th scope="col" className="pb-1 pr-3 text-right font-normal">Actual</th>
+                  <th scope="col" className="pb-1 text-right font-normal">
+                    <abbr title="Weight in the score">Wt</abbr>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {criteria.map((criterion) => {
+                  const actual = actuals[criterion.metric]
+                  return (
+                    <tr key={criterion.metric} className="border-t border-border">
+                      <td className="py-1.5 pr-3 text-foreground">{criterion.metric}</td>
+                      <td className="py-1.5 pr-3 text-muted-foreground">
+                        {OPERATOR_LABEL[criterion.operator] ?? criterion.operator}{' '}
+                        {criterion.target}
+                        {criterion.unit ? ` ${criterion.unit}` : ''}
+                      </td>
+                      <td
                         className={cn(
-                          'ml-auto tabular-nums',
-                          verdict === 'FAIL' ? 'text-destructive' : 'text-foreground',
+                          'py-1.5 pr-3 text-right tabular-nums',
+                          actual === undefined
+                            ? 'text-muted-foreground'
+                            : verdict === 'FAIL'
+                              ? 'text-destructive'
+                              : 'text-foreground',
                         )}
                       >
-                        actual {actual}
-                      </span>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
+                        {actual ?? '—'}
+                      </td>
+                      <td className="py-1.5 text-right tabular-nums text-muted-foreground">
+                        {criterion.weight}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           )}
 
           {guardrails.length > 0 && (
@@ -252,7 +286,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {task.resultSummary && (
           <section className="border-t border-border pt-4">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Do · reported by {task.subAgentTitle}
+              Result · from {task.subAgentTitle}
             </p>
             <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
               {task.resultSummary}
@@ -296,7 +330,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {verdict && (
           <section className="border-t border-border pt-4">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Check · compared against the criteria above
+              Verdict
             </p>
 
             <p className="mt-2 text-sm leading-relaxed text-foreground">
@@ -334,9 +368,9 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {learningCase && (
           <section className="border-t border-border pt-4">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Act · lesson sealed for reuse
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-foreground">
+            Lesson · saved for reuse
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-foreground">
               {learningCase}
             </p>
             {verdict === 'LEARNING' && (
@@ -345,6 +379,8 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
               </p>
             )}
           </section>
+        )}
+        </div>
         )}
 
         {blocked && (
@@ -378,7 +414,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
                 onClick={() => run(() => checkTask({ taskId: task.id }))}
                 busy={busy}
                 icon={Scale}
-                label="Check against criteria"
+                label="Check result"
                 tone="primary"
               />
             )}
@@ -398,14 +434,14 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
                 onClick={() => run(() => reabsorbTask({ taskId: task.id }))}
                 busy={busy}
                 icon={GitBranch}
-                label="Reabsorb into OKR tree"
+                label="Accept result"
                 tone="primary"
               />
             )}
 
             {task.reabsorbedAt && (
               <p className="text-xs font-medium text-seal">
-                reabsorbed — proposed as a node under this sub-goal
+                Accepted — added under this sub-goal
               </p>
             )}
           </div>
