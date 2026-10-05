@@ -71,7 +71,7 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
+            'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
             uploading
               ? 'cursor-wait text-muted-foreground'
               : 'text-muted-foreground hover:border-sumi hover:text-foreground',
@@ -87,7 +87,7 @@ export function DocumentAttach({ projectId }: { projectId: string }) {
 
         <p
           id={`${inputId}-hint`}
-className="truncate font-mono text-[11px] text-muted-foreground"
+className="truncate font-mono text-[13px] text-muted-foreground"
   title={SUPPORTED_MIME_LABEL}
   >
           {SUPPORTED_MIME_LABEL}
@@ -115,8 +115,8 @@ function DocumentChip({ document }: { document: DocumentSummary }) {
   return (
     <li className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted py-1 pr-1.5 pl-2.5">
       <FileText className="size-3.5 shrink-0 text-seal" aria-hidden="true" />
-      <span className="truncate text-xs text-foreground">{document.name}</span>
-      <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+      <span className="truncate text-sm text-foreground">{document.name}</span>
+      <span className="shrink-0 font-mono text-[13px] text-muted-foreground">
         {Math.max(1, Math.round(document.charCount / 1000))}k
       </span>
     </li>
@@ -196,7 +196,7 @@ export function DocumentLibrary({
               <p className="truncate text-sm font-medium text-foreground">
                 {document.name}
               </p>
-              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+              <p className="mt-0.5 font-mono text-[13px] text-muted-foreground">
                 {Math.max(1, Math.round(document.charCount / 1000))}k characters
                 <span aria-hidden="true"> · </span>
                 {document.projectId ? 'this project' : 'all projects'}

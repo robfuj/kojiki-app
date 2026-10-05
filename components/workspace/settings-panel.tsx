@@ -5,6 +5,7 @@ import { LanguageSelector } from '@/components/i18n/language-selector'
 import { useLocale } from '@/components/i18n/locale-provider'
 import { AccentPicker } from '@/components/settings/accent-picker'
 import { IntegrationsCatalog } from '@/components/settings/integrations-catalog'
+import { TextSizePicker } from '@/components/settings/text-size-picker'
 import { DocumentLibrary } from '@/components/workspace/document-attach'
 import { SUPPORTED_MIME_LABEL } from '@/lib/documents'
 import { format } from '@/lib/i18n'
@@ -57,7 +58,7 @@ export function SettingsPanel({
           <h2 id="settings-title" className="text-xl font-semibold text-foreground">
             {t.settings.title}
           </h2>
-          <p className="hidden text-xs text-muted-foreground sm:block">
+          <p className="hidden text-sm text-muted-foreground sm:block">
             {t.settings.summary}
           </p>
 
@@ -65,7 +66,7 @@ export function SettingsPanel({
             type="button"
             onClick={onClose}
             aria-label={t.settings.closeAria}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <X className="size-3.5" aria-hidden="true" />
             {t.common.close}
@@ -87,6 +88,14 @@ export function SettingsPanel({
             description={t.settings.appearanceDescription}
           >
             <AccentPicker currentKey={accentKey} />
+          </SettingsSection>
+
+          <SettingsSection
+            id="text-size"
+            title="Text size"
+            description="Make everything larger and easier to read. Saved on this device."
+          >
+            <TextSizePicker />
           </SettingsSection>
 
           <SettingsSection
@@ -234,7 +243,7 @@ function FileUpload({
           {uploading ? t.settings.readingFile : t.settings.addFile}
         </button>
 
-        <p className="font-mono text-[11px] text-muted-foreground">
+        <p className="font-mono text-[13px] text-muted-foreground">
           {SUPPORTED_MIME_LABEL}
           <span aria-hidden="true"> · </span>
           {projectId ? t.settings.scopedProject : t.settings.scopedAll}

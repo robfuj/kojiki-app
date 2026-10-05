@@ -213,7 +213,7 @@ export function OrientationFlow({ userName }: { userName: string | null }) {
         footnote={
           onProviderStep ? (
             <div className="mt-10 max-w-xl rounded-2xl bg-muted px-5 py-4">
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+              <p className="text-[13px] text-seal">
                 {t.orientation.nextEyebrow}
               </p>
               <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
@@ -242,12 +242,12 @@ function OrientationHeader({ userName }: { userName: string | null }) {
         </p>
 
         <div className="flex items-center gap-4">
-          <p className="hidden font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground sm:block">
+          <p className="hidden text-sm text-muted-foreground sm:block">
             {t.orientation.protocol}
           </p>
           <LanguageSelector />
           {userName && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="max-w-32 truncate text-foreground">
                 {userName}
               </span>

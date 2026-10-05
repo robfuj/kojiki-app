@@ -92,7 +92,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
             type="button"
             disabled={uploading}
             onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             <Upload className="size-3.5" aria-hidden="true" />
             {uploading ? '…' : labels.upload}
@@ -116,7 +116,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={labels.search}
-                className="h-8 w-full rounded-full border border-border bg-background pr-3 pl-8 text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
+                className="h-8 w-full rounded-full border border-border bg-background pr-3 pl-8 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
               />
             </div>
           </div>
@@ -138,19 +138,19 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
                       selectedId === doc.id ? 'bg-muted/70' : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">
+                    <span className="w-16 shrink-0 font-mono text-[13px] text-muted-foreground">
                       {doc.id.slice(0, 6)}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {doc.name}
                     </span>
-                    <span className="hidden w-24 shrink-0 truncate text-xs text-muted-foreground sm:block">
+                    <span className="hidden w-24 shrink-0 truncate text-sm text-muted-foreground sm:block">
                       {doc.source}
                     </span>
-                    <span className="w-16 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                    <span className="w-16 shrink-0 text-right text-[13px] tabular-nums text-muted-foreground">
                       {formatBytes(doc.sizeBytes)}
                     </span>
-                    <span className="w-14 shrink-0 text-right text-[11px] text-muted-foreground">
+                    <span className="w-14 shrink-0 text-right text-[13px] text-muted-foreground">
                       {relative(doc.createdAt)}
                     </span>
                   </button>
@@ -164,7 +164,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
           {selected ? (
             <>
               <div className="flex items-start justify-between gap-3">
-                <p className="font-mono text-[11px] text-muted-foreground">
+                <p className="font-mono text-[13px] text-muted-foreground">
                   {selected.id.slice(0, 8)}
                 </p>
                 <StatusPill tone="idle">{selected.mimeType}</StatusPill>
@@ -172,7 +172,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
               <h2 className="mt-2 text-base font-semibold text-balance text-foreground">
                 {selected.name}
               </h2>
-              <dl className="mt-3 space-y-2 text-xs">
+              <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted-foreground">{labels.source}</dt>
                   <dd className="font-medium text-foreground">{selected.source}</dd>
@@ -192,10 +192,10 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
               </dl>
 
               <div className="mt-4 border-t border-border pt-3">
-                <h3 className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <h3 className="text-[13px] font-semibold text-muted-foreground">
                   {labels.extracted}
                 </h3>
-                <pre className="mt-2 max-h-72 overflow-y-auto rounded-md border border-border bg-background p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                <pre className="mt-2 max-h-72 overflow-y-auto rounded-md border border-border bg-background p-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
                   {detail?.content ?? '…'}
                 </pre>
               </div>
@@ -205,7 +205,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
                   href={detail.sourceRef}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-seal transition-opacity hover:opacity-80"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-seal transition-opacity hover:opacity-80"
                 >
                   <ExternalLink className="size-3.5" aria-hidden="true" />
                   {labels.viewSource}

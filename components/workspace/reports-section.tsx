@@ -53,11 +53,11 @@ export function ReportsSection({ report }: ReportsSectionProps) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-3 rounded-md border border-dashed border-border px-3 py-6 text-xs text-muted-foreground">
+          <p className="mt-3 rounded-md border border-dashed border-border px-3 py-6 text-sm text-muted-foreground">
             {labels.overallProgress.replace('{percent}', String(report.averageProgress))}
           </p>
         )}
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <Stat label={t.tabs.work.status} value={String(report.taskCount)} />
           <Stat
             label={labels.gates.replace('{count}', String(report.gatesPending))}
@@ -75,10 +75,10 @@ export function ReportsSection({ report }: ReportsSectionProps) {
           </h3>
           <ul className="mt-2.5 space-y-1.5">
             {verdicts.length === 0 ? (
-              <li className="text-xs text-muted-foreground">—</li>
+              <li className="text-sm text-muted-foreground">—</li>
             ) : (
               verdicts.map(([verdict, count]) => (
-                <li key={verdict} className="flex items-center gap-2 text-xs">
+                <li key={verdict} className="flex items-center gap-2 text-sm">
                   <span className="min-w-0 flex-1 truncate text-muted-foreground">
                     {verdict}
                   </span>
@@ -105,7 +105,7 @@ export function ReportsSection({ report }: ReportsSectionProps) {
           </h3>
           <ul className="mt-2.5 divide-y divide-border">
             {report.perDepartment.map((line) => (
-              <li key={line.displayName} className="flex items-center gap-3 py-1.5 text-xs">
+              <li key={line.displayName} className="flex items-center gap-3 py-1.5 text-sm">
                 <span className="min-w-0 flex-1 truncate text-foreground">
                   {line.displayName}
                 </span>
@@ -118,7 +118,7 @@ export function ReportsSection({ report }: ReportsSectionProps) {
               </li>
             ))}
             {report.perDepartment.length === 0 && (
-              <li className="py-1.5 text-xs text-muted-foreground">—</li>
+              <li className="py-1.5 text-sm text-muted-foreground">—</li>
             )}
           </ul>
         </Card>
@@ -132,7 +132,7 @@ export function ReportsSection({ report }: ReportsSectionProps) {
               {signals.map(([kind, count]) => (
                 <span
                   key={kind}
-                  className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground"
+                  className="rounded-full bg-muted px-2.5 py-1 text-[13px] font-medium text-foreground"
                 >
                   {kind} · {count}
                 </span>

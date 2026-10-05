@@ -76,7 +76,7 @@ export function OkrTree({ projectId, projectName, bots, onOpenSubGoal }: OkrTree
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+          <p className="text-[13px] text-seal">
             OKR tree
           </p>
           <h2 className="mt-2 font-serif text-3xl leading-tight text-balance text-foreground">
@@ -250,7 +250,7 @@ function ObjectiveNode({
 
               <span
                 className={cn(
-                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  'rounded-full px-2.5 py-0.5 text-sm font-medium',
                   node.status === 'complete'
                     ? 'bg-seal-soft text-seal'
                     : node.status === 'in_progress'
@@ -262,7 +262,7 @@ function ObjectiveNode({
               </span>
 
               {owner && (
-                <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+                <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-sm text-muted-foreground">
                   {owner}
                 </span>
               )}
@@ -271,7 +271,7 @@ function ObjectiveNode({
                   reads as "proposed · Marketing · SEO Specialist" rather than as
                   an anonymous departmental claim. */}
               {node.assigneeSubAgentTitle && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-seal/40 bg-seal-soft px-2.5 py-0.5 text-xs font-medium text-seal">
+                <span className="inline-flex items-center gap-1 rounded-full border border-seal/40 bg-seal-soft px-2.5 py-0.5 text-sm font-medium text-seal">
                   <span aria-hidden="true">↳</span>
                   {node.assigneeSubAgentTitle}
                 </span>
@@ -296,7 +296,7 @@ function ObjectiveNode({
               </div>
 
               <output
-                className="w-11 shrink-0 text-right font-mono text-xs tabular-nums text-foreground"
+                className="w-11 shrink-0 text-right font-mono text-sm tabular-nums text-foreground"
                 aria-live="polite"
               >
                 {progress}%
@@ -322,7 +322,7 @@ function ObjectiveNode({
             </div>
 
             {hasChildren && (
-              <p className="mt-2.5 text-xs text-muted-foreground">
+              <p className="mt-2.5 text-sm text-muted-foreground">
                 rolled up from {node.children.length} sub-goal
                 {node.children.length === 1 ? '' : 's'}
               </p>
@@ -341,7 +341,7 @@ function ObjectiveNode({
                     type="button"
                     onClick={decompose}
                     disabled={busy}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-seal hover:text-seal disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-seal hover:text-seal disabled:opacity-50"
                   >
                     <Sparkles className="size-3.5" aria-hidden="true" />
                     {busy ? 'Working…' : 'Agents decompose'}
@@ -350,7 +350,7 @@ function ObjectiveNode({
                   <button
                     type="button"
                     onClick={() => setAdding((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
                   >
                     <Plus className="size-3.5" aria-hidden="true" />
                     Sub-goal
@@ -363,7 +363,7 @@ function ObjectiveNode({
                 onClick={remove}
                 disabled={busy}
                 aria-label={`Delete ${node.title}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
                 Delete

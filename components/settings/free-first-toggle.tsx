@@ -34,7 +34,7 @@ export function FreeFirstToggle({ initial }: { initial: boolean }) {
     <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3">
       <div>
         <p className="text-sm font-medium text-foreground">{t.settings.freeFirstTitle}</p>
-        <p className="mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-1 max-w-md text-sm leading-relaxed text-muted-foreground">
           {t.settings.freeFirstDescription}
         </p>
       </div>

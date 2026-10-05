@@ -7,7 +7,7 @@ import { MyceliumFeed } from '@/components/workspace/mycelium-feed'
 import { TaskCard } from '@/components/workspace/task-card'
 import { subAgentsOf } from '@/lib/ontology/specialists'
 import { cn } from '@/lib/utils'
-import { ArrowLeft, Loader2, Users } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Loader2, Users } from 'lucide-react'
 import { useState } from 'react'
 import useSWR from 'swr'
 
@@ -33,6 +33,27 @@ interface SubGoalPanelProps {
   }) => void
 }
 
+type TaskGroup = 'needs_you' | 'in_progress' | 'done'
+
+const TASK_GROUPS: { key: TaskGroup; label: string }[] = [
+  { key: 'needs_you', label: 'Needs you' },
+  { key: 'in_progress', label: 'In progress' },
+  { key: 'done', label: 'Done' },
+]
+
+function groupOf(task: TaskRow): TaskGroup {
+  if (task.reabsorbedAt || task.status === 'reabsorbed') return 'done'
+  if (
+    task.status === 'blocked' ||
+    task.status === 'proposed' ||
+    task.status === 'reported' ||
+    task.validationResult
+  ) {
+    return 'needs_you'
+  }
+  return 'in_progress'
+}
+
 export function SubGoalPanel({
   objectiveId,
   bots,
@@ -47,6 +68,7 @@ export function SubGoalPanel({
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showDone, setShowDone] = useState(false)
 
   async function dispatch() {
     if (!data) return
@@ -69,7 +91,7 @@ export function SubGoalPanel({
     return (
       <div className="flex items-center justify-center gap-2 p-10">
         <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
-        <p className="font-mono text-xs text-muted-foreground">Loading sub-goal…</p>
+        <p className="font-mono text-sm text-muted-foreground">Loading sub-goal…</p>
       </div>
     )
   }
@@ -84,14 +106,14 @@ export function SubGoalPanel({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex min-h-11 items-center gap-2 text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden="true" />
         Back to OKR tree
       </button>
 
       <header className="mt-5">
-        <p className="text-xs font-medium text-muted-foreground">
+        <p className="text-sm font-medium text-muted-foreground">
           Sub-goal · execution
         </p>
         <h2 className="mt-1.5 font-serif text-3xl text-balance text-foreground">
@@ -107,7 +129,7 @@ export function SubGoalPanel({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span
             className={cn(
-              'rounded-full px-2.5 py-0.5 text-xs font-medium',
+              'rounded-full px-2.5 py-0.5 text-sm font-medium',
               objective.status === 'complete'
                 ? 'bg-seal-soft text-seal'
                 : objective.status === 'in_progress'
@@ -119,17 +141,17 @@ export function SubGoalPanel({
           </span>
 
           {ownerBot && (
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-sm text-muted-foreground">
               owned by {ownerBot.displayName}
             </span>
           )}
 
-          <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+          <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-sm text-muted-foreground">
             {objective.progress}%
           </span>
 
           {tasks.length > 0 && (
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-sm text-muted-foreground">
               {tasks.length} task{tasks.length === 1 ? '' : 's'} · {reabsorbed} reabsorbed
             </span>
           )}
@@ -141,7 +163,7 @@ export function SubGoalPanel({
         <section className="mt-7" aria-labelledby="gates-heading">
           <h3
             id="gates-heading"
-            className="text-xs font-medium text-seal"
+            className="text-sm font-medium text-seal"
           >
             Governance gates · {pendingGates.length} awaiting your decision
           </h3>
@@ -157,7 +179,7 @@ export function SubGoalPanel({
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h3
             id="tasks-heading"
-            className="text-xs font-medium text-muted-foreground"
+            className="text-sm font-medium text-muted-foreground"
           >
             Sub-agent tasks · Kaizen cycle
           </h3>
@@ -177,7 +199,7 @@ export function SubGoalPanel({
                   ? `${ownerBot.displayName} has no sub-agents in the ontology, so it handles this sub-goal itself`
                   : undefined
             }
-            className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-sumi px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <Users className="size-3.5" aria-hidden="true" />
             {busy
@@ -202,37 +224,68 @@ export function SubGoalPanel({
           </p>
         )}
 
-        <div className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-          {tasks.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              No sub-agents dispatched yet.
-            </p>
-          ) : (
-            tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onChanged={() => mutate()}
-                onTalkToSubAgent={(selected: TaskRow) =>
-                  ownerBot &&
-                  onTalkToSubAgent({
-                    botId: ownerBot.id,
-                    parentSpecialistKey: selected.parentSpecialistKey,
-                    subAgentKey: selected.subAgentKey,
-                    subAgentTitle: selected.subAgentTitle,
-                    objectiveId: objective.id,
-                  })
-                }
-              />
-            ))
-          )}
-        </div>
+        {tasks.length === 0 ? (
+          <p className="mt-4 rounded-2xl border border-dashed border-border p-8 text-center text-[17px] text-muted-foreground">
+            No sub-agents dispatched yet.
+          </p>
+        ) : (
+          <div className="mt-5 flex flex-col gap-6">
+            {TASK_GROUPS.map((group) => {
+              const groupTasks = tasks.filter((task) => groupOf(task) === group.key)
+              if (groupTasks.length === 0) return null
+              const folded = group.key === 'done' && !showDone
+              return (
+                <div key={group.key}>
+                  {group.key === 'done' ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDone((v) => !v)}
+                      aria-expanded={!folded}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-lg text-base font-semibold text-foreground"
+                    >
+                      <ChevronDown
+                        className={cn('size-5 transition-transform', folded && '-rotate-90')}
+                        aria-hidden="true"
+                      />
+                      {group.label} · {groupTasks.length}
+                    </button>
+                  ) : (
+                    <h4 className="flex min-h-11 items-center text-base font-semibold text-foreground">
+                      {group.label} · {groupTasks.length}
+                    </h4>
+                  )}
+                  {!folded && (
+                    <div className="mt-2 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+                      {groupTasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onChanged={() => mutate()}
+                          onTalkToSubAgent={(selected: TaskRow) =>
+                            ownerBot &&
+                            onTalkToSubAgent({
+                              botId: ownerBot.id,
+                              parentSpecialistKey: selected.parentSpecialistKey,
+                              subAgentKey: selected.subAgentKey,
+                              subAgentTitle: selected.subAgentTitle,
+                              objectiveId: objective.id,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       <section className="mt-8" aria-labelledby="mycelium-heading">
         <h3
           id="mycelium-heading"
-          className="text-xs font-medium text-muted-foreground"
+          className="text-sm font-medium text-muted-foreground"
         >
           Mycelium · agent to agent traffic
         </h3>
@@ -250,7 +303,7 @@ export function SubGoalPanel({
         <section className="mt-8" aria-labelledby="decided-gates-heading">
           <h3
             id="decided-gates-heading"
-            className="text-xs font-medium text-muted-foreground"
+            className="text-sm font-medium text-muted-foreground"
           >
             Decided gates
           </h3>

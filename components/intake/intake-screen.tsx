@@ -140,7 +140,7 @@ export function IntakeScreen({
             direction === 'forward' ? 'intake-enter-forward' : 'intake-enter-back',
           )}
         >
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-seal">
+          <p className="text-sm text-seal">
             {eyebrow}
           </p>
 
@@ -273,7 +273,7 @@ export function IntakeScreen({
       </div>
 
       {isFinal && (
-        <p className="pb-8 text-center text-xs text-muted-foreground/70">
+        <p className="pb-8 text-center text-sm text-muted-foreground/70">
           {t.intake.lastStep}
         </p>
       )}
@@ -283,7 +283,7 @@ export function IntakeScreen({
 
 function KeyCap({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="mx-0.5 inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 font-sans text-xs font-medium text-foreground">
+    <kbd className="mx-0.5 inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 font-sans text-sm font-medium text-foreground">
       <ArrowUp className="size-3" aria-hidden="true" />
       {children}
     </kbd>

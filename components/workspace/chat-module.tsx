@@ -89,7 +89,7 @@ export function ChatModule({
             Back to agents
           </button>
 
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+          <p className="mt-3 text-[13px] text-seal">
             Sub-agent
           </p>
           <p className="mt-1.5 text-base font-medium text-foreground">
@@ -129,10 +129,10 @@ export function ChatModule({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Agents
           </p>
-          <p className="truncate text-xs text-muted-foreground">{projectName}</p>
+          <p className="truncate text-sm text-muted-foreground">{projectName}</p>
         </div>
 
         <div
@@ -147,7 +147,7 @@ export function ChatModule({
             onClick={() => onFocusChange({ kind: 'orchestrator' })}
             title="Coordinates the departments and reports the OKR tree back to you"
             className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+              'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
               orchestratorActive
                 ? 'border-seal bg-seal text-primary-foreground'
                 : 'border-seal/40 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
@@ -167,7 +167,7 @@ export function ChatModule({
                 onClick={() => onFocusChange({ kind: 'bot', botId: bot.id })}
                 title={bot.mandate ?? undefined}
                 className={cn(
-                  'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                  'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
                   active
                     ? 'border-sumi bg-sumi text-primary-foreground'
                     : 'border-border bg-card text-muted-foreground hover:border-sumi/40 hover:text-foreground',
@@ -252,7 +252,7 @@ function BotDetails({ bot }: { bot: BotRow }) {
           const items = rights[verb]
           if (!items || items.length === 0) return null
           return (
-            <div key={verb} className="flex gap-3 text-xs">
+            <div key={verb} className="flex gap-3 text-sm">
               <dt className="w-20 shrink-0 font-mono uppercase tracking-wide text-seal">
                 {verb}
               </dt>
@@ -266,12 +266,12 @@ function BotDetails({ bot }: { bot: BotRow }) {
 
       {handoffs.length > 0 && (
         <div className="border-t border-border pt-3">
-          <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
             Hands off to
           </p>
           <ul className="mt-2 space-y-1.5">
             {handoffs.map((handoff) => (
-              <li key={handoff.target} className="text-xs leading-relaxed text-muted-foreground">
+              <li key={handoff.target} className="text-sm leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground">{handoff.target}</span>
                 <span> — {handoff.trigger}</span>
               </li>
@@ -281,10 +281,10 @@ function BotDetails({ bot }: { bot: BotRow }) {
       )}
 
       <div className="border-t border-border pt-3">
-        <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
           SYNAPSIS cycle
         </p>
-        <p className="mt-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 font-mono text-[13px] leading-relaxed text-muted-foreground">
           {SYNAPSIS_STAGES.map((stage) => stage.key).join(' → ')}
         </p>
       </div>
@@ -610,7 +610,7 @@ function Conversation({
             <ArrowUp className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
           Enter to send · Shift + Enter for a new line
         </p>
 
@@ -620,7 +620,7 @@ function Conversation({
         <DocumentAttach projectId={projectId} />
 
         {dropping && (
-          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             Reading dropped file…
           </p>
@@ -674,15 +674,15 @@ function MessageBubble({
     <div className="flex items-start gap-2.5">
       <span
         aria-hidden="true"
-        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[13px] font-semibold text-muted-foreground"
       >
         {agentName.slice(0, 1).toUpperCase()}
       </span>
       <div className="min-w-0 max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-        <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>
+        <p className="mb-1 text-sm font-medium text-muted-foreground">{agentName}</p>
         {text}
         {documentNames.length > 0 && (
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Reasoned over: {documentNames.join(' · ')}
           </p>
         )}

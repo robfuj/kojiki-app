@@ -124,7 +124,7 @@ export function TopBar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={t.tabs.searchPlaceholder}
-            className="h-9 w-56 rounded-full border border-border bg-background pr-3 pl-9 text-xs text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
+            className="h-9 w-56 rounded-full border border-border bg-background pr-3 pl-9 text-sm text-foreground transition-colors outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
           />
         </div>
 
@@ -138,7 +138,7 @@ export function TopBar({
           onClick={onToggleSidebar}
           aria-expanded={!sidebarCollapsed}
           aria-label={t.nav.label}
-          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <PanelLeft className="size-4" aria-hidden="true" />
         </button>
@@ -171,7 +171,7 @@ export function TopBar({
                     <AvatarCircle
                       name={project.name}
                       className={cn(
-                        'size-6 shrink-0 text-[10px]',
+                        'size-6 shrink-0 text-[13px]',
                         active
                           ? 'bg-foreground text-background'
                           : 'bg-muted text-muted-foreground',
@@ -291,11 +291,11 @@ function GateBell({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={t.tabs.decisions.awaiting}
-        className="relative flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <Bell className="size-4" aria-hidden="true" />
         {pending.length > 0 && (
-          <span className="absolute top-1 right-1 flex size-3.5 items-center justify-center rounded-full bg-status-review text-[9px] font-semibold text-status-review-soft">
+          <span className="absolute top-1 right-1 flex size-3.5 items-center justify-center rounded-full bg-status-review text-[13px] font-semibold text-status-review-soft">
             {pending.length}
           </span>
         )}
@@ -310,7 +310,7 @@ function GateBell({
             onClick={() => setOpen(false)}
           />
           <div className="absolute right-0 z-40 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-lifted">
-            <p className="border-b border-border px-3 py-2 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="border-b border-border px-3 py-2 text-[13px] font-semibold text-muted-foreground">
               {t.tabs.decisions.awaiting}
             </p>
             {pending.length === 0 ? (
@@ -332,7 +332,7 @@ function GateBell({
                       <p className="truncate text-sm font-medium text-foreground">
                         {gate.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="mt-0.5 text-sm text-muted-foreground">
                         {gate.requestedByTitle} · {relative(gate.createdAt)}
                       </p>
                     </button>
@@ -364,7 +364,7 @@ function AccountMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={t.workspace.settings}
-        className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+        className="flex size-11 items-center justify-center rounded-full transition-opacity hover:opacity-80"
       >
         <AvatarCircle name={userName || 'K'} className="size-8 bg-primary text-primary-foreground" />
       </button>

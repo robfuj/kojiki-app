@@ -185,14 +185,14 @@ export function WorkspaceShell({
                 <p className="text-sm font-medium text-foreground">
                   {t.tabs.orchestrator.brand} / {t.nav.orchestrator}
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <p className="mt-0.5 text-sm text-muted-foreground">
                   {t.tabs.orchestrator.subtitle}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setTab(returnTab)}
-                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t.tabs.orchestrator.collapse}
               </button>
@@ -226,7 +226,7 @@ export function WorkspaceShell({
                     setSeed({ text: suggestion, nonce: Date.now() })
                     openConversation({ kind: 'orchestrator' }, true)
                   }}
-                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
                 >
                   {suggestion}
                 </button>
@@ -234,7 +234,7 @@ export function WorkspaceShell({
               <button
                 type="button"
                 onClick={() => openConversation({ kind: 'orchestrator' }, true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
               >
                 <Sparkles className="size-3.5" aria-hidden="true" />
                 {t.tabs.orchestrator.ask}

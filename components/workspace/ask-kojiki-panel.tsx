@@ -114,14 +114,14 @@ export function AskKojikiPanel({
         <span className="shrink-0 text-sm font-medium text-foreground">
           {t.tabs.orchestrator.ask}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">
           {focusLabel}
         </span>
         <button
           type="button"
           onClick={() => setMinimized((v) => !v)}
           aria-label={minimized ? 'Expand' : 'Minimize'}
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Minus className="size-3.5" aria-hidden="true" />
         </button>
@@ -129,7 +129,7 @@ export function AskKojikiPanel({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <X className="size-3.5" aria-hidden="true" />
         </button>

@@ -24,7 +24,7 @@ export function ActionButton({ onClick, busy, icon: Icon, label, tone }: ActionB
       onClick={onClick}
       disabled={busy}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-opacity disabled:opacity-50',
+        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50',
         tone === 'primary'
           ? 'bg-sumi text-primary-foreground hover:opacity-90'
           : 'border border-seal/50 bg-seal-soft text-seal hover:bg-seal hover:text-primary-foreground',
@@ -64,12 +64,12 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
 
   return (
     <div className="rounded-xl border border-seal/40 bg-background p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+      <p className="text-[13px] text-seal">
         Neuraxis · escalate to the layer that can fix this
       </p>
 
       <fieldset className="mt-3">
-        <legend className="text-xs font-medium text-muted-foreground">
+        <legend className="text-sm font-medium text-muted-foreground">
           What actually went wrong
         </legend>
         <div className="mt-2 space-y-1.5">
@@ -95,7 +95,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
                 <span className="block text-sm font-medium text-foreground">
                   {ERROR_CLASS_LABELS[key]}
                 </span>
-                <span className="block text-xs leading-relaxed text-muted-foreground">
+                <span className="block text-sm leading-relaxed text-muted-foreground">
                   {ERROR_CLASS_HINTS[key]}
                 </span>
               </span>
@@ -116,7 +116,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
         <div className="mt-3">
           <label
             htmlFor="escalation-redefinition"
-            className="text-xs font-medium text-muted-foreground"
+            className="text-sm font-medium text-muted-foreground"
           >
             Redefinition — the corrected problem statement
           </label>
@@ -128,7 +128,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
             placeholder="What the problem actually is, now that the old framing is known to be wrong"
             className="mt-1.5 w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             The superseded statement is kept, not overwritten, so the reasoning
             stays auditable.
           </p>
@@ -138,7 +138,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
       <div className="mt-3">
         <label
           htmlFor="escalation-reason"
-          className="text-xs font-medium text-muted-foreground"
+          className="text-sm font-medium text-muted-foreground"
         >
           Why (optional)
         </label>
@@ -162,7 +162,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
             })
           }
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <GitBranch className="size-3.5" aria-hidden="true" />
           {busy ? 'Escalating…' : 'Escalate'}
@@ -171,7 +171,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Cancel
         </button>
@@ -208,7 +208,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
 
   return (
     <section className="rounded-xl border border-seal/40 bg-seal-soft p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+      <p className="text-[13px] text-seal">
         Model · proposed by {task.parentSpecialistKey}, awaiting your approval
       </p>
 
@@ -217,12 +217,12 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
           {task.proposedModelLabel ?? task.proposedModelId}
         </span>
         {task.proposedModelLabel && task.proposedModelId && (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-sm text-muted-foreground">
             {task.proposedModelId}
           </span>
         )}
         {task.estimatedCostUsd !== null && (
-          <span className="ml-auto inline-flex items-center gap-1 font-mono text-xs text-foreground">
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-sm text-foreground">
             <Coins className="size-3.5 text-seal" aria-hidden="true" />
             ~{formatUsd(task.estimatedCostUsd)}
           </span>
@@ -236,7 +236,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
       )}
 
       {task.estimatedInputTokens !== null && task.estimatedOutputTokens !== null && (
-        <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+        <p className="mt-1.5 font-mono text-[13px] text-muted-foreground">
           estimated {task.estimatedInputTokens.toLocaleString()} tokens in /{' '}
           {task.estimatedOutputTokens.toLocaleString()} out
         </p>
@@ -246,7 +246,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
         <div className="mt-3">
           <label
             htmlFor={`model-${task.id}`}
-            className="text-xs font-medium text-muted-foreground"
+            className="text-sm font-medium text-muted-foreground"
           >
             Run it on a different model
           </label>
@@ -276,7 +276,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
           type="button"
           onClick={() => onApprove(modelId || null)}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <CheckCircle2 className="size-3.5" aria-hidden="true" />
           {busy
@@ -289,7 +289,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
         <button
           type="button"
           onClick={() => setChoosing((v) => !v)}
-          className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+          className="rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
         >
           {choosing ? 'Keep the proposal' : 'Choose a different model'}
         </button>

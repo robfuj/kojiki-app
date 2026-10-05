@@ -17,10 +17,10 @@ import type { ReactNode } from 'react'
 export type PillTone = 'progress' | 'review' | 'approved' | 'idle'
 
 const TONE_CLASS: Record<PillTone, string> = {
-  progress: 'border-status-progress/30 bg-status-progress-soft text-status-progress',
-  review: 'border-status-review/30 bg-status-review-soft text-status-review',
-  approved: 'border-status-approved/30 bg-status-approved-soft text-status-approved',
-  idle: 'border-border bg-status-idle-soft text-status-idle',
+  progress: 'bg-status-progress-soft text-status-progress',
+  review: 'bg-status-review-soft text-status-review',
+  approved: 'bg-status-approved-soft text-status-approved',
+  idle: 'bg-status-idle-soft text-status-idle',
 }
 
 /** The small dotted pill every table and card uses for work state. */
@@ -36,7 +36,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-medium whitespace-nowrap',
         TONE_CLASS[tone],
         className,
       )}
@@ -127,7 +127,7 @@ export function useRelativeTime() {
   }
 }
 
-/** The tiny uppercase label that opens every section. */
+/** The small sentence-case label that opens every section. */
 export function Eyebrow({
   children,
   className,
@@ -138,7 +138,7 @@ export function Eyebrow({
   return (
     <p
       className={cn(
-        'text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase',
+        'text-[13px] font-semibold text-muted-foreground',
         className,
       )}
     >
@@ -147,7 +147,7 @@ export function Eyebrow({
   )
 }
 
-/** The white hairline card everything sits in. */
+/** The white card everything sits in: depth from a soft shadow, not a hard rule. */
 export function Card({
   children,
   className,
@@ -156,7 +156,12 @@ export function Card({
   className?: string
 }) {
   return (
-    <div className={cn('rounded-lg border border-border bg-card', className)}>
+    <div
+      className={cn(
+        'rounded-xl border border-border/60 bg-card shadow-soft',
+        className,
+      )}
+    >
       {children}
     </div>
   )
@@ -180,7 +185,7 @@ export function AvatarCircle({
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-7 shrink-0 items-center justify-center rounded-full bg-sumi-soft text-[11px] font-semibold text-sumi',
+        'flex size-7 shrink-0 items-center justify-center rounded-full bg-sumi-soft text-[13px] font-semibold text-sumi',
         className,
       )}
     >

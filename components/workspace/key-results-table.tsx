@@ -33,16 +33,16 @@ export function KeyResultsTable({ rows }: { rows: KeyResultRow[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="px-4 py-2.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-[13px] font-semibold text-muted-foreground">
               {labels.metric}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[13px] font-semibold text-muted-foreground">
               {labels.target}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[13px] font-semibold text-muted-foreground">
               {labels.actual}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[13px] font-semibold text-muted-foreground">
               {labels.status}
             </th>
           </tr>
@@ -52,7 +52,7 @@ export function KeyResultsTable({ rows }: { rows: KeyResultRow[] }) {
             <tr key={`${row.taskId}-${row.metric}-${index}`}>
               <td className="px-4 py-2.5">
                 <p className="font-medium text-foreground">{row.metric}</p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">
                   {row.taskTitle}
                 </p>
               </td>
