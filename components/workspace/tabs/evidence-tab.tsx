@@ -192,7 +192,7 @@ export function EvidenceTab({ projectId, query }: EvidenceTabProps) {
               </dl>
 
               <div className="mt-4 border-t border-border pt-3">
-                <h3 className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <h3 className="text-[11px] font-semibold text-muted-foreground">
                   {labels.extracted}
                 </h3>
                 <pre className="mt-2 max-h-72 overflow-y-auto rounded-md border border-border bg-background p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">

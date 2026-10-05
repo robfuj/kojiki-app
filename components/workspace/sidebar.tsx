@@ -100,7 +100,7 @@ export function Sidebar({
       >
         <div>
           {!collapsed && (
-            <p className="px-2.5 pb-1.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
               {t.nav.operations}
             </p>
           )}
@@ -119,7 +119,7 @@ export function Sidebar({
 
         <div>
           {!collapsed && (
-            <p className="px-2.5 pb-1.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
               {t.nav.knowledge}
             </p>
           )}
@@ -178,19 +178,20 @@ function NavItem({
           'relative flex w-full items-center gap-2.5 rounded-lg py-2 text-sm transition-colors',
           collapsed ? 'justify-center px-0' : 'px-2.5',
           active
-            ? 'bg-primary font-medium text-primary-foreground'
-            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+            ? 'bg-foreground/[0.07] font-medium text-foreground'
+            : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
         )}
       >
-        <item.icon className="size-4 shrink-0" aria-hidden="true" />
+        <item.icon
+          className={cn('size-4 shrink-0', active && 'text-seal')}
+          aria-hidden="true"
+        />
         {!collapsed && <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>}
         {!collapsed && count > 0 && (
           <span
             className={cn(
               'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
-              active
-                ? 'bg-primary-foreground/20 text-primary-foreground'
-                : 'bg-status-review-soft text-status-review',
+              'bg-status-review-soft text-status-review',
             )}
           >
             {count}

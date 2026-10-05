@@ -17,7 +17,7 @@ import {
 } from '@/components/workspace/ui/primitives'
 import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { Coins, ListChecks, Scale, Target } from 'lucide-react'
+import { Scale } from 'lucide-react'
 import useSWR from 'swr'
 
 interface OverviewTabProps {
@@ -104,13 +104,13 @@ export function OverviewTab({
   const maxOpen = Math.max(1, ...bubbles.map((bubble) => bubble.open))
 
   return (
-    <div className="space-y-4 px-6 py-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-8">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-balance text-foreground">
             {projectName}
           </h1>
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+          <p className="mt-1 truncate text-sm text-muted-foreground">
             {projectObjective ?? ''}
           </p>
         </div>
@@ -125,7 +125,6 @@ export function OverviewTab({
 
       <Card className="grid grid-cols-2 divide-y divide-border overflow-hidden p-0 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
         <StatCell
-          icon={Target}
           label={labels.objectives}
           value={String(report.objectiveCount)}
           sub={format(labels.rootProgress, {
@@ -133,19 +132,17 @@ export function OverviewTab({
           })}
         />
         <StatCell
-          icon={ListChecks}
           label={labels.tasks}
           value={String(report.taskCount)}
           sub={format(labels.done, { count: String(doneTasks) })}
         />
         <StatCell
-          icon={Scale}
           label={labels.gateQueue}
+          attention={report.gatesPending > 0}
           value={String(report.gatesPending)}
           sub={format(labels.decided, { count: String(report.gatesDecided) })}
         />
         <StatCell
-          icon={Coins}
           label={labels.spend}
           value={`$${report.totalCostUsd.toFixed(2)}`}
           sub={format(labels.tokens, {
@@ -155,21 +152,21 @@ export function OverviewTab({
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl bg-foreground p-6 text-background shadow-soft lg:col-span-2">
-          <p className="text-[11px] font-medium tracking-[0.14em] text-background/60 uppercase">
-            {labels.companyObjective}
-          </p>
-          <p className="mt-2.5 max-w-xl text-xl leading-snug font-semibold text-balance">
-            {home.root?.title ?? projectObjective ?? '—'}
-          </p>
-          <div className="mt-5 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-background/20">
-              <div
-                className="h-full rounded-full bg-background"
-                style={{ width: `${home.root?.progress ?? 0}%` }}
-              />
-            </div>
-            <span className="shrink-0 text-xs tabular-nums text-background/70">
+        <Card className="flex flex-col justify-between p-6 lg:col-span-2">
+          <div>
+            <p className="text-xs font-semibold text-seal">
+              {labels.companyObjective}
+            </p>
+            <p className="mt-2 max-w-xl text-2xl leading-tight font-semibold tracking-tight text-balance text-foreground">
+              {home.root?.title ?? projectObjective ?? '—'}
+            </p>
+          </div>
+          <div className="mt-6 flex items-center gap-3">
+            <ProgressBar
+              value={home.root?.progress ?? 0}
+              className="h-1.5 flex-1"
+            />
+            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
               {format(labels.overallProgress, {
                 percent: String(home.root?.progress ?? report.averageProgress),
               })}
@@ -182,14 +179,14 @@ export function OverviewTab({
                 .map(([status, count]) => (
                   <span
                     key={status}
-                    className="rounded-full bg-background/10 px-2 py-0.5 text-[10px] font-medium tabular-nums"
+                    className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
                   >
                     {status.replace(/_/g, ' ')} · {count}
                   </span>
                 ))}
             </div>
           )}
-        </div>
+        </Card>
 
         <Card className="p-0">
           <div className="flex items-center justify-between px-5 py-4">
@@ -370,30 +367,28 @@ export function OverviewTab({
 }
 
 function StatCell({
-  icon: Icon,
   label,
   value,
   sub,
+  attention = false,
 }: {
-  icon: typeof Target
   label: string
   value: string
   sub: string
+  attention?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3 px-5 py-4">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-        <Icon className="size-4" aria-hidden="true" />
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
-          {label}
-        </p>
-        <p className="mt-0.5 truncate text-xl font-semibold tabular-nums text-foreground">
-          {value}
-        </p>
-        <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
-      </div>
+    <div className="min-w-0 px-5 py-4">
+      <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+      <p
+        className={cn(
+          'mt-1 truncate text-2xl font-semibold tracking-tight tabular-nums',
+          attention ? 'text-status-review' : 'text-foreground',
+        )}
+      >
+        {value}
+      </p>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</p>
     </div>
   )
 }

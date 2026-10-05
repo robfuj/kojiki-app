@@ -128,7 +128,7 @@ export function IntegrationsCatalog({ freeFirst }: { freeFirst: boolean }) {
 
           {groups.map((group) => (
             <section key={group.key} aria-label={group.label}>
-              <h4 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <h4 className="text-xs font-semibold text-muted-foreground">
                 {group.label}
               </h4>
 

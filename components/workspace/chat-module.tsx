@@ -89,7 +89,7 @@ export function ChatModule({
             Back to agents
           </button>
 
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+          <p className="mt-3 text-[11px] text-seal">
             Sub-agent
           </p>
           <p className="mt-1.5 text-base font-medium text-foreground">
@@ -129,7 +129,7 @@ export function ChatModule({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Agents
           </p>
           <p className="truncate text-xs text-muted-foreground">{projectName}</p>

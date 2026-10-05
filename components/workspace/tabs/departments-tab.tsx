@@ -247,7 +247,7 @@ export function DepartmentsTab({
               {detailTab === 'members' && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       {labels.head}
                     </p>
                     <div className="mt-2 flex items-center gap-2.5">
@@ -263,7 +263,7 @@ export function DepartmentsTab({
                     </div>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       {labels.team}
                     </p>
                     {members.length === 0 ? (
@@ -294,7 +294,7 @@ export function DepartmentsTab({
               {detailTab === 'info' && (
                 <div className="space-y-4 text-sm">
                   <div>
-                    <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       {labels.mandate}
                     </p>
                     <p className="mt-1.5 leading-relaxed text-pretty text-foreground">
@@ -302,14 +302,14 @@ export function DepartmentsTab({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       {labels.functionLine}
                     </p>
                     <p className="mt-1.5 text-foreground">{selected.functionLine}</p>
                   </div>
                   {selected.signals.length > 0 && (
                     <div>
-                      <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                      <p className="text-[11px] font-semibold text-muted-foreground">
                         {t.tabs.overview.signals}
                       </p>
                       <ul className="mt-2 space-y-2">

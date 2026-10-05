@@ -122,7 +122,7 @@ export function ReviewCard({
       ) : (
         <>
           <section aria-label={labels.findings} className="mt-4">
-            <h3 className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <h3 className="text-[11px] font-semibold text-muted-foreground">
               {labels.findings}
             </h3>
             <ul className="mt-2 space-y-2.5">
@@ -148,7 +148,7 @@ export function ReviewCard({
           </section>
 
           <section aria-label={labels.recommended} className="mt-5">
-            <h3 className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <h3 className="text-[11px] font-semibold text-muted-foreground">
               {labels.recommended}
             </h3>
             <ul className="mt-2 space-y-1.5">
@@ -212,7 +212,7 @@ export function ReviewCard({
               <div className="mt-3 rounded-md border border-border bg-background p-3">
                 <label
                   htmlFor="review-decision-title"
-                  className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
+                  className="text-[11px] font-semibold text-muted-foreground"
                 >
                   {labels.decisionTitle}
                 </label>

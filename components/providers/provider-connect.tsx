@@ -177,7 +177,7 @@ export function ProviderConnect({
           className={cn('space-y-3', connections.length > 0 && 'border-t border-border pt-4')}
         >
           <fieldset>
-            <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <legend className="text-[11px] text-muted-foreground">
               {connections.length > 0 ? tp.legendAnother : tp.legendFirst}
             </legend>
 

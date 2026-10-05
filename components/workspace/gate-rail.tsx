@@ -28,7 +28,7 @@ export function GateRail({ projectId, onOpenDecisions }: GateRailProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between px-4 py-3.5">
-        <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+        <p className="text-[11px] font-semibold text-muted-foreground">
           {t.tabs.decisions.awaiting}
         </p>
         <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-status-review">

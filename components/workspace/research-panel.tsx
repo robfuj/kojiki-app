@@ -263,7 +263,7 @@ function MethodBadge({ method }: { method: 'web-search' | 'model-reasoning' }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+    <h4 className="text-[11px] text-seal">
       {children}
     </h4>
   )
@@ -272,7 +272,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+      <dt className="text-[11px] text-muted-foreground">
         {label}
       </dt>
       <dd className="mt-1.5 text-sm leading-relaxed text-foreground">{value}</dd>

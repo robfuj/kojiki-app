@@ -310,7 +310,7 @@ function GateBell({
             onClick={() => setOpen(false)}
           />
           <div className="absolute right-0 z-40 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-lifted">
-            <p className="border-b border-border px-3 py-2 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="border-b border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
               {t.tabs.decisions.awaiting}
             </p>
             {pending.length === 0 ? (

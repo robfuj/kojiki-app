@@ -76,7 +76,7 @@ export function OkrTree({ projectId, projectName, bots, onOpenSubGoal }: OkrTree
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+          <p className="text-[11px] text-seal">
             OKR tree
           </p>
           <h2 className="mt-2 font-serif text-3xl leading-tight text-balance text-foreground">

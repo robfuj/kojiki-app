@@ -257,7 +257,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                 <DetailRow label={labels.updated} value={relative(selected.createdAt)} />
               </dl>
               <div className="mt-4 border-t border-border pt-3">
-                <h3 className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                <h3 className="text-[11px] font-semibold text-muted-foreground">
                   {labels.summary}
                 </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-pretty text-foreground">

@@ -64,7 +64,7 @@ export function EscalationForm({ busy, onSubmit, onCancel }: EscalationFormProps
 
   return (
     <div className="rounded-xl border border-seal/40 bg-background p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+      <p className="text-[11px] text-seal">
         Neuraxis · escalate to the layer that can fix this
       </p>
 
@@ -208,7 +208,7 @@ export function ModelApproval({ task, busy, onApprove }: ModelApprovalProps) {
 
   return (
     <section className="rounded-xl border border-seal/40 bg-seal-soft p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+      <p className="text-[11px] text-seal">
         Model · proposed by {task.parentSpecialistKey}, awaiting your approval
       </p>
 

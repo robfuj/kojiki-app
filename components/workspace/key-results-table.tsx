@@ -33,16 +33,16 @@ export function KeyResultsTable({ rows }: { rows: KeyResultRow[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="px-4 py-2.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-[11px] font-semibold text-muted-foreground">
               {labels.metric}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground">
               {labels.target}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground">
               {labels.actual}
             </th>
-            <th className="px-4 py-2.5 text-right text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground">
               {labels.status}
             </th>
           </tr>

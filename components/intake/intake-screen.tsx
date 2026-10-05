@@ -140,7 +140,7 @@ export function IntakeScreen({
             direction === 'forward' ? 'intake-enter-forward' : 'intake-enter-back',
           )}
         >
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-seal">
+          <p className="text-xs text-seal">
             {eyebrow}
           </p>
 

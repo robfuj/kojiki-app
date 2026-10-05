@@ -509,7 +509,7 @@ export function ProjectIntake({
               <div className="mt-10 max-w-xl space-y-4">
                 {refined && (
                   <div className="rounded-2xl border border-seal/30 bg-seal/5 px-5 py-4">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+                    <p className="text-[11px] text-seal">
                       {tp.refinedEyebrow}
                     </p>
                     <p className="mt-2 text-pretty text-base font-medium leading-relaxed text-foreground">
@@ -522,7 +522,7 @@ export function ProjectIntake({
                 )}
 
                 <div className="rounded-2xl bg-muted px-5 py-4">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal">
+                  <p className="text-[11px] text-seal">
                     {tp.builtEyebrow}
                   </p>
                   <ul className="mt-2.5 space-y-1.5 text-sm leading-relaxed text-muted-foreground">

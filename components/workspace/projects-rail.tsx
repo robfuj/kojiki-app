@@ -59,7 +59,7 @@ export function ProjectsRail({
       >
         <div className="flex items-stretch gap-2 overflow-x-auto px-5 py-3">
           <div className="flex shrink-0 flex-col justify-center pr-1">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {t.projects.label}
             </p>
             <p className="font-mono text-[11px] text-muted-foreground">
