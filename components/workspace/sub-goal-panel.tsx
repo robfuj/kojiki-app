@@ -91,7 +91,7 @@ export function SubGoalPanel({
       </button>
 
       <header className="mt-5">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-medium text-muted-foreground">
           Sub-goal · execution
         </p>
         <h2 className="mt-1.5 font-serif text-3xl text-balance text-foreground">
@@ -141,7 +141,7 @@ export function SubGoalPanel({
         <section className="mt-7" aria-labelledby="gates-heading">
           <h3
             id="gates-heading"
-            className="font-mono text-[11px] uppercase tracking-[0.16em] text-seal"
+            className="text-xs font-medium text-seal"
           >
             Governance gates · {pendingGates.length} awaiting your decision
           </h3>
@@ -157,7 +157,7 @@ export function SubGoalPanel({
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h3
             id="tasks-heading"
-            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+            className="text-xs font-medium text-muted-foreground"
           >
             Sub-agent tasks · Kaizen cycle
           </h3>
@@ -202,7 +202,7 @@ export function SubGoalPanel({
           </p>
         )}
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
           {tasks.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               No sub-agents dispatched yet.
@@ -232,7 +232,7 @@ export function SubGoalPanel({
       <section className="mt-8" aria-labelledby="mycelium-heading">
         <h3
           id="mycelium-heading"
-          className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+          className="text-xs font-medium text-muted-foreground"
         >
           Mycelium · agent to agent traffic
         </h3>
@@ -250,7 +250,7 @@ export function SubGoalPanel({
         <section className="mt-8" aria-labelledby="decided-gates-heading">
           <h3
             id="decided-gates-heading"
-            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+            className="text-xs font-medium text-muted-foreground"
           >
             Decided gates
           </h3>

@@ -85,7 +85,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [escalating, setEscalating] = useState(false)
-  const [open, setOpen] = useState(!task.reabsorbedAt)
+  const [open, setOpen] = useState(task.status === 'blocked')
   const detailsId = `task-details-${task.id}`
 
   const criteria = task.successCriteria as SuccessCriterion[]
@@ -120,77 +120,70 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
   const VerdictIcon = verdict ? VERDICT_ICON[verdict] : null
 
   return (
-    <article
-      className={cn(
-        'rounded-2xl border bg-card shadow-soft',
-        blocked ? 'border-seal/50' : 'border-border',
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <h4 className="min-w-0 text-base font-medium text-balance text-foreground">
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-controls={detailsId}
-            className="inline-flex items-center gap-1.5 text-left hover:text-sumi"
-          >
-            <ChevronDown
-              className={cn(
-                'size-4 shrink-0 text-muted-foreground transition-transform',
-                !open && '-rotate-90',
-              )}
-              aria-hidden="true"
-            />
-            {task.title}
-          </button>
-        </h4>
-
-        <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-          {task.subAgentTitle}
-        </span>
-
+    <article className={cn('transition-colors', open && 'bg-muted/30')}>
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
         <span
           className={cn(
-            'rounded-full px-2.5 py-0.5 text-xs font-medium',
+            'size-2 shrink-0 rounded-full',
             blocked
-              ? 'bg-seal-soft text-seal'
+              ? 'bg-status-review'
               : task.status === 'reabsorbed'
-                ? 'bg-seal-soft text-seal'
-                : 'bg-muted text-muted-foreground',
+                ? 'bg-status-approved'
+                : task.status === 'proposed'
+                  ? 'bg-status-idle'
+                  : 'bg-status-progress',
           )}
-        >
-          {TASK_STATUS_LABELS[task.status] ?? task.status}
-        </span>
+          aria-hidden="true"
+        />
 
-        {verdict && (
-          <span
-            className={cn(
-              'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-              VERDICT_TONE[verdict],
-            )}
-          >
-            {VerdictIcon && <VerdictIcon className="size-3.5" aria-hidden="true" />}
-            {VALIDATION_LABELS[verdict]} · {task.outcomeScore ?? 0}/100
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={detailsId}
+          className="flex min-w-0 flex-1 flex-col items-start text-left"
+        >
+          <span className="w-full truncate text-[15px] font-medium text-foreground">
+            {task.title}
           </span>
+          <span className="w-full truncate text-xs text-muted-foreground">
+            {task.subAgentTitle} · {TASK_STATUS_LABELS[task.status] ?? task.status}
+            {verdict && ` · ${VALIDATION_LABELS[verdict]} ${task.outcomeScore ?? 0}/100`}
+          </span>
+        </button>
+
+        {verdict && VerdictIcon && (
+          <VerdictIcon
+            className={cn('size-4 shrink-0 rounded-full', VERDICT_TONE[verdict])}
+            aria-hidden="true"
+          />
         )}
 
         <button
           type="button"
           onClick={() => onTalkToSubAgent(task)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+          aria-label={`Talk to ${task.subAgentTitle}`}
+          title={`Talk to ${task.subAgentTitle}`}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <MessageSquare className="size-3.5" aria-hidden="true" />
-          Talk to {task.subAgentTitle}
+          <MessageSquare className="size-4" aria-hidden="true" />
         </button>
+
+        <ChevronDown
+          className={cn(
+            'size-4 shrink-0 text-muted-foreground transition-transform',
+            !open && '-rotate-90',
+          )}
+          aria-hidden="true"
+        />
       </div>
 
-      <div className="space-y-4 p-4 sm:p-5">
+      <div className="space-y-4 px-4 pb-4 empty:hidden sm:px-5">
         {open && (
         <div id={detailsId} className="space-y-4">
         {/* PLAN — criteria fixed before the work started. */}
         <section>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-xs font-medium text-muted-foreground">
             Targets · set before the work started
           </p>
 
@@ -285,7 +278,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {/* DO — what the sub-agent reported. */}
         {task.resultSummary && (
           <section className="border-t border-border pt-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               Result · from {task.subAgentTitle}
             </p>
             <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
@@ -329,7 +322,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {/* CHECK — the mechanical comparison. */}
         {verdict && (
           <section className="border-t border-border pt-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               Verdict
             </p>
 
@@ -367,7 +360,7 @@ export function TaskCard({ task, onChanged, onTalkToSubAgent }: TaskCardProps) {
         {/* ACT — the lesson, when the attempt produced one. */}
         {learningCase && (
           <section className="border-t border-border pt-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
             Lesson · saved for reuse
           </p>
           <p className="mt-2 text-sm leading-relaxed text-foreground">
