@@ -113,7 +113,7 @@
   --secondary: oklch(0.96 0.005 95);
   --secondary-foreground: oklch(0.32 0.01 95);
   --muted: oklch(0.96 0.005 95);
-  --muted-foreground: oklch(0.55 0.012 95);
+  --muted-foreground: oklch(0.45 0.012 95);
   --accent: oklch(0.96 0.005 95);
   --accent-foreground: oklch(0.32 0.01 95);
 
@@ -132,7 +132,7 @@
   --status-idle-soft: oklch(0.96 0.005 95);
 
   --destructive: oklch(0.55 0.19 25);
-  --border: oklch(0.24 0.01 95 / 10%);
+  --border: oklch(0.24 0.01 95 / 16%);
   --input: oklch(0.24 0.01 95 / 14%);
   --ring: oklch(0.52 0.11 160 / 45%);
 
@@ -181,7 +181,7 @@
   --secondary: oklch(0.27 0.008 95);
   --secondary-foreground: oklch(0.92 0.004 95);
   --muted: oklch(0.27 0.008 95);
-  --muted-foreground: oklch(0.68 0.012 95);
+  --muted-foreground: oklch(0.75 0.012 95);
   --accent: oklch(0.29 0.008 95);
   --accent-foreground: oklch(0.92 0.004 95);
 
@@ -231,10 +231,29 @@
     @apply bg-background text-foreground font-sans;
     /* Apple's body copy sits at 17px with generous leading. Tighter tracking on
        large type and looser on small is what makes the hierarchy read cleanly. */
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    font-size: 1.0625rem;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+  /* Root size drives every rem, so the Settings text-size choice scales the whole UI. */
+  html[data-text-size='large'] {
+    font-size: 112.5%;
+  }
+  html[data-text-size='xl'] {
+    font-size: 125%;
+  }
+  :focus-visible {
+    outline: 3px solid var(--seal, var(--ring));
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
   h1,
   h2,

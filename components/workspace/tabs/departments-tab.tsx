@@ -127,11 +127,11 @@ export function DepartmentsTab({
                       <span className="block truncate text-sm font-medium text-foreground">
                         {dept.displayName}
                       </span>
-                      <span className="block truncate text-[11px] text-muted-foreground">
+                      <span className="block truncate text-[13px] text-muted-foreground">
                         {dept.functionLine}
                       </span>
                     </span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                    <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">
                       {progress}%
                     </span>
                   </button>
@@ -149,7 +149,7 @@ export function DepartmentsTab({
                 <p className="truncate text-sm font-semibold text-foreground">
                   {selected.displayName}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="truncate text-sm text-muted-foreground">
                   {selected.functionLine}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export function DepartmentsTab({
               <button
                 type="button"
                 onClick={() => onChatWithBot(selected.botId)}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
               >
                 <MessageSquare className="size-3.5" aria-hidden="true" />
                 {format(labels.chatWith, { name: selected.displayName })}
@@ -176,7 +176,7 @@ export function DepartmentsTab({
                   onClick={() => setDetailTab(tab.key)}
                   aria-pressed={detailTab === tab.key}
                   className={cn(
-                    'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                     detailTab === tab.key
                       ? 'bg-muted text-foreground'
                       : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -204,7 +204,7 @@ export function DepartmentsTab({
                           <StatusPill tone={toneForStatus(objective.status)}>
                             {objective.status.replace(/_/g, ' ')}
                           </StatusPill>
-                          <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
+                          <span className="w-10 text-right text-sm tabular-nums text-muted-foreground">
                             {objective.progress}%
                           </span>
                         </div>
@@ -235,7 +235,7 @@ export function DepartmentsTab({
                             decision.status as 'proposed' | 'accepted' | 'rejected'
                           ] ?? t.tabs.decisions.statuses.other}
                         </StatusPill>
-                        <span className="w-14 shrink-0 text-right text-[11px] text-muted-foreground">
+                        <span className="w-14 shrink-0 text-right text-[13px] text-muted-foreground">
                           {relative(decision.createdAt)}
                         </span>
                       </li>
@@ -247,7 +247,7 @@ export function DepartmentsTab({
               {detailTab === 'members' && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[11px] font-semibold text-muted-foreground">
+                    <p className="text-[13px] font-semibold text-muted-foreground">
                       {labels.head}
                     </p>
                     <div className="mt-2 flex items-center gap-2.5">
@@ -256,14 +256,14 @@ export function DepartmentsTab({
                         <p className="truncate text-sm font-medium text-foreground">
                           {selected.displayName}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-sm text-muted-foreground">
                           {selected.functionLine}
                         </p>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-muted-foreground">
+                    <p className="text-[13px] font-semibold text-muted-foreground">
                       {labels.team}
                     </p>
                     {members.length === 0 ? (
@@ -279,7 +279,7 @@ export function DepartmentsTab({
                               <p className="truncate text-sm text-foreground">
                                 {member}
                               </p>
-                              <p className="truncate text-xs text-muted-foreground">
+                              <p className="truncate text-sm text-muted-foreground">
                                 {selected.displayName}
                               </p>
                             </div>
@@ -294,7 +294,7 @@ export function DepartmentsTab({
               {detailTab === 'info' && (
                 <div className="space-y-4 text-sm">
                   <div>
-                    <p className="text-[11px] font-semibold text-muted-foreground">
+                    <p className="text-[13px] font-semibold text-muted-foreground">
                       {labels.mandate}
                     </p>
                     <p className="mt-1.5 leading-relaxed text-pretty text-foreground">
@@ -302,14 +302,14 @@ export function DepartmentsTab({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-muted-foreground">
+                    <p className="text-[13px] font-semibold text-muted-foreground">
                       {labels.functionLine}
                     </p>
                     <p className="mt-1.5 text-foreground">{selected.functionLine}</p>
                   </div>
                   {selected.signals.length > 0 && (
                     <div>
-                      <p className="text-[11px] font-semibold text-muted-foreground">
+                      <p className="text-[13px] font-semibold text-muted-foreground">
                         {t.tabs.overview.signals}
                       </p>
                       <ul className="mt-2 space-y-2">
@@ -318,13 +318,13 @@ export function DepartmentsTab({
                             key={signal.id}
                             className="rounded-md border border-border bg-background px-3 py-2"
                           >
-                            <p className="text-xs font-medium text-foreground">
+                            <p className="text-sm font-medium text-foreground">
                               {signal.fromTitle} → {signal.toTitle}
                               <span className="ml-1.5 text-muted-foreground">
                                 ({signal.signalKind})
                               </span>
                             </p>
-                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                               {signal.body}
                             </p>
                           </li>

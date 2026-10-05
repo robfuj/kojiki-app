@@ -129,11 +129,11 @@ export function ProviderConnect({
               >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <span className="text-sm text-foreground">{connection.label}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">
+                  <span className="font-mono text-[13px] text-muted-foreground">
                     {connection.maskedKey}
                   </span>
                   {connection.isDefault && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[13px] font-medium text-primary-foreground">
                       <Check className="size-3" aria-hidden="true" />
                       {tp.defaultBadge}
                     </span>
@@ -144,7 +144,7 @@ export function ProviderConnect({
                       <button
                         type="button"
                         onClick={() => setDefault(connection.provider)}
-                        className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+                        className="rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
                       >
                         {tp.makeDefault}
                       </button>
@@ -152,7 +152,7 @@ export function ProviderConnect({
                     <button
                       type="button"
                       onClick={() => disconnect(connection.provider, connection.label)}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
                     >
                       <Trash2 className="size-3.5" aria-hidden="true" />
                       {tp.disconnect}
@@ -177,7 +177,7 @@ export function ProviderConnect({
           className={cn('space-y-3', connections.length > 0 && 'border-t border-border pt-4')}
         >
           <fieldset>
-            <legend className="text-[11px] text-muted-foreground">
+            <legend className="text-[13px] text-muted-foreground">
               {connections.length > 0 ? tp.legendAnother : tp.legendFirst}
             </legend>
 
@@ -211,12 +211,12 @@ export function ProviderConnect({
                       <span className="flex flex-wrap items-center gap-1.5 text-sm text-foreground">
                         {option.label}
                         {connected && (
-                          <span className="text-[11px] font-medium text-seal">
+                          <span className="text-[13px] font-medium text-seal">
                             {tp.connectedTag}
                           </span>
                         )}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                      <span className="mt-0.5 block text-sm leading-relaxed text-muted-foreground">
                         {tp.blurbs[id]}
                       </span>
                     </span>
@@ -229,7 +229,7 @@ export function ProviderConnect({
           <div>
             <label
               htmlFor="provider-api-key"
-              className="flex flex-wrap items-baseline gap-2 text-xs font-medium text-muted-foreground"
+              className="flex flex-wrap items-baseline gap-2 text-sm font-medium text-muted-foreground"
             >
               {tp.apiKeyLabel}
               {meta.keyPrefix && (
@@ -252,7 +252,7 @@ export function ProviderConnect({
               placeholder={`${meta.keyPrefix}…`}
               className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/25"
             />
-            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
               {tp.storedNote}
               <a
                 href={meta.keyDocsUrl}
@@ -267,7 +267,7 @@ export function ProviderConnect({
           </div>
 
           {alreadyConnected && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {format(tp.alreadyConnected, { label: meta.label })}
             </p>
           )}
@@ -286,7 +286,7 @@ export function ProviderConnect({
           <button
             type="submit"
             disabled={busy || apiKey.trim().length === 0}
-            className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <KeyRound className="size-3.5" aria-hidden="true" />
             {busy ? tp.saving : alreadyConnected ? tp.replaceKey : tp.connect}

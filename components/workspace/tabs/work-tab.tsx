@@ -6,6 +6,7 @@ import { getObjectiveKeyResults } from '@/app/actions/workspace'
 import type { ChatFocus } from '@/components/workspace/chat-module'
 import { useLocale } from '@/components/i18n/locale-provider'
 import { KeyResultsTable } from '@/components/workspace/key-results-table'
+import { OkrOutline } from '@/components/workspace/okr-outline'
 import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
 import {
   Card,
@@ -23,13 +24,6 @@ interface WorkTabProps {
   selectedId: string | null
   onSelect: (objectiveId: string | null) => void
   onTalkToSubAgent: (focus: ChatFocus) => void
-}
-
-const DOT_TONE: Record<string, string> = {
-  progress: 'bg-status-progress',
-  review: 'bg-status-review',
-  approved: 'bg-status-approved',
-  idle: 'bg-status-idle',
 }
 
 /**
@@ -89,43 +83,14 @@ export function WorkTab({
     <div className="mx-auto w-full max-w-6xl space-y-4 px-6 py-6">
       <TabHeader title={t.nav.work} subtitle={labels.subtitle} />
 
-      <div className="grid gap-4 lg:grid-cols-[18rem_1fr]">
-        <Card className="self-start p-2">
-          <ul className="space-y-0.5">
-            {flat.map((node) => {
-              const active = selected?.id === node.id
-              return (
-                <li key={node.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(node.id)}
-                    aria-current={active ? 'true' : undefined}
-                    style={{ paddingLeft: `${node.depth * 14 + 8}px` }}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md py-1.5 pr-2 text-sm transition-colors',
-                      active
-                        ? 'bg-muted font-medium text-foreground'
-                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'size-1.5 shrink-0 rounded-full',
-                        DOT_TONE[toneForStatus(node.status)],
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span className="line-clamp-2 min-w-0 flex-1 text-left">
-                      {node.title}
-                    </span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                      {node.progress}%
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+      <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
+        <Card className="self-start p-2 lg:sticky lg:top-4">
+          <OkrOutline
+            nodes={tree ?? []}
+            selectedId={selected?.id ?? null}
+            onSelect={onSelect}
+            label={t.nav.work}
+          />
         </Card>
 
         {selected && (
@@ -140,17 +105,17 @@ export function WorkTab({
                   {selected.status.replace(/_/g, ' ')}
                 </StatusPill>
                 {selected.timeframe && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {selected.timeframe}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {labels.owner}: {ownerName}
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <ProgressBar value={selected.progress} className="max-w-sm" />
-                <span className="text-xs tabular-nums text-muted-foreground">
+                <span className="text-sm tabular-nums text-muted-foreground">
                   {selected.progress}%
                 </span>
               </div>

@@ -72,18 +72,18 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="text-base font-medium text-balance text-foreground">{gate.title}</h4>
 
-            <span className="rounded-full bg-seal-soft px-2.5 py-0.5 text-xs font-medium text-seal">
+            <span className="rounded-full bg-seal-soft px-2.5 py-0.5 text-sm font-medium text-seal">
               {gate.layer} · {layerLabel(gate.layer)}
             </span>
 
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-sm text-muted-foreground">
               {gate.changeType.replace('_', ' ')}
             </span>
 
             {decided ? (
               <span
                 className={cn(
-                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  'rounded-full px-2.5 py-0.5 text-sm font-medium',
                   gate.decision === 'approved'
                     ? 'bg-seal-soft text-seal'
                     : 'bg-muted text-muted-foreground',
@@ -92,7 +92,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
                 {gate.decision}
               </span>
             ) : (
-              <span className="rounded-full bg-sumi px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
+              <span className="rounded-full bg-sumi px-2.5 py-0.5 text-sm font-medium text-primary-foreground">
                 awaiting you
               </span>
             )}
@@ -100,16 +100,16 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{gate.summary}</p>
 
-          <dl className="mt-4 space-y-2 text-xs">
+          <dl className="mt-4 space-y-2 text-sm">
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                 requested by
               </dt>
               <dd className="min-w-0 flex-1 text-sm text-foreground">{gate.requestedByTitle}</dd>
             </div>
 
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                 corroboration
               </dt>
               <dd className="min-w-0 flex-1 text-sm text-foreground">
@@ -124,7 +124,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
             {gate.recommendation && (
               <div className="flex gap-2">
-                <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                   recommendation
                 </dt>
                 <dd className="min-w-0 flex-1 text-sm text-foreground">{gate.recommendation}</dd>
@@ -133,7 +133,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
             {gate.approveRole && (
               <div className="flex gap-2">
-                <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                   approve role
                 </dt>
                 <dd className="min-w-0 flex-1 text-sm text-foreground">{gate.approveRole}</dd>
@@ -142,7 +142,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
             {consult.length > 0 && (
               <div className="flex gap-2">
-                <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                   consult
                 </dt>
                 <dd className="min-w-0 flex-1 text-sm text-foreground">{consult.join(' · ')}</dd>
@@ -151,7 +151,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
             {proposedEntries.length > 0 && (
               <div className="flex gap-2">
-                <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <dt className="w-28 shrink-0 font-mono text-[13px] uppercase tracking-wide text-muted-foreground">
                   would change
                 </dt>
                 <dd className="min-w-0 flex-1 text-sm text-foreground">
@@ -167,7 +167,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
           </dl>
 
           {overdue && (
-            <p className="mt-2.5 text-xs font-medium text-seal">
+            <p className="mt-2.5 text-sm font-medium text-seal">
               SLA breached — surfaced, never auto-applied
             </p>
           )}
@@ -183,7 +183,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
                 <div className="mt-3">
                   <label
                     htmlFor={`gate-note-${gate.id}`}
-                    className="text-xs font-medium text-muted-foreground"
+                    className="text-sm font-medium text-muted-foreground"
                   >
                     Decision note (optional)
                   </label>
@@ -203,7 +203,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
                   type="button"
                   onClick={() => decide('approved')}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-seal px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {busy ? 'Recording…' : 'Approve change'}
                 </button>
@@ -212,7 +212,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
                   type="button"
                   onClick={() => decide('denied')}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
                 >
                   Deny
                 </button>
@@ -220,7 +220,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
                 <button
                   type="button"
                   onClick={() => setShowNote((v) => !v)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {showNote ? 'Hide note' : 'Add note'}
                 </button>
@@ -230,7 +230,7 @@ export function GateCard({ gate, onDecided }: GateCardProps) {
 
           {decided && gate.decisionNote && (
             <p className="mt-4 border-t border-border pt-3 text-sm leading-relaxed text-muted-foreground">
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 your note:{' '}
               </span>
               {gate.decisionNote}

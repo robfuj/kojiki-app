@@ -36,7 +36,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-medium whitespace-nowrap',
         TONE_CLASS[tone],
         className,
       )}
@@ -138,7 +138,7 @@ export function Eyebrow({
   return (
     <p
       className={cn(
-        'text-[11px] font-semibold text-muted-foreground',
+        'text-[13px] font-semibold text-muted-foreground',
         className,
       )}
     >
@@ -185,7 +185,7 @@ export function AvatarCircle({
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-7 shrink-0 items-center justify-center rounded-full bg-sumi-soft text-[11px] font-semibold text-sumi',
+        'flex size-7 shrink-0 items-center justify-center rounded-full bg-sumi-soft text-[13px] font-semibold text-sumi',
         className,
       )}
     >

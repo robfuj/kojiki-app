@@ -100,7 +100,7 @@ export function Sidebar({
       >
         <div>
           {!collapsed && (
-            <p className="px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
+            <p className="px-2.5 pb-1.5 text-[13px] font-semibold text-muted-foreground">
               {t.nav.operations}
             </p>
           )}
@@ -119,7 +119,7 @@ export function Sidebar({
 
         <div>
           {!collapsed && (
-            <p className="px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
+            <p className="px-2.5 pb-1.5 text-[13px] font-semibold text-muted-foreground">
               {t.nav.knowledge}
             </p>
           )}
@@ -190,7 +190,7 @@ function NavItem({
         {!collapsed && count > 0 && (
           <span
             className={cn(
-              'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+              'shrink-0 rounded-full px-1.5 py-0.5 text-[13px] font-semibold tabular-nums',
               'bg-status-review-soft text-status-review',
             )}
           >

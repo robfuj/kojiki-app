@@ -87,7 +87,7 @@ export function IntegrationsCatalog({ freeFirst }: { freeFirst: boolean }) {
         </FilterButton>
         <FilterButton active={filter === 'connected'} onClick={() => setFilter('connected')}>
           {ti.filterConnected}
-          <span className="ml-auto font-mono text-[11px] text-muted-foreground">
+          <span className="ml-auto font-mono text-[13px] text-muted-foreground">
             {connectedCount}
           </span>
         </FilterButton>
@@ -128,7 +128,7 @@ export function IntegrationsCatalog({ freeFirst }: { freeFirst: boolean }) {
 
           {groups.map((group) => (
             <section key={group.key} aria-label={group.label}>
-              <h4 className="text-xs font-semibold text-muted-foreground">
+              <h4 className="text-sm font-semibold text-muted-foreground">
                 {group.label}
               </h4>
 
@@ -224,13 +224,13 @@ function IntegrationCard({
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-foreground">
             {item.name}
             {connected && def.kind !== 'seam' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-seal-soft px-2 py-0.5 text-[11px] font-medium text-seal">
+              <span className="inline-flex items-center gap-1 rounded-full bg-seal-soft px-2 py-0.5 text-[13px] font-medium text-seal">
                 <Check className="size-3" aria-hidden="true" />
                 {ti.connected}
               </span>
             )}
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.blurb}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.blurb}</p>
         </div>
 
         {def.kind === 'provider' && (
@@ -239,7 +239,7 @@ function IntegrationCard({
             onClick={onExpand}
             aria-expanded={expanded}
             className={cn(
-              'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+              'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
               connected
                 ? 'border border-border bg-background text-muted-foreground hover:border-sumi hover:text-foreground'
                 : 'bg-sumi text-primary-foreground hover:opacity-90',
@@ -250,20 +250,20 @@ function IntegrationCard({
         )}
 
         {def.kind === 'builtin' && (
-          <span className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
+          <span className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground">
             {ti.categories['built-in']}
           </span>
         )}
 
         {def.kind === 'seam' && (
-          <span className="shrink-0 rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground">
+          <span className="shrink-0 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground">
             {ti.seamNote}
           </span>
         )}
       </div>
 
       {def.kind === 'builtin' && (
-        <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-3 border-t border-border pt-3 text-sm leading-relaxed text-muted-foreground">
           {ti.builtInNote}
         </p>
       )}
@@ -325,9 +325,9 @@ function ConnectedDetails({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="font-mono text-[11px] text-muted-foreground">{connection.maskedKey}</span>
+        <span className="font-mono text-[13px] text-muted-foreground">{connection.maskedKey}</span>
         {connection.isDefault && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-seal px-2.5 py-0.5 text-[13px] font-medium text-primary-foreground">
             <Check className="size-3" aria-hidden="true" />
             {ti.defaultBadge}
           </span>
@@ -339,7 +339,7 @@ function ConnectedDetails({
               type="button"
               disabled={busy}
               onClick={() => run(() => makeProviderDefault(providerId), ti.defaultError)}
-              className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground disabled:opacity-40"
+              className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground disabled:opacity-40"
             >
               {ti.makeDefault}
             </button>
@@ -354,7 +354,7 @@ function ConnectedDetails({
                 format(ti.disconnectedNotice, { label: connection.label }),
               )
             }
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive disabled:opacity-40"
+            className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive disabled:opacity-40"
           >
             {ti.disconnect}
           </button>
@@ -362,7 +362,7 @@ function ConnectedDetails({
       </div>
 
       {connection.lastError && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           {connection.lastError}
         </p>
       )}
@@ -372,12 +372,12 @@ function ConnectedDetails({
       <ConnectForm providerId={providerId} makeDefault={false} onConnected={onMutate} replace />
 
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-xs text-seal">
+        <p role="status" className="text-sm text-seal">
           {notice}
         </p>
       )}
@@ -430,7 +430,7 @@ function ConnectForm({
     <form onSubmit={submit} className="space-y-2.5">
       <label
         htmlFor={`key-${providerId}`}
-        className="flex flex-wrap items-baseline gap-2 text-xs font-medium text-muted-foreground"
+        className="flex flex-wrap items-baseline gap-2 text-sm font-medium text-muted-foreground"
       >
         {ti.apiKeyLabel}
         {meta.keyPrefix && (
@@ -453,7 +453,7 @@ function ConnectForm({
         placeholder={`${meta.keyPrefix}…`}
         className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/25"
       />
-      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
         {ti.storedNote}
         <a
           href={meta.keyDocsUrl}
@@ -467,12 +467,12 @@ function ConnectForm({
       </p>
 
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-xs text-seal">
+        <p role="status" className="text-sm text-seal">
           {notice}
         </p>
       )}
@@ -480,7 +480,7 @@ function ConnectForm({
       <button
         type="submit"
         disabled={busy || apiKey.trim().length === 0}
-        className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 rounded-full bg-sumi px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {busy ? (
           <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />

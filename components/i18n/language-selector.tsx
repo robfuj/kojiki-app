@@ -61,7 +61,7 @@ export function LanguageSelector({ className }: { className?: string }) {
             aria-pressed={active}
             title={LOCALE_META[option].label}
             className={cn(
-              'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+              'rounded-full px-2.5 py-1 text-sm font-medium transition-colors',
               active
                 ? 'bg-sumi text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground',

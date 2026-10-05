@@ -41,14 +41,14 @@ export function MyceliumFeed({ signals }: MyceliumFeedProps) {
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                'rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
+                'rounded-full border px-2.5 py-0.5 text-[13px] font-medium',
                 KIND_TONE[signal.signalKind] ?? KIND_TONE.answer,
               )}
             >
               {SIGNAL_KIND_LABELS[signal.signalKind] ?? signal.signalKind}
             </span>
 
-            <p className="font-mono text-[11px] text-muted-foreground">
+            <p className="font-mono text-[13px] text-muted-foreground">
               <span className="text-foreground">{signal.fromTitle}</span>
               <span aria-hidden="true"> → </span>
               <span className="text-foreground">{signal.toTitle}</span>
@@ -56,7 +56,7 @@ export function MyceliumFeed({ signals }: MyceliumFeedProps) {
 
             <time
               dateTime={signal.firedAt.toISOString()}
-              className="ml-auto font-mono text-[11px] text-muted-foreground"
+              className="ml-auto font-mono text-[13px] text-muted-foreground"
             >
               {formatTimestamp(signal.firedAt)}
             </time>
@@ -66,7 +66,7 @@ export function MyceliumFeed({ signals }: MyceliumFeedProps) {
             {signal.body}
           </p>
 
-          <p className="mt-2.5 font-mono text-[11px] text-muted-foreground">
+          <p className="mt-2.5 font-mono text-[13px] text-muted-foreground">
             status {signal.status}
             {signal.sentinelEntryId ? ' · sealed in SENTINEL' : ''}
           </p>

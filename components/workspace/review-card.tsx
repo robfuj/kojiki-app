@@ -99,7 +99,7 @@ export function ReviewCard({
             {labels.latestReview}
           </h2>
           {review && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-sm text-muted-foreground">
               {relative(review.createdAt)}
             </p>
           )}
@@ -108,7 +108,7 @@ export function ReviewCard({
           type="button"
           onClick={run}
           disabled={running}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <Play className="size-3.5" aria-hidden="true" />
           {running ? labels.reviewing : labels.runReview}
@@ -122,7 +122,7 @@ export function ReviewCard({
       ) : (
         <>
           <section aria-label={labels.findings} className="mt-4">
-            <h3 className="text-[11px] font-semibold text-muted-foreground">
+            <h3 className="text-[13px] font-semibold text-muted-foreground">
               {labels.findings}
             </h3>
             <ul className="mt-2 space-y-2.5">
@@ -139,7 +139,7 @@ export function ReviewCard({
                       {finding.summary}
                     </p>
                   </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-pretty text-muted-foreground">
+                  <p className="mt-1.5 text-sm leading-relaxed text-pretty text-muted-foreground">
                     {finding.detail}
                   </p>
                 </li>
@@ -148,7 +148,7 @@ export function ReviewCard({
           </section>
 
           <section aria-label={labels.recommended} className="mt-5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground">
+            <h3 className="text-[13px] font-semibold text-muted-foreground">
               {labels.recommended}
             </h3>
             <ul className="mt-2 space-y-1.5">
@@ -212,7 +212,7 @@ export function ReviewCard({
               <div className="mt-3 rounded-md border border-border bg-background p-3">
                 <label
                   htmlFor="review-decision-title"
-                  className="text-[11px] font-semibold text-muted-foreground"
+                  className="text-[13px] font-semibold text-muted-foreground"
                 >
                   {labels.decisionTitle}
                 </label>
@@ -226,14 +226,14 @@ export function ReviewCard({
                   <button
                     type="button"
                     onClick={saveDecision}
-                    className="rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    className="rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
                   >
                     {labels.save}
                   </button>
                   <button
                     type="button"
                     onClick={() => setDrafting(null)}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {labels.cancel}
                   </button>

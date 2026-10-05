@@ -44,7 +44,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-5">
       {isSignUp ? (
         <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-sm font-medium text-muted-foreground">
             {t.auth.nameLabel}
           </span>
           <input
@@ -59,7 +59,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       ) : null}
 
       <label className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground">
           {t.auth.emailLabel}
         </span>
         <input
@@ -74,7 +74,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground">
           {t.auth.passwordLabel}
         </span>
         <input

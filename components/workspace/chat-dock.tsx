@@ -49,7 +49,7 @@ export function ChatDock({
           onClick={onPopOut}
           aria-label={t.tabs.orchestrator.popOut}
           title={t.tabs.orchestrator.popOut}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <ArrowUpRight className="size-3.5" aria-hidden="true" />
         </button>

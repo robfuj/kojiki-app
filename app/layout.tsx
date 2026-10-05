@@ -73,7 +73,16 @@ export default async function RootLayout({
     <html
       lang={LOCALE_META[locale].htmlLang}
       className={`bg-background ${geistSans.variable} ${geistMono.variable} ${mincho.variable}`}
+      // The saved text size is applied by the inline script before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=localStorage.getItem('kojiki-text-size');if(s==='large'||s==='xl')document.documentElement.dataset.textSize=s}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="antialiased">
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
       </body>

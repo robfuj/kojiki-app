@@ -117,7 +117,7 @@ export function OverviewTab({
         <button
           type="button"
           onClick={onOpenWork}
-          className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           {labels.viewDetails}
         </button>
@@ -154,7 +154,7 @@ export function OverviewTab({
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="flex flex-col justify-between p-6 lg:col-span-2">
           <div>
-            <p className="text-xs font-semibold text-seal">
+            <p className="text-sm font-semibold text-seal">
               {labels.companyObjective}
             </p>
             <p className="mt-2 max-w-xl text-2xl leading-tight font-semibold tracking-tight text-balance text-foreground">
@@ -166,7 +166,7 @@ export function OverviewTab({
               value={home.root?.progress ?? 0}
               className="h-1.5 flex-1"
             />
-            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
               {format(labels.overallProgress, {
                 percent: String(home.root?.progress ?? report.averageProgress),
               })}
@@ -179,7 +179,7 @@ export function OverviewTab({
                 .map(([status, count]) => (
                   <span
                     key={status}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+                    className="rounded-full bg-muted px-2 py-0.5 text-[13px] font-medium tabular-nums text-muted-foreground"
                   >
                     {status.replace(/_/g, ' ')} · {count}
                   </span>
@@ -192,7 +192,7 @@ export function OverviewTab({
           <div className="flex items-center justify-between px-5 py-4">
             <p className="text-sm font-medium text-foreground">{labels.gateQueue}</p>
             {pendingGates.length > 0 && (
-              <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-status-review">
+              <span className="rounded-full bg-status-review-soft px-2 py-0.5 text-[13px] font-semibold tabular-nums text-status-review">
                 {pendingGates.length}
               </span>
             )}
@@ -212,14 +212,14 @@ export function OverviewTab({
                     <p className="truncate text-sm font-medium text-foreground">
                       {gate.title}
                     </p>
-                    <p className="truncate text-[11px] text-muted-foreground">
+                    <p className="truncate text-[13px] text-muted-foreground">
                       {gate.requestedByTitle} · {relative(gate.createdAt)}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={onOpenDecisions}
-                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
+                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:border-seal/40 hover:text-foreground"
                   >
                     {labels.viewDetails}
                   </button>
@@ -232,7 +232,7 @@ export function OverviewTab({
         <Card className={cn('p-0', bubbles.length > 0 || stages.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3')}>
           <div className="flex items-center justify-between px-5 py-4">
             <p className="text-sm font-medium text-foreground">{labels.liveWork}</p>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
+            <span className="text-[13px] tabular-nums text-muted-foreground">
               {objectives.length}
             </span>
           </div>
@@ -263,16 +263,16 @@ export function OverviewTab({
                     </StatusPill>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3 pl-5">
-                    <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+                    <p className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">
                       {objective.ownerName ?? '—'}
                     </p>
                     <div className="w-24 shrink-0">
                       <ProgressBar value={objective.progress} />
                     </div>
-                    <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                    <span className="w-9 shrink-0 text-right text-[13px] tabular-nums text-muted-foreground">
                       {objective.progress}%
                     </span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                    <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">
                       {format(labels.tasksDone, {
                         done: String(objective.doneTaskCount),
                         total: String(objective.taskCount),
@@ -321,7 +321,7 @@ export function OverviewTab({
                   <span
                     key={bubble.botId}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-medium',
                       BUBBLE_TONES[index % BUBBLE_TONES.length],
                     )}
                   >
@@ -341,7 +341,7 @@ export function OverviewTab({
                   key={status}
                   className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
                 >
-                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                  <span className="text-[13px] tabular-nums text-muted-foreground">
                     {count}
                   </span>
                   <div
@@ -351,7 +351,7 @@ export function OverviewTab({
                     )}
                     style={{ height: `${Math.max(8, (count / maxStage) * 100)}%` }}
                   />
-                  <span className="w-full truncate text-center text-[10px] text-muted-foreground">
+                  <span className="w-full truncate text-center text-[13px] text-muted-foreground">
                     {status.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -379,7 +379,7 @@ function StatCell({
 }) {
   return (
     <div className="min-w-0 px-5 py-4">
-      <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(
           'mt-1 truncate text-2xl font-semibold tracking-tight tabular-nums',
@@ -388,7 +388,7 @@ function StatCell({
       >
         {value}
       </p>
-      <p className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</p>
+      <p className="mt-0.5 truncate text-sm text-muted-foreground">{sub}</p>
     </div>
   )
 }

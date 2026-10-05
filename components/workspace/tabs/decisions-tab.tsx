@@ -123,7 +123,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                   <p className="truncate text-sm font-medium text-foreground">
                     {gate.title}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {gate.requestedByTitle} · {relative(gate.createdAt)}
                   </p>
                 </div>
@@ -131,7 +131,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                   type="button"
                   disabled={deciding === gate.id}
                   onClick={() => decide(gate.id, 'approved')}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-status-approved px-3 py-1.5 text-xs font-medium text-status-approved-soft transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-status-approved px-3 py-1.5 text-sm font-medium text-status-approved-soft transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   <Check className="size-3.5" aria-hidden="true" />
                   {labels.approved}
@@ -140,7 +140,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                   type="button"
                   disabled={deciding === gate.id}
                   onClick={() => decide(gate.id, 'denied')}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                 >
                   <X className="size-3.5" aria-hidden="true" />
                   {labels.archived}
@@ -162,7 +162,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                   onClick={() => setFilter(item.key)}
                   aria-pressed={filter === item.key}
                   className={cn(
-                    'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                     filter === item.key
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -185,7 +185,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={labels.search}
-                className="h-8 w-40 rounded-full border border-border bg-background pr-3 pl-8 text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
+                className="h-8 w-40 rounded-full border border-border bg-background pr-3 pl-8 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-seal/50"
               />
             </div>
           </div>
@@ -209,19 +209,19 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                         : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">
+                    <span className="w-16 shrink-0 font-mono text-[13px] text-muted-foreground">
                       {decision.id.slice(0, 6)}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {decision.title}
                     </span>
-                    <span className="hidden w-24 shrink-0 truncate text-xs text-muted-foreground sm:block">
+                    <span className="hidden w-24 shrink-0 truncate text-sm text-muted-foreground sm:block">
                       {botName(decision.botId)}
                     </span>
                     <StatusPill tone={toneForStatus(decision.status)}>
                       {statusLabel(decision.status, labels)}
                     </StatusPill>
-                    <span className="w-14 shrink-0 text-right text-[11px] text-muted-foreground">
+                    <span className="w-14 shrink-0 text-right text-[13px] text-muted-foreground">
                       {relative(decision.createdAt)}
                     </span>
                   </button>
@@ -235,7 +235,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
           {selected ? (
             <>
               <div className="flex items-start justify-between gap-3">
-                <p className="font-mono text-[11px] text-muted-foreground">
+                <p className="font-mono text-[13px] text-muted-foreground">
                   {selected.id.slice(0, 8)}
                 </p>
                 <StatusPill tone={toneForStatus(selected.status)}>
@@ -245,7 +245,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
               <h2 className="mt-2 text-base font-semibold text-balance text-foreground">
                 {selected.title}
               </h2>
-              <dl className="mt-4 space-y-2.5 text-xs">
+              <dl className="mt-4 space-y-2.5 text-sm">
                 <DetailRow label={labels.department} value={botName(selected.botId)} />
                 <DetailRow label={labels.stage} value={selected.stage} />
                 <DetailRow
@@ -257,7 +257,7 @@ export function DecisionsTab({ projectId, query }: DecisionsTabProps) {
                 <DetailRow label={labels.updated} value={relative(selected.createdAt)} />
               </dl>
               <div className="mt-4 border-t border-border pt-3">
-                <h3 className="text-[11px] font-semibold text-muted-foreground">
+                <h3 className="text-[13px] font-semibold text-muted-foreground">
                   {labels.summary}
                 </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-pretty text-foreground">

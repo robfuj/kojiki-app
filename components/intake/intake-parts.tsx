@@ -63,7 +63,7 @@ export function BriefBody({
       <div className="space-y-7">
         {sections.map((section) => (
           <section key={section.heading}>
-            <h2 className="text-[11px] text-seal">
+            <h2 className="text-[13px] text-seal">
               {section.heading}
             </h2>
             <p className="mt-2.5 text-pretty text-base leading-relaxed text-foreground/85">
@@ -74,7 +74,7 @@ export function BriefBody({
 
         {result.brief.keyRisks.length > 0 && (
           <section>
-            <h2 className="text-[11px] text-seal">
+            <h2 className="text-[13px] text-seal">
               {tp.briefRisks}
             </h2>
             <ul className="mt-3 space-y-2">
@@ -96,7 +96,7 @@ export function BriefBody({
       </div>
 
       <section className="rounded-2xl bg-muted px-5 py-5">
-        <h2 className="text-[11px] text-seal">
+        <h2 className="text-[13px] text-seal">
           {tp.briefSpecialists}
         </h2>
         <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
@@ -122,7 +122,7 @@ export function BriefBody({
 
       {result.brief.sources.length > 0 && (
         <section>
-          <h2 className="text-[11px] text-muted-foreground">
+          <h2 className="text-[13px] text-muted-foreground">
             {tp.briefSources}
           </h2>
           <ul className="mt-3 space-y-1.5">

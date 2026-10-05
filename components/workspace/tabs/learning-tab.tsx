@@ -79,7 +79,7 @@ export function LearningTab({ projectId }: LearningTabProps) {
             onClick={() => setSection(item.key)}
             aria-pressed={section === item.key}
             className={cn(
-              'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+              'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
               section === item.key
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -129,10 +129,10 @@ export function LearningTab({ projectId }: LearningTabProps) {
                     <p className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {pattern.errorClass}
                     </p>
-                    <p className="shrink-0 truncate text-xs text-muted-foreground">
+                    <p className="shrink-0 truncate text-sm text-muted-foreground">
                       {Array.from(pattern.agents).join(', ')}
                     </p>
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-foreground">
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[13px] font-medium tabular-nums text-foreground">
                       {pattern.count}
                     </span>
                   </li>
@@ -154,14 +154,14 @@ export function LearningTab({ projectId }: LearningTabProps) {
                       <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                         {learning.hypothesis}
                       </p>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                      <span className="shrink-0 text-[13px] text-muted-foreground">
                         {dateOf(learning.recordedAt)}
                       </span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {learning.observed}
                     </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 text-[13px] text-muted-foreground">
                       {learning.agentTitle} · {learning.errorClass}
                     </p>
                   </li>
@@ -216,12 +216,12 @@ function InsightRow({
         <p className="text-sm font-medium text-balance text-foreground">
           {learning.insight ?? learning.observed}
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{sub}</p>
       </div>
-      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[13px] font-medium text-muted-foreground">
         {learning.agentTitle}
       </span>
-      <span className="w-20 shrink-0 text-right text-[11px] text-muted-foreground">
+      <span className="w-20 shrink-0 text-right text-[13px] text-muted-foreground">
         {date}
       </span>
     </li>

@@ -131,13 +131,13 @@ export function ResearchPanel({
           <h2 id="research-title" className="text-xl font-semibold text-foreground">
             {tr.title}
           </h2>
-          <p className="hidden text-xs text-muted-foreground sm:block">{tr.summary}</p>
+          <p className="hidden text-sm text-muted-foreground sm:block">{tr.summary}</p>
 
           <button
             type="button"
             onClick={onClose}
             aria-label={tr.closeAria}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-sumi hover:text-foreground"
           >
             <X className="size-3.5" aria-hidden="true" />
             {t.common.close}
@@ -247,7 +247,7 @@ function MethodBadge({ method }: { method: 'web-search' | 'model-reasoning' }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium',
         web ? 'bg-seal-soft text-seal' : 'bg-muted text-muted-foreground',
       )}
     >
@@ -263,7 +263,7 @@ function MethodBadge({ method }: { method: 'web-search' | 'model-reasoning' }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-[11px] text-seal">
+    <h4 className="text-[13px] text-seal">
       {children}
     </h4>
   )
@@ -272,7 +272,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <dt className="text-[11px] text-muted-foreground">
+      <dt className="text-[13px] text-muted-foreground">
         {label}
       </dt>
       <dd className="mt-1.5 text-sm leading-relaxed text-foreground">{value}</dd>
