@@ -69,7 +69,13 @@ export function WorkspaceShell({
   const [selectedId, setSelectedId] = useState<string | null>(
     projects[0]?.id ?? null,
   )
-  const [tab, setTab] = useState<TabKey>(initialTab)
+  // Start from the server's value and adopt ?tab= after mount; reading the URL
+  // during render made server and client disagree and broke hydration.
+  const [tab, setTab] = useState<TabKey>('overview')
+  useEffect(() => {
+    const fromUrl = initialTab()
+    if (fromUrl !== 'overview') setTab(fromUrl)
+  }, [])
   const [returnTab, setReturnTab] = useState<TabKey>('overview')
   const [query, setQuery] = useState('')
   const [chatFocus, setChatFocus] = useState<ChatFocus | null>({
