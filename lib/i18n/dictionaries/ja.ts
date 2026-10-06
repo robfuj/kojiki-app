@@ -122,6 +122,13 @@ export const ja: Dictionary = {
       emptyDepartments:
         '部門エージェントはまだいません。インテーク時にオーケストレーターが部門を編成します。',
       liveWork: '進行中の仕事',
+      agentsTitle: 'エージェント',
+      agentsHint: 'オーケストレーターが依頼を適切なエージェントに振り分けます。エージェントをタップすると話しかけられます。',
+      agentsWorkingCount: '{total}人中{working}人が作業中',
+      orchestrator: 'オーケストレーター',
+      agentWorking: '作業中',
+      agentWaiting: 'あなたの確認待ち',
+      agentIdle: '待機中',
       stageLoad: 'ステージ別負荷',
       departmentLoad: '部門別負荷',
       gateQueue: 'ゲートキュー',
@@ -374,7 +381,7 @@ export const ja: Dictionary = {
       placeholder: '例：物流・フォワーディング',
     },
     jurisdiction: {
-      eyebrow: 'コンテキスト',
+      eyebrow: 'コンテキ��ト',
       prompt: 'どの管轄区域の規制を受けますか？',
       why: '法務と財務は助言の前にこれを読みます。ある管轄で妥当な提案が別の管轄では違法になり得るため、明示することでエージェントが誤った前提で推論するのを防ぎます。',
       label: '管轄区域',
@@ -506,7 +513,7 @@ export const ja: Dictionary = {
     openButton: 'リサーチ',
     companySection: '会社オリエンテーション',
     companyNote:
-      'オリエンテーション時に取得したより広いリサーチ。すべてのプロジェクトのすべてのエージェントが、プロジェクトブリーフと共にこれを受け取ります。',
+      'オリエンテーション時に取得したより広いリサーチ。すべてのプロジェクトのすべてのエージェントが、プロジェクトブリーフと共に��れを受け取ります。',
     goalLabel: 'リサーチした目標',
     industryLabel: '業界',
     market: '市場',
