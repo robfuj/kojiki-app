@@ -121,6 +121,13 @@ export const en = {
       emptyDepartments:
         'No department agents yet. The orchestrator staffs the project during intake.',
       liveWork: 'Live work',
+      agentsTitle: 'Your agents',
+      agentsHint: 'The orchestrator routes each request to the right agent. Tap an agent to talk to it.',
+      agentsWorkingCount: '{working} of {total} working',
+      orchestrator: 'Orchestrator',
+      agentWorking: 'Working',
+      agentWaiting: 'Waiting on you',
+      agentIdle: 'Idle',
       stageLoad: 'Stage load',
       departmentLoad: 'Department load',
       gateQueue: 'Gate queue',
