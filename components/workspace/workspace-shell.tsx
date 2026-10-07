@@ -246,6 +246,8 @@ export function WorkspaceShell({
         <div className="flex min-h-0 flex-1">
           <Sidebar
             projectName={activeProject?.name ?? null}
+            projectId={activeProject?.id ?? null}
+            onSelectAgent={(botId) => openConversation({ kind: 'bot', botId })}
             tab={tab}
             onTab={goTo}
             collapsed={sidebarCollapsed}
