@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale } from '@/components/i18n/locale-provider'
+import { SidebarAgents } from '@/components/workspace/agents/sidebar-agents'
 import { AvatarCircle } from '@/components/workspace/ui/primitives'
 import { cn } from '@/lib/utils'
 import {
@@ -33,6 +34,8 @@ interface SidebarCounts {
 
 interface SidebarProps {
   projectName: string | null
+  projectId: string | null
+  onSelectAgent: (botId: string) => void
   tab: TabKey
   onTab: (tab: TabKey) => void
   collapsed: boolean
@@ -47,6 +50,8 @@ interface SidebarProps {
  */
 export function Sidebar({
   projectName,
+  projectId,
+  onSelectAgent,
   tab,
   onTab,
   collapsed,
@@ -135,6 +140,14 @@ export function Sidebar({
             ))}
           </ul>
         </div>
+
+        {projectId && (
+          <SidebarAgents
+            projectId={projectId}
+            collapsed={collapsed}
+            onSelectAgent={onSelectAgent}
+          />
+        )}
       </nav>
 
       <div className={cn('space-y-0.5 border-t border-border p-2', collapsed && 'px-1.5')}>

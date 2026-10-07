@@ -21,11 +21,19 @@ Read this first when continuing. Reference: orbit-agent-workspace.vercel.app (Ho
 
 ## Progress
 - [x] Step 1: orbit on Overview (under the header). Clicking an agent currently calls `onChatWithBot(botId)`.
-- [ ] Step 2: sidebar agent list (`components/workspace/sidebar.tsx`): small face + name + status text, "N working" heading. Reuse `summariseAgent` + same SWR key.
+- [x] Step 2: sidebar agent list — `components/workspace/agents/sidebar-agents.tsx`, rendered at the bottom of the sidebar `<nav>` (props `projectId`, `onSelectAgent` passed from `workspace-shell.tsx`). Hides when the project has no agents. Click opens a chat with that bot (same as orbit; step 4 will change both).
 - [ ] Step 3: Owner column in Work table (`components/workspace/work/okr-cascade.tsx`): `<AgentFace size="sm">` + name; owner via `objective.ownerBotId` → department index for tint (tint index = roster position).
 - [ ] Step 4: clicking an agent filters the Work table to that agent (lift an `ownerFilter` state into `workspace-shell.tsx`, then switch tab to Work). Replaces the onChatWithBot click from step 1.
 - [ ] Step 5 (optional): remove the old department "bubbles" card on Overview, now duplicated by the orbit.
 - [ ] Optional: synapsis "thinking…" chip on a working agent (later moves to background).
+
+## Future: department mascots (not started)
+Reference sheet: `docs/brand/kojiki-mascots.png`. Eventually the drawn faces get replaced by Kojiki mascots — a white rounded spirit with a comma mark, accessory per department:
+- Orchestrator: red/coral ribbon horns + scarf (larger, at the centre)
+- Engineering: green leaves + small blocks · Strategy: purple ribbon/cape · Finance: gold leaves + coin
+- HR / People: pink blossoms · Product: blue swirl + ball · Marketing: lavender leaves
+Expression set on the sheet maps to statuses: working = laptop pose, waiting = raised/alert pose, idle = sleeping ("zz") pose.
+How to swap: `AgentFace` is the single place faces are drawn — replace its body with `<Image>` per department + status, keep the status dot and the written status text. Tint should then come from department name (palette above) instead of roster position in `AGENT_TINTS`. Needs one mascot asset per department × 3 poses.
 
 ## Testing
 - Test login: uitest-v0@example.com / uitest-pass-1234; seeded objectives live in project "APAC Freight Expansion".
