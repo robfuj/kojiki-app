@@ -1,6 +1,7 @@
 'use client'
 
 import type { OkrNode } from '@/app/actions/okr'
+import { AgentFace } from '@/components/workspace/agents/agent-face'
 import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
@@ -10,6 +11,7 @@ interface OkrCascadeProps {
   selectedId: string | null
   onSelect: (id: string) => void
   ownerName: (botId: string | null) => string
+  ownerTint: (botId: string | null) => string | null
   labels: { objective: string; owner: string; progress: string; timeframe: string }
   label: string
 }
@@ -37,7 +39,7 @@ export function pathTo(nodes: OkrNode[], id: string | null, trail: OkrNode[] = [
  * The whole OKR tree as one full-width table. The top two levels start open;
  * deeper levels fold. Follows the WAI-ARIA treegrid keyboard pattern.
  */
-export function OkrCascade({ nodes, selectedId, onSelect, ownerName, labels, label }: OkrCascadeProps) {
+export function OkrCascade({ nodes, selectedId, onSelect, ownerName, ownerTint, labels, label }: OkrCascadeProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const open = new Set<string>()
     for (const root of nodes) {
@@ -184,8 +186,11 @@ export function OkrCascade({ nodes, selectedId, onSelect, ownerName, labels, lab
                 {node.title}
               </button>
             </div>
-            <span role="gridcell" className="hidden truncate text-sm text-muted-foreground @4xl:block">
-              {ownerName(node.ownerBotId)}
+            <span role="gridcell" className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground @4xl:flex">
+              {ownerTint(node.ownerBotId) && (
+                <AgentFace status="idle" tint={ownerTint(node.ownerBotId)!} size="sm" />
+              )}
+              <span className="truncate">{ownerName(node.ownerBotId)}</span>
             </span>
             <span role="gridcell" className="flex items-center gap-2.5">
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">

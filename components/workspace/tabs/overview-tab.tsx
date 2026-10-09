@@ -7,7 +7,6 @@ import {
   listProjectGates,
 } from '@/app/actions/workspace'
 import { useLocale } from '@/components/i18n/locale-provider'
-import { AgentOrbit } from '@/components/workspace/agents/agent-orbit'
 import {
   AvatarCircle,
   Card,
@@ -123,8 +122,6 @@ export function OverviewTab({
           {labels.viewDetails}
         </button>
       </div>
-
-      <AgentOrbit departments={departments ?? []} onSelectAgent={onChatWithBot} />
 
       <Card className="grid grid-cols-2 divide-y divide-border overflow-hidden p-0 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
         <StatCell

@@ -64,8 +64,11 @@ async function gatewayModelIds(): Promise<string[]> {
     const response = await fetch(GATEWAY_MODELS_URL, { next: { revalidate: 3600 } })
     if (!response.ok) return cached?.ids ?? []
 
-    const payload = (await response.json()) as { data?: { id?: string }[] }
+    const payload = (await response.json()) as { data?: { id?: string; type?: string }[] }
+    // The catalog also lists embedding, image and "decision" models; calling one of
+    // those through generateText fails, so only language models are candidates.
     const ids = (payload.data ?? [])
+      .filter((model) => model.type === undefined || model.type === 'language')
       .map((model) => model.id)
       .filter((id): id is string => typeof id === 'string' && id.length > 0)
 
