@@ -24,7 +24,8 @@ Read this first when continuing. Reference: orbit-agent-workspace.vercel.app (Ho
 - [x] Step 2: sidebar agent list — `components/workspace/agents/sidebar-agents.tsx`, rendered at the bottom of the sidebar `<nav>` (props `projectId`, `onSelectAgent` passed from `workspace-shell.tsx`). Hides when the project has no agents. Click opens a chat with that bot (same as orbit; step 4 will change both).
 - [x] Step 3: Owner column in Work table (`components/workspace/work/okr-cascade.tsx`): `<AgentFace size="sm" status="idle">` + name. Tint comes from `ownerTint` in `work-tab.tsx` = `AGENT_TINTS[workspace.bots index]`. Caveat: assumes `workspace.bots` order matches the department roster order used by the orbit — verify once a project has agents. Status is fixed to `idle` (no per-bot status in that query); wire real status if wanted.
 - [ ] Step 4: clicking an agent filters the Work table to that agent (lift an `ownerFilter` state into `workspace-shell.tsx`, then switch tab to Work). Replaces the onChatWithBot click from step 1.
-- [ ] Step 5 (optional): remove the old department "bubbles" card on Overview, now duplicated by the orbit.
+- [x] Step 5a: replaced the Overview department bubbles with a mascot lineup (`overview-tab.tsx`): face + open-count badge + name + Working/Idle. Colors come from the mascot sheet palette (`DEPARTMENT_TINTS`, matched by department name, fallback `AGENT_TINTS`). Not visually verified — test projects have no departments.
+- [ ] Step 5b: mood poses (sleeping / laptop / overloaded / waiting-on-you) once mascot images exist (`docs/brand/kojiki-mascots.png`); use `summariseAgent` for real `waiting` status instead of open>0. Move `DEPARTMENT_TINTS` to `agent-status.ts` and reuse it for the Work table owner tints. Seed test departments to screenshot.
 - [ ] Optional: synapsis "thinking…" chip on a working agent (later moves to background).
 
 ## Future: department mascots (not started)
