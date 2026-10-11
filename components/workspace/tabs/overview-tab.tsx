@@ -16,7 +16,7 @@ import {
   useRelativeTime,
 } from '@/components/workspace/ui/primitives'
 import { AgentFace } from '@/components/workspace/agents/agent-face'
-import { AGENT_TINTS } from '@/components/workspace/agents/agent-status'
+import { departmentTint } from '@/components/workspace/agents/agent-status'
 import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Scale } from 'lucide-react'
@@ -36,23 +36,6 @@ const DOT_TONE: Record<string, string> = {
   review: 'bg-status-review',
   approved: 'bg-status-approved',
   idle: 'bg-status-idle',
-}
-
-const DEPARTMENT_TINTS: [RegExp, string][] = [
-  [/orchestr|head/i, 'bg-[#E0644E]'],
-  [/engineer/i, 'bg-[#6F9A7E]'],
-  [/strateg/i, 'bg-[#7467A8]'],
-  [/financ/i, 'bg-[#E3BE6A]'],
-  [/hr|people/i, 'bg-[#F09A9A]'],
-  [/product/i, 'bg-[#7E9CC2]'],
-  [/market/i, 'bg-[#B8A4D6]'],
-]
-
-function departmentTint(name: string, index: number) {
-  return (
-    DEPARTMENT_TINTS.find(([pattern]) => pattern.test(name))?.[1] ??
-    AGENT_TINTS[index % AGENT_TINTS.length]
-  )
 }
 
 const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
