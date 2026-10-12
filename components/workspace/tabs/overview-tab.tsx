@@ -15,6 +15,8 @@ import {
   toneForStatus,
   useRelativeTime,
 } from '@/components/workspace/ui/primitives'
+import { AgentFace } from '@/components/workspace/agents/agent-face'
+import { departmentTint } from '@/components/workspace/agents/agent-status'
 import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Scale } from 'lucide-react'
@@ -35,13 +37,6 @@ const DOT_TONE: Record<string, string> = {
   approved: 'bg-status-approved',
   idle: 'bg-status-idle',
 }
-
-const BUBBLE_TONES = [
-  'bg-primary/15 text-primary',
-  'bg-status-review-soft text-status-review',
-  'bg-status-approved-soft text-status-approved',
-  'bg-status-progress-soft text-status-progress',
-]
 
 const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
 
@@ -101,8 +96,7 @@ export function OverviewTab({
     ).length
     return { ...department, open }
   })
-  const maxOpen = Math.max(1, ...bubbles.map((bubble) => bubble.open))
-
+  
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-8">
       <div className="flex items-end justify-between gap-4">
@@ -292,44 +286,35 @@ export function OverviewTab({
                 <p className="text-sm font-medium text-foreground">
                   {labels.departmentLoad}
                 </p>
-            <>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                {bubbles.map((bubble, index) => {
-                  const size = 56 + Math.round((bubble.open / maxOpen) * 64)
-                  return (
+              <ul className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-5">
+                {bubbles.map((bubble, index) => (
+                  <li key={bubble.botId}>
                     <button
-                      key={bubble.botId}
                       type="button"
                       onClick={() => onChatWithBot(bubble.botId)}
-                      title={bubble.displayName}
-                      aria-label={bubble.displayName}
-                      style={{ width: size, height: size }}
-                      className={cn(
-                        'flex items-center justify-center rounded-full transition-transform hover:scale-105',
-                        BUBBLE_TONES[index % BUBBLE_TONES.length],
-                      )}
+                      className="group flex w-20 flex-col items-center gap-1.5 rounded-lg p-1 text-center focus-visible:outline-2 focus-visible:outline-ring"
                     >
-                      <span className="text-sm font-semibold tabular-nums">
-                        {bubble.open}
+                      <span className="relative transition-transform group-hover:-translate-y-0.5">
+                        <AgentFace
+                          status={bubble.open > 0 ? 'working' : 'idle'}
+                          tint={departmentTint(bubble.displayName, index)}
+                          size="lg"
+                        />
+                        <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-card px-1 text-center text-xs font-semibold tabular-nums text-foreground shadow-sm ring-1 ring-border">
+                          {bubble.open}
+                        </span>
+                      </span>
+                      <span aria-hidden="true" className="h-1 w-8 rounded-full bg-muted" />
+                      <span className="w-full truncate text-[13px] font-medium text-foreground">
+                        {bubble.displayName}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {bubble.open > 0 ? labels.agentWorking : labels.agentIdle}
                       </span>
                     </button>
-                  )
-                })}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {bubbles.map((bubble, index) => (
-                  <span
-                    key={bubble.botId}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-medium',
-                      BUBBLE_TONES[index % BUBBLE_TONES.length],
-                    )}
-                  >
-                    {bubble.displayName}
-                  </span>
+                  </li>
                 ))}
-              </div>
-            </>
+              </ul>
               </Card>
             )}
             {stages.length > 0 && (

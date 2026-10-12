@@ -9,7 +9,7 @@ import { KeyResultsTable } from '@/components/workspace/key-results-table'
 import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
 import { ProgressBar } from '@/components/workspace/ui/primitives'
 import { OkrCascade, pathTo } from '@/components/workspace/work/okr-cascade'
-import { AGENT_TINTS } from '@/components/workspace/agents/agent-status'
+import { departmentTint } from '@/components/workspace/agents/agent-status'
 import { ChevronRight, X } from 'lucide-react'
 import { useEffect } from 'react'
 import useSWR from 'swr'
@@ -43,8 +43,9 @@ export function WorkTab({ projectId, selectedId, onSelect, onTalkToSubAgent }: W
       : labels.unassigned
 
   const ownerTint = (botId: string | null) => {
-    const index = botId ? (workspace?.bots.findIndex((bot) => bot.id === botId) ?? -1) : -1
-    return index >= 0 ? AGENT_TINTS[index % AGENT_TINTS.length] : null
+    const bots = workspace?.bots ?? []
+    const index = botId ? bots.findIndex((bot) => bot.id === botId) : -1
+    return index >= 0 ? departmentTint(bots[index].displayName, index) : null
   }
 
   return (
