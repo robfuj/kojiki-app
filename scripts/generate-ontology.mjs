@@ -14,6 +14,7 @@ import { parse as parseYaml } from 'yaml'
 const ROOT = process.cwd()
 const SOURCE_DIR = join(ROOT, 'ontology')
 const OUT_FILE = join(ROOT, 'lib/ontology/generated.ts')
+const PROMPTS_FILE = join(ROOT, 'lib/ontology/generated-prompts.ts')
 
 const UPSTREAM = {
   repo: 'robfuj/kojiki-ontology',
@@ -367,14 +368,27 @@ export interface SynapsisStage {
   subtitle: string | null
   authority: string
   boundary: string[]
-  prompt: string
   source: string
   sha256: string
 }
 
 export const SPECIALISTS: Specialist[] = ${JSON.stringify(specialists, null, 2)}
 
-export const SYNAPSIS_STAGES: SynapsisStage[] = ${JSON.stringify(stages, null, 2)}
+export const SYNAPSIS_STAGES: SynapsisStage[] = ${JSON.stringify(
+  stages.map(({ prompt: _prompt, ...stage }) => stage),
+  null,
+  2,
+)}
+`
+
+// Prompt text and schemas are server-only; keeping them out of generated.ts
+// stops every client component that touches the ontology from shipping them.
+const promptsOutput = `${banner}
+export const STAGE_PROMPTS: Record<string, string> = ${JSON.stringify(
+  Object.fromEntries(stages.map((stage) => [stage.key, stage.prompt])),
+  null,
+  2,
+)}
 
 export const ORIENTATION_PROMPT = ${JSON.stringify(prose.orientation.text)}
 
@@ -392,19 +406,25 @@ export const STAGE_SCHEMAS: Record<string, unknown> = ${JSON.stringify(
 `
 
 if (process.argv.includes('--check')) {
-  const current = existsSync(OUT_FILE) ? read(OUT_FILE) : null
-  if (current !== output) {
-    const where = current === null ? 'missing' : 'out of date'
-    console.error(
-      `[ontology] lib/ontology/generated.ts is ${where}.\n` +
-        `Run \`pnpm ontology:generate\` and commit the result.\n` +
-        `Sources: ${relative(ROOT, SOURCE_DIR)}/`,
-    )
-    process.exit(1)
+  for (const [file, expected] of [
+    [OUT_FILE, output],
+    [PROMPTS_FILE, promptsOutput],
+  ]) {
+    const current = existsSync(file) ? read(file) : null
+    if (current !== expected) {
+      const where = current === null ? 'missing' : 'out of date'
+      console.error(
+        `[ontology] ${relative(ROOT, file)} is ${where}.\n` +
+          `Run \`pnpm ontology:generate\` and commit the result.\n` +
+          `Sources: ${relative(ROOT, SOURCE_DIR)}/`,
+      )
+      process.exit(1)
+    }
   }
-  console.log('[ontology] generated.ts is up to date with ontology/')
+  console.log('[ontology] generated files are up to date with ontology/')
 } else {
   writeFileSync(OUT_FILE, output)
+  writeFileSync(PROMPTS_FILE, promptsOutput)
   console.log(
     `[ontology] wrote ${relative(ROOT, OUT_FILE)}\n` +
       `  ${specialists.length} specialists, ${stages.length} SYNAPSIS stages, ` +
