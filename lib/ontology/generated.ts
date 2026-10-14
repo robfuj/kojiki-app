@@ -103,9 +103,14 @@ export const ONTOLOGY_MANIFEST = {
   ]
 } as const
 
-export type DecisionRightVerb = 'own' | 'recommend' | 'consult' | 'approve' | 'execute' | 'escalate' | 'automate'
+export {
+  SYNAPSIS_STAGES,
+  type DecisionRightVerb,
+  type DecisionRights,
+  type SynapsisStage,
+} from './generated-client'
 
-export type DecisionRights = Record<DecisionRightVerb, string[]>
+import type { DecisionRights } from './generated-client'
 
 export interface Handoff {
   target: string
@@ -148,17 +153,6 @@ export interface Specialist {
   upstreamModel: string | null
   decisionRights: DecisionRights
   handoffs: Handoff[]
-  source: string
-  sha256: string
-}
-
-export interface SynapsisStage {
-  index: number
-  key: string
-  name: string
-  subtitle: string | null
-  authority: string
-  boundary: string[]
   source: string
   sha256: string
 }
@@ -2593,113 +2587,5 @@ export const SPECIALISTS: Specialist[] = [
         "sha256": "6ac0028bb546ff47"
       }
     ]
-  }
-]
-
-export const SYNAPSIS_STAGES: SynapsisStage[] = [
-  {
-    "index": 1,
-    "key": "saccade",
-    "name": "SACCADE",
-    "subtitle": "A Priori Problem Framing",
-    "authority": "What is the actual question this decision needs to answer?",
-    "boundary": [
-      "EVIDENCE: Never retrieves or reads a source",
-      "STRATEGY: Never proposes an intervention",
-      "If your output contains a recommendation, that is the same category of violation as EVIDENCE silently performing INTERPRETATION — the transformation boundary has been crossed."
-    ],
-    "source": "ontology/prompts/stages/01-saccade.md",
-    "sha256": "1ac391555ee12fd8"
-  },
-  {
-    "index": 2,
-    "key": "evidence",
-    "name": "EVIDENCE",
-    "subtitle": "Verified Extracts Only",
-    "authority": "What does the retrieved source actually establish?",
-    "boundary": [
-      "INTERPRETATION: You do not diagnose, explain, or draw conclusions",
-      "STRATEGY: You do not propose interventions"
-    ],
-    "source": "ontology/prompts/stages/02-evidence.md",
-    "sha256": "22c0a4956d083bb0"
-  },
-  {
-    "index": 3,
-    "key": "interpretation",
-    "name": "INTERPRETATION",
-    "subtitle": "Diagnosis Only",
-    "authority": "Given accepted evidence, what does it mean?",
-    "boundary": [
-      "EVIDENCE: You do not retrieve or re-read sources",
-      "STRATEGY: You do not propose interventions"
-    ],
-    "source": "ontology/prompts/stages/03-interpretation.md",
-    "sha256": "728cc38cba829927"
-  },
-  {
-    "index": 4,
-    "key": "strategy",
-    "name": "STRATEGY",
-    "subtitle": "Objective Decision Only",
-    "authority": "Given accepted interpretation, what should we do and when?",
-    "boundary": [
-      "EVIDENCE: You do not retrieve sources",
-      "INTERPRETATION: You do not re-diagnose"
-    ],
-    "source": "ontology/prompts/stages/04-strategy.md",
-    "sha256": "d5c485d5c079e878"
-  },
-  {
-    "index": 5,
-    "key": "output",
-    "name": "OUTPUT",
-    "subtitle": "Intervention Design Only",
-    "authority": "Given accepted strategy, how do we execute?",
-    "boundary": [
-      "EVIDENCE: You do not retrieve sources",
-      "INTERPRETATION: You do not re-diagnose",
-      "STRATEGY: You do not re-decide the objective"
-    ],
-    "source": "ontology/prompts/stages/05-output.md",
-    "sha256": "a4bf5ab656d67f6e"
-  },
-  {
-    "index": 6,
-    "key": "deck",
-    "name": "DECK",
-    "subtitle": "Decision Communication Artifact",
-    "authority": "Given accepted OUTPUT (and OUTCOME/LEARNING if available), produce a stakeholder-ready communication artifact.",
-    "boundary": [
-      "STRATEGY: You do not re-decide the objective",
-      "OUTPUT: You do not redesign the intervention",
-      "INTERPRETATION/EVIDENCE: You do not re-diagnose"
-    ],
-    "source": "ontology/prompts/stages/06-deck.md",
-    "sha256": "89c6cd7db1bcee2c"
-  },
-  {
-    "index": 7,
-    "key": "outcome",
-    "name": "OUTCOME",
-    "subtitle": "Kaizen Loop CHECK Phase",
-    "authority": "Run the Kaizen Loop CHECK phase: compare measured actuals against success criteria with guardrails. This is where reality meets plan — actual measurements against success criteria, with guardrails that promote learning.",
-    "boundary": [
-      "raw_source, accepted_evidence, accepted_interpretation, accepted_strategy"
-    ],
-    "source": "ontology/prompts/stages/07-outcome.md",
-    "sha256": "3973087c160c986e"
-  },
-  {
-    "index": 8,
-    "key": "learning",
-    "name": "LEARNING",
-    "subtitle": "Kaizen Loop ACT Phase",
-    "authority": "Synthesize the full decision cycle into reusable experiences and patterns. This is the Kaizen Loop ACT phase — generates `experiences` (atomic unit of organizational learning) that feed NEURAXIS escalation.",
-    "boundary": [
-      "raw_source, raw_record"
-    ],
-    "source": "ontology/prompts/stages/08-learning.md",
-    "sha256": "46da41b7d5735d33"
   }
 ]

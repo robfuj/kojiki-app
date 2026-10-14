@@ -10,7 +10,10 @@
  * rather than from a function the human declares.
  */
 
-import { SPECIALISTS, type Specialist } from './specialists'
+import {
+  CLIENT_SPECIALISTS as SPECIALISTS,
+  type ClientSpecialist as Specialist,
+} from './generated-client'
 import { SYNAPSIS_STAGES } from './synapsis'
 
 export interface OrientationField {
