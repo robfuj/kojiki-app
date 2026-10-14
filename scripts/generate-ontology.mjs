@@ -15,6 +15,7 @@ const ROOT = process.cwd()
 const SOURCE_DIR = join(ROOT, 'ontology')
 const OUT_FILE = join(ROOT, 'lib/ontology/generated.ts')
 const PROMPTS_FILE = join(ROOT, 'lib/ontology/generated-prompts.ts')
+const CLIENT_FILE = join(ROOT, 'lib/ontology/generated-client.ts')
 
 const UPSTREAM = {
   repo: 'robfuj/kojiki-ontology',
@@ -312,9 +313,14 @@ export const ONTOLOGY_SOURCE = ${JSON.stringify(
 
 export const ONTOLOGY_MANIFEST = ${JSON.stringify(manifest, null, 2)} as const
 
-export type DecisionRightVerb = ${DECISION_VERBS.map((v) => `'${v}'`).join(' | ')}
+export {
+  SYNAPSIS_STAGES,
+  type DecisionRightVerb,
+  type DecisionRights,
+  type SynapsisStage,
+} from './generated-client'
 
-export type DecisionRights = Record<DecisionRightVerb, string[]>
+import type { DecisionRights } from './generated-client'
 
 export interface Handoff {
   target: string
@@ -361,6 +367,25 @@ export interface Specialist {
   sha256: string
 }
 
+export const SPECIALISTS: Specialist[] = ${JSON.stringify(specialists, null, 2)}
+`
+
+// Browser-safe subset: client components import only this file, so payload
+// schemas, model settings and source hashes stay out of the client bundle.
+const clientSpecialists = specialists.map((s) => ({
+  key: s.key,
+  department: s.department,
+  description: s.description,
+  decisionRights: s.decisionRights,
+  handoffs: s.handoffs.map((h) => ({ target: h.target, trigger: h.trigger })),
+  subAgents: s.subAgents.map((a) => ({ key: a.key, title: a.title })),
+}))
+
+const clientOutput = `${banner}
+export type DecisionRightVerb = ${DECISION_VERBS.map((v) => `'${v}'`).join(' | ')}
+
+export type DecisionRights = Record<DecisionRightVerb, string[]>
+
 export interface SynapsisStage {
   index: number
   key: string
@@ -372,13 +397,22 @@ export interface SynapsisStage {
   sha256: string
 }
 
-export const SPECIALISTS: Specialist[] = ${JSON.stringify(specialists, null, 2)}
+export interface ClientSpecialist {
+  key: string
+  department: string
+  description: string
+  decisionRights: DecisionRights
+  handoffs: { target: string; trigger: string }[]
+  subAgents: { key: string; title: string }[]
+}
 
 export const SYNAPSIS_STAGES: SynapsisStage[] = ${JSON.stringify(
   stages.map(({ prompt: _prompt, ...stage }) => stage),
   null,
   2,
 )}
+
+export const CLIENT_SPECIALISTS: ClientSpecialist[] = ${JSON.stringify(clientSpecialists, null, 2)}
 `
 
 // Prompt text and schemas are server-only; keeping them out of generated.ts
@@ -409,6 +443,7 @@ if (process.argv.includes('--check')) {
   for (const [file, expected] of [
     [OUT_FILE, output],
     [PROMPTS_FILE, promptsOutput],
+    [CLIENT_FILE, clientOutput],
   ]) {
     const current = existsSync(file) ? read(file) : null
     if (current !== expected) {
@@ -425,6 +460,7 @@ if (process.argv.includes('--check')) {
 } else {
   writeFileSync(OUT_FILE, output)
   writeFileSync(PROMPTS_FILE, promptsOutput)
+  writeFileSync(CLIENT_FILE, clientOutput)
   console.log(
     `[ontology] wrote ${relative(ROOT, OUT_FILE)}\n` +
       `  ${specialists.length} specialists, ${stages.length} SYNAPSIS stages, ` +

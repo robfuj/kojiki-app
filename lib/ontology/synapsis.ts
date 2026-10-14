@@ -8,9 +8,9 @@
  * perform), and the full upstream `prompt` text.
  */
 
-import { SYNAPSIS_STAGES, type SynapsisStage } from './generated'
+import { SYNAPSIS_STAGES, type SynapsisStage } from './generated-client'
 
-export { SYNAPSIS_STAGES, type SynapsisStage } from './generated'
+export { SYNAPSIS_STAGES, type SynapsisStage } from './generated-client'
 
 export const STAGE_BY_KEY = new Map(SYNAPSIS_STAGES.map((s) => [s.key, s]))
 
