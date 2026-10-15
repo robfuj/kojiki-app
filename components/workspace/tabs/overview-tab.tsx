@@ -16,7 +16,7 @@ import {
   useRelativeTime,
 } from '@/components/workspace/ui/primitives'
 import { AgentFace } from '@/components/workspace/agents/agent-face'
-import { departmentTint } from '@/components/workspace/agents/agent-status'
+import { summariseAgent } from '@/components/workspace/agents/agent-status'
 import { format } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Scale } from 'lucide-react'
@@ -37,8 +37,6 @@ const DOT_TONE: Record<string, string> = {
   approved: 'bg-status-approved',
   idle: 'bg-status-idle',
 }
-
-const CLOSED_TASK_STATUSES = ['done', 'completed', 'cancelled', 'failed']
 
 /**
  * The bento board: one stat strip, then an asymmetric grid — the live work
@@ -90,12 +88,12 @@ export function OverviewTab({
   const maxStage = Math.max(1, ...stages.map(([, count]) => count))
   const objectives = home.objectives.filter((objective) => !objective.isRoot)
 
-  const bubbles = (departments ?? []).map((department) => {
-    const open = department.tasks.filter(
-      (task) => !CLOSED_TASK_STATUSES.includes(task.status),
-    ).length
-    return { ...department, open }
-  })
+  const bubbles = (departments ?? []).map(summariseAgent)
+  const statusLabel = {
+    working: labels.agentWorking,
+    waiting: labels.agentWaiting,
+    idle: labels.agentIdle,
+  } as const
   
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-8">
@@ -287,7 +285,7 @@ export function OverviewTab({
                   {labels.departmentLoad}
                 </p>
               <ul className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-5">
-                {bubbles.map((bubble, index) => (
+                {bubbles.map((bubble) => (
                   <li key={bubble.botId}>
                     <button
                       type="button"
@@ -295,21 +293,17 @@ export function OverviewTab({
                       className="group flex w-20 flex-col items-center gap-1.5 rounded-lg p-1 text-center focus-visible:outline-2 focus-visible:outline-ring"
                     >
                       <span className="relative transition-transform group-hover:-translate-y-0.5">
-                        <AgentFace
-                          status={bubble.open > 0 ? 'working' : 'idle'}
-                          tint={departmentTint(bubble.displayName, index)}
-                          size="lg"
-                        />
+                        <AgentFace status={bubble.status} tint={bubble.tint} size="lg" />
                         <span className="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-card px-1 text-center text-xs font-semibold tabular-nums text-foreground shadow-sm ring-1 ring-border">
-                          {bubble.open}
+                          {bubble.openTasks}
                         </span>
                       </span>
                       <span aria-hidden="true" className="h-1 w-8 rounded-full bg-muted" />
                       <span className="w-full truncate text-[13px] font-medium text-foreground">
-                        {bubble.displayName}
+                        {bubble.name}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {bubble.open > 0 ? labels.agentWorking : labels.agentIdle}
+                        {statusLabel[bubble.status]}
                       </span>
                     </button>
                   </li>
