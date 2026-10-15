@@ -26,7 +26,8 @@ Read this first when continuing. Reference: orbit-agent-workspace.vercel.app (Ho
 - [ ] Step 4: clicking an agent filters the Work table to that agent (lift an `ownerFilter` state into `workspace-shell.tsx`, then switch tab to Work). Replaces the onChatWithBot click from step 1.
 - [x] Step 5a: replaced the Overview department bubbles with a mascot lineup (`overview-tab.tsx`): face + open-count badge + name + Working/Idle. Colors come from the mascot sheet palette (`DEPARTMENT_TINTS`, matched by department name, fallback `AGENT_TINTS`). Not visually verified — test projects have no departments.
 - [x] Step 5b-i: `DEPARTMENT_TINTS` + `departmentTint(name, index)` now live in `agent-status.ts`. Used by the Overview lineup, `summariseAgent` (sidebar faces) and `ownerTint` in `work-tab.tsx` (matched by bot name, so the roster-order caveat in Step 3 no longer matters for colour).
-- [ ] Step 5b-ii: use `summariseAgent` in the Overview lineup for the real `waiting` status instead of open>0. Seed test departments to screenshot.
+- [x] Step 5b-ii: Overview lineup now uses `summariseAgent` (real working / waiting / idle + `openTasks` + `tint`). Still not screenshotted — seed test departments to verify.
+- Note: `import 'server-only'` guard deferred — package not installed, and node scripts may import `generated.ts`; check those before adding.
 - [ ] Step 5b-iii: mood poses (sleeping / laptop / overloaded / waiting-on-you) once mascot images exist (`docs/brand/kojiki-mascots.png`).
 - [ ] Optional: synapsis "thinking…" chip on a working agent (later moves to background).
 
