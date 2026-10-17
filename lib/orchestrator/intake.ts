@@ -76,6 +76,16 @@ export const projectIntakeSchema = z.object({
           ),
         kind: z.enum(['text', 'textarea']),
         required: z.boolean(),
+        impact: z
+          .number()
+          .describe(
+            '1-5: how much the answer would change the decomposition.',
+          ),
+        uncertainty: z
+          .number()
+          .describe(
+            '1-5: how unsure the research leaves you about the answer.',
+          ),
       }),
     )
     .describe(
@@ -164,7 +174,7 @@ Do two things.
 
 First, select the specialists this project actually needs. Do not select all of them by default: a goal with no legal exposure needs no legal specialist. Order them most central first. Every key you return must appear in the catalog above.
 
-Second, ask the three to five questions whose answers would materially change how this goal is decomposed. Ask only what the goal leaves genuinely open. If the goal already states its budget, timeline or audience, do not ask for it again. At most one question may be required; the rest are optional so the user can move quickly. Each question's "why" must say how the answer changes the plan.${
+Second, ask the three to five questions whose answers would materially change how this goal is decomposed. Ask only what the goal leaves genuinely open. If the goal already states its budget, timeline or audience, do not ask for it again. At most one question may be required; the rest are optional so the user can move quickly. Each question's "why" must say how the answer changes the plan, and each must cite the research finding that prompted it. Score each question's impact and uncertainty honestly; only the four highest impact × uncertainty questions will be asked.${
     languageDirective(locale) ? `\n\n${languageDirective(locale)}` : ''
   }`,
   })
@@ -192,8 +202,13 @@ Second, ask the three to five questions whose answers would materially change ho
     },
     rosterKeys,
     rosterRationale: plan.rosterRationale,
-    // Capped so a verbose model cannot turn the intake into a long form.
-    questions: plan.questions.slice(0, 5).map((question, index) => ({
+    // Orientation protocol phase 3: rank by impact × uncertainty, keep the top four.
+    questions: [...plan.questions]
+      .sort(
+        (a, b) => b.impact * b.uncertainty - a.impact * a.uncertainty,
+      )
+      .slice(0, 4)
+      .map((question, index) => ({
       id: `q${index + 1}`,
       prompt: question.prompt,
       why: question.why,
