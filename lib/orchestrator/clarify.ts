@@ -144,8 +144,56 @@ export async function runClarifyPhase(input: {
     prompt: q.prompt.replace('{raw_goal}', goal.slice(0, 200)),
   }))
 
+  // The protocol must clarify before it researches. If the model cannot produce
+  // a plan (free models often fail tool calls), ask the bank questions as written
+  // instead of returning nothing, which would send the user straight to research.
+  let plan: z.infer<typeof clarifySchema>
+  try {
+    plan = await planClarify(route.model, context, bank, locale)
+  } catch (error) {
+    console.error('[orchestrator] clarify plan failed, using bank wording', error)
+    plan = { thinkAloud: '', knownCategories: [], wording: [] }
+  }
+
+  const known = new Set(plan.knownCategories)
+  const wording = new Map(plan.wording.map((w) => [w.id, w]))
+
+  const questions = bank
+    .filter((q) => q.required || !known.has(q.category))
+    .sort((a, b) => Number(b.required) - Number(a.required))
+    .slice(0, MAX_CLARIFY)
+    .map((q) => {
+      const worded = wording.get(q.id)
+      return {
+        id: q.id,
+        prompt: cleanModelText(worded?.prompt) || q.prompt,
+        why: cleanModelText(worded?.why),
+        kind: 'textarea' as const,
+        required: q.required,
+        category: q.category,
+      }
+    })
+
+  return { questions, thinkAloud: plan.thinkAloud }
+}
+
+// Free models sometimes run the tool-call JSON into a string field
+// (e.g. `...entails.},{"id":`). Cut at the first structural break.
+function cleanModelText(value: string | undefined): string {
+  if (!value) return ''
+  const cut = value.search(/\}\s*,?\s*[{"]|",\s*"\w+"\s*:|"\s*\}/)
+  const text = (cut === -1 ? value : value.slice(0, cut)).replace(/["{}[\],\s]+$/, '').trim()
+  return text.length >= 8 ? text : ''
+}
+
+async function planClarify(
+  model: Parameters<typeof generateText>[0]['model'],
+  context: string,
+  bank: BankQuestion[],
+  locale: Locale,
+): Promise<z.infer<typeof clarifySchema>> {
   const { toolCalls } = await generateText({
-    model: route.model,
+    model,
     tools: {
       clarify: {
         description:
@@ -168,26 +216,5 @@ List the categories the goal already answers explicitly. Then reword every bank 
 
   const call = toolCalls.find((c) => c.toolName === 'clarify')
   if (!call) throw new Error('The orchestrator returned no clarify plan')
-  const plan = clarifySchema.parse(call.input)
-
-  const known = new Set(plan.knownCategories)
-  const wording = new Map(plan.wording.map((w) => [w.id, w]))
-
-  const questions = bank
-    .filter((q) => q.required || !known.has(q.category))
-    .sort((a, b) => Number(b.required) - Number(a.required))
-    .slice(0, MAX_CLARIFY)
-    .map((q) => {
-      const worded = wording.get(q.id)
-      return {
-        id: q.id,
-        prompt: worded?.prompt || q.prompt,
-        why: worded?.why || '',
-        kind: 'textarea' as const,
-        required: q.required,
-        category: q.category,
-      }
-    })
-
-  return { questions, thinkAloud: plan.thinkAloud }
+  return clarifySchema.parse(call.input)
 }
