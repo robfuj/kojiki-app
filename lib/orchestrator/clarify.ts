@@ -166,8 +166,8 @@ export async function runClarifyPhase(input: {
       const worded = wording.get(q.id)
       return {
         id: q.id,
-        prompt: worded?.prompt || q.prompt,
-        why: worded?.why || '',
+        prompt: cleanModelText(worded?.prompt) || q.prompt,
+        why: cleanModelText(worded?.why),
         kind: 'textarea' as const,
         required: q.required,
         category: q.category,
@@ -175,6 +175,15 @@ export async function runClarifyPhase(input: {
     })
 
   return { questions, thinkAloud: plan.thinkAloud }
+}
+
+// Free models sometimes run the tool-call JSON into a string field
+// (e.g. `...entails.},{"id":`). Cut at the first structural break.
+function cleanModelText(value: string | undefined): string {
+  if (!value) return ''
+  const cut = value.search(/\}\s*,?\s*[{"]|",\s*"\w+"\s*:|"\s*\}/)
+  const text = (cut === -1 ? value : value.slice(0, cut)).replace(/["{}[\],\s]+$/, '').trim()
+  return text.length >= 8 ? text : ''
 }
 
 async function planClarify(
