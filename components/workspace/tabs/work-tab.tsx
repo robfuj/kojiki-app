@@ -19,21 +19,39 @@ interface WorkTabProps {
   selectedId: string | null
   onSelect: (objectiveId: string | null) => void
   onTalkToSubAgent: (focus: ChatFocus) => void
+  ownerFilter?: string | null
+  onClearOwnerFilter?: () => void
+}
+
+/** Keeps nodes the owner holds, plus their ancestors so the tree stays readable. */
+function filterByOwner(nodes: OkrNode[], botId: string): OkrNode[] {
+  return nodes.flatMap((node) => {
+    const children = filterByOwner(node.children, botId)
+    return node.ownerBotId === botId || children.length > 0 ? [{ ...node, children }] : []
+  })
 }
 
 /**
  * The operating view: the whole objective tree as one table, with the selected
  * goal opening in a side panel so the tree stays in view.
  */
-export function WorkTab({ projectId, selectedId, onSelect, onTalkToSubAgent }: WorkTabProps) {
+export function WorkTab({
+  projectId,
+  selectedId,
+  onSelect,
+  onTalkToSubAgent,
+  ownerFilter = null,
+  onClearOwnerFilter,
+}: WorkTabProps) {
   const { t } = useLocale()
   const labels = t.tabs.work
 
   const { data: tree } = useSWR(['okr-tree', projectId], () => getOkrTree(projectId))
   const { data: workspace } = useSWR(['workspace', projectId], () => getProjectWorkspace(projectId))
 
-  const nodes = tree ?? []
-  const root = nodes[0] ?? null
+  const fullTree = tree ?? []
+  const root = fullTree[0] ?? null
+  const nodes = ownerFilter ? filterByOwner(fullTree, ownerFilter) : fullTree
   const trail = pathTo(nodes, selectedId) ?? []
   const selected = trail.at(-1) ?? null
 
@@ -53,6 +71,19 @@ export function WorkTab({ projectId, selectedId, onSelect, onTalkToSubAgent }: W
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t.nav.work}</h1>
         <p className="text-base text-muted-foreground">{labels.subtitle}</p>
+        {ownerFilter && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onClearOwnerFilter}
+              aria-label={`Clear filter: ${labels.owner} ${ownerName(ownerFilter)}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              {labels.owner}: {ownerName(ownerFilter)}
+              <X className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </header>
 
       {nodes.length === 0 ? (
