@@ -34,31 +34,47 @@ export interface ReResearchResult {
  * Canonical trigger keywords (orientation_protocol.py) plus Japanese
  * equivalents, since answers arrive in the user's locale.
  */
-const TRIGGER_KEYWORDS = [
-  'new market',
-  'different regulation',
-  'budget changed',
-  'timeline shifted',
-  'stakeholder added',
-  'scope expanded',
-  'country',
-  'jurisdiction',
+// English triggers use word boundaries so "countryside" or "scoped" don't fire;
+// each pattern pairs a planning dimension with a change verb where wording varies.
+const ENGLISH_TRIGGERS: RegExp[] = [
+  /\bnew (market|region|country|customer segment)s?\b/,
+  /\b(different|new|stricter|changed?) (regulation|rules?|law|licen[cs]e|permit)s?\b/,
+  /\bbudget\b.{0,30}\b(changed?|cut|halved|doubled|increased|reduced|now|only)\b/,
+  /\b(timeline|deadline|schedule|launch date)\b.{0,30}\b(shifted|moved|changed?|earlier|later|slipped)\b/,
+  /\b(stakeholder|partner|investor|co-?founder)s? (added|joined|involved)\b/,
+  /\bscope\b.{0,20}\b(expanded|grew|changed?|widened)\b/,
+  /\b(another|other|different|foreign) (country|countries|jurisdiction)s?\b/,
+  /\bjurisdictions?\b/,
+  /\b(abroad|overseas|cross-border|international(ly)?)\b/,
+]
+
+// Japanese has no word boundaries, so terms are specific compounds — bare 国
+// would match 全国 or 中国 in ordinary answers.
+const JAPANESE_TRIGGERS = [
   '新市場',
   '新しい市場',
   '規制',
-  '予算',
+  '許認可',
+  '予算が',
+  '予算を',
   '期限',
   'スケジュール',
   '関係者',
   '範囲',
-  '国',
+  '海外',
+  '他国',
+  '別の国',
+  '国外',
   '管轄',
 ]
 
 export function shouldReResearch(answers: { answer: string }[]): boolean {
   return answers.some((a) => {
     const text = a.answer.toLowerCase()
-    return TRIGGER_KEYWORDS.some((k) => text.includes(k))
+    return (
+      ENGLISH_TRIGGERS.some((re) => re.test(text)) ||
+      JAPANESE_TRIGGERS.some((k) => text.includes(k))
+    )
   })
 }
 

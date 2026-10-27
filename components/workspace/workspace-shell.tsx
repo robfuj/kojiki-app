@@ -86,6 +86,7 @@ export function WorkspaceShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [workObjectiveId, setWorkObjectiveId] = useState<string | null>(null)
   const [deptBotId, setDeptBotId] = useState<string | null>(null)
+  const [ownerFilter, setOwnerFilter] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [researchOpen, setResearchOpen] = useState(false)
 
@@ -157,12 +158,14 @@ export function WorkspaceShell({
           setSelectedId(projectId)
           setWorkObjectiveId(null)
           setDeptBotId(null)
+          setOwnerFilter(null)
           setChatFocus({ kind: 'orchestrator' })
         }}
         onCreated={(project) => {
           setSelectedId(project.id)
           setWorkObjectiveId(null)
           setDeptBotId(null)
+          setOwnerFilter(null)
           setChatFocus({ kind: 'orchestrator' })
         }}
         query={query}
@@ -270,7 +273,11 @@ export function WorkspaceShell({
                     projectObjective={workspace.project.objective}
                     onOpenWork={() => goTo('work')}
                     onOpenDecisions={() => goTo('decisions')}
-                    onChatWithBot={(botId) => openConversation({ kind: 'bot', botId })}
+                    onOpenAgentWork={(botId) => {
+                      setOwnerFilter(botId)
+                      setWorkObjectiveId(null)
+                      goTo('work')
+                    }}
                   />
                 )}
                 {tab === 'work' && (
@@ -278,6 +285,8 @@ export function WorkspaceShell({
                     projectId={activeId}
                     selectedId={workObjectiveId}
                     onSelect={setWorkObjectiveId}
+                    ownerFilter={ownerFilter}
+                    onClearOwnerFilter={() => setOwnerFilter(null)}
                     onTalkToSubAgent={openConversation}
                   />
                 )}

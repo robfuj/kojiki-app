@@ -28,7 +28,7 @@ interface OverviewTabProps {
   projectObjective: string | null
   onOpenWork: () => void
   onOpenDecisions: () => void
-  onChatWithBot: (botId: string) => void
+  onOpenAgentWork: (botId: string) => void
 }
 
 const DOT_TONE: Record<string, string> = {
@@ -49,7 +49,7 @@ export function OverviewTab({
   projectObjective,
   onOpenWork,
   onOpenDecisions,
-  onChatWithBot,
+  onOpenAgentWork,
 }: OverviewTabProps) {
   const { t } = useLocale()
   const labels = t.tabs.overview
@@ -289,7 +289,7 @@ export function OverviewTab({
                   <li key={bubble.botId}>
                     <button
                       type="button"
-                      onClick={() => onChatWithBot(bubble.botId)}
+                      onClick={() => onOpenAgentWork(bubble.botId)}
                       className="group flex w-20 flex-col items-center gap-1.5 rounded-lg p-1 text-center focus-visible:outline-2 focus-visible:outline-ring"
                     >
                       <span className="relative transition-transform group-hover:-translate-y-0.5">
