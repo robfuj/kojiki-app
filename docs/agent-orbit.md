@@ -27,9 +27,10 @@ Read this first when continuing. Reference: orbit-agent-workspace.vercel.app (Ho
 - [x] Step 5a: replaced the Overview department bubbles with a mascot lineup (`overview-tab.tsx`): face + open-count badge + name + Working/Idle. Colors come from the mascot sheet palette (`DEPARTMENT_TINTS`, matched by department name, fallback `AGENT_TINTS`). Not visually verified — test projects have no departments.
 - [x] Step 5b-i: `DEPARTMENT_TINTS` + `departmentTint(name, index)` now live in `agent-status.ts`. Used by the Overview lineup, `summariseAgent` (sidebar faces) and `ownerTint` in `work-tab.tsx` (matched by bot name, so the roster-order caveat in Step 3 no longer matters for colour).
 - [x] Step 5b-ii: Overview lineup now uses `summariseAgent` (real working / waiting / idle + `openTasks` + `tint`). Still not screenshotted — seed test departments to verify.
-- Note: `import 'server-only'` guard deferred — package not installed, and node scripts may import `generated.ts`; check those before adding.
+- [x] `import 'server-only'` guard: added to `lib/db/index.ts` and `lib/auth.ts` (no scripts import them; covers providers/kaizen/engine/actions transitively). `generated.ts` still unguarded — node scripts import it.
+- [x] Sign-in form: `minLength={8}` now applies to sign-up only (it silently blocked short existing passwords, e.g. test account `tester-10270015@kojiki.dev` / `12345`). Verified in browser.
 - [ ] Step 5b-iii: mood poses (sleeping / laptop / overloaded / waiting-on-you) once mascot images exist (`docs/brand/kojiki-mascots.png`).
-- [ ] Optional: synapsis "thinking…" chip on a working agent (later moves to background).
+- [x] Optional: "thinking…" chip — Overview lineup shows a pulsing primary chip (localized `statusLabel.working` + "…") for working agents. Types pass; not screenshotted (needs a project with a working agent).
 
 ## Future: department mascots (not started)
 Reference sheet: `docs/brand/kojiki-mascots.png`. Eventually the drawn faces get replaced by Kojiki mascots — a white rounded spirit with a comma mark, accessory per department:

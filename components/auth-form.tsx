@@ -82,7 +82,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
-          minLength={8}
+          minLength={isSignUp ? 8 : undefined}
           autoComplete={isSignUp ? 'new-password' : 'current-password'}
           placeholder={t.auth.passwordPlaceholder}
           className="h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none"

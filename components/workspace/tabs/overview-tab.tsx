@@ -302,9 +302,17 @@ export function OverviewTab({
                       <span className="w-full truncate text-[13px] font-medium text-foreground">
                         {bubble.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {statusLabel[bubble.status]}
-                      </span>
+                      {bubble.status === 'working' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          <span aria-hidden="true" className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
+                          {statusLabel.working}
+                          <span aria-hidden="true">…</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {statusLabel[bubble.status]}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
