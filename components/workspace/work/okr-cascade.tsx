@@ -2,6 +2,7 @@
 
 import type { OkrNode } from '@/app/actions/okr'
 import { AgentFace } from '@/components/workspace/agents/agent-face'
+import { HEALTH_LABELS, type Health } from '@/lib/okr-health'
 import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
@@ -12,7 +13,8 @@ interface OkrCascadeProps {
   onSelect: (id: string) => void
   ownerName: (botId: string | null) => string
   ownerTint: (botId: string | null) => string | null
-  labels: { objective: string; owner: string; progress: string; timeframe: string }
+  healthOf: (node: OkrNode) => Health
+  labels: { objective: string; owner: string; health: string; progress: string; timeframe: string }
   label: string
 }
 
@@ -23,7 +25,14 @@ interface VisibleRow {
 }
 
 const GRID =
-  'grid grid-cols-[minmax(0,1fr)_8rem] @2xl:grid-cols-[minmax(0,1fr)_8rem_7rem] @4xl:grid-cols-[minmax(0,1fr)_10rem_9rem_7rem] items-center gap-4'
+  'grid grid-cols-[minmax(0,1fr)_6.5rem_7rem] @2xl:grid-cols-[minmax(0,1fr)_7rem_8rem_7rem] @4xl:grid-cols-[minmax(0,1fr)_10rem_7rem_9rem_7rem] items-center gap-4'
+
+const HEALTH_DOT: Record<Health, string> = {
+  needs_you: 'bg-seal',
+  on_track: 'bg-status-approved',
+  at_risk: 'bg-status-review',
+  blocked: 'bg-destructive',
+}
 
 export function pathTo(nodes: OkrNode[], id: string | null, trail: OkrNode[] = []): OkrNode[] | null {
   if (!id) return null
@@ -39,7 +48,16 @@ export function pathTo(nodes: OkrNode[], id: string | null, trail: OkrNode[] = [
  * The whole OKR tree as one full-width table. The top two levels start open;
  * deeper levels fold. Follows the WAI-ARIA treegrid keyboard pattern.
  */
-export function OkrCascade({ nodes, selectedId, onSelect, ownerName, ownerTint, labels, label }: OkrCascadeProps) {
+export function OkrCascade({
+  nodes,
+  selectedId,
+  onSelect,
+  ownerName,
+  ownerTint,
+  healthOf,
+  labels,
+  label,
+}: OkrCascadeProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const open = new Set<string>()
     for (const root of nodes) {
@@ -136,6 +154,7 @@ export function OkrCascade({ nodes, selectedId, onSelect, ownerName, ownerTint, 
       >
         <span role="columnheader">{labels.objective}</span>
         <span role="columnheader" className="hidden @4xl:block">{labels.owner}</span>
+        <span role="columnheader">{labels.health}</span>
         <span role="columnheader">{labels.progress}</span>
         <span role="columnheader" className="hidden @2xl:block">{labels.timeframe}</span>
       </div>
@@ -185,12 +204,22 @@ export function OkrCascade({ nodes, selectedId, onSelect, ownerName, ownerTint, 
               >
                 {node.title}
               </button>
+              {node.needsYouCount > 0 && (
+                <span className="ml-2 shrink-0 rounded-full bg-seal px-2 py-0.5 text-xs font-semibold tabular-nums text-seal-foreground">
+                  {node.needsYouCount}
+                  <span className="sr-only"> {node.needsYouCount === 1 ? 'task needs' : 'tasks need'} you</span>
+                </span>
+              )}
             </div>
             <span role="gridcell" className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground @4xl:flex">
               {ownerTint(node.ownerBotId) && (
                 <AgentFace status="idle" tint={ownerTint(node.ownerBotId)!} size="sm" />
               )}
               <span className="truncate">{ownerName(node.ownerBotId)}</span>
+            </span>
+            <span role="gridcell" className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+              <span className={cn('size-2 shrink-0 rounded-full', HEALTH_DOT[healthOf(node)])} aria-hidden="true" />
+              <span className="truncate">{HEALTH_LABELS[healthOf(node)]}</span>
             </span>
             <span role="gridcell" className="flex items-center gap-2.5">
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">

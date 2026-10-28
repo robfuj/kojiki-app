@@ -7,10 +7,11 @@ import {
   objectives,
   projectBots,
   projects,
+  subAgentTasks,
 } from '@/lib/db/schema'
 import { resolveModelForUser } from '@/lib/ai'
 import { MAX_DEPTH, rollupAncestors } from '@/lib/okr-tree'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { generateText } from 'ai'
 import { z } from 'zod'
@@ -20,6 +21,9 @@ const getUserId = requireUserId
 export type ObjectiveRow = typeof objectives.$inferSelect
 
 export interface OkrNode extends ObjectiveRow {
+  /** Open tasks on this objective that are waiting on the user. */
+  needsYouCount: number
+  blockedCount: number
   children: OkrNode[]
 }
 
@@ -47,8 +51,30 @@ export async function getOkrTree(projectId: string): Promise<OkrNode[]> {
     .where(and(eq(objectives.projectId, projectId), eq(objectives.userId, userId)))
     .orderBy(asc(objectives.depth), asc(objectives.position), asc(objectives.createdAt))
 
+  // Mirrors the "Needs you" grouping in the sub-goal panel so the counts match.
+  const counts = await db
+    .select({
+      objectiveId: subAgentTasks.objectiveId,
+      needsYou: sql<number>`count(*) filter (where ${subAgentTasks.status} in ('blocked', 'proposed', 'reported') or ${subAgentTasks.validationResult} is not null)`.mapWith(Number),
+      blocked: sql<number>`count(*) filter (where ${subAgentTasks.status} = 'blocked')`.mapWith(Number),
+    })
+    .from(subAgentTasks)
+    .where(
+      and(
+        eq(subAgentTasks.projectId, projectId),
+        eq(subAgentTasks.userId, userId),
+        isNull(subAgentTasks.reabsorbedAt),
+        ne(subAgentTasks.status, 'reabsorbed'),
+      ),
+    )
+    .groupBy(subAgentTasks.objectiveId)
+  const countsById = new Map(counts.map((c) => [c.objectiveId, c]))
+
   const nodes = new Map<string, OkrNode>()
-  for (const row of rows) nodes.set(row.id, { ...row, children: [] })
+  for (const row of rows) {
+    const c = countsById.get(row.id)
+    nodes.set(row.id, { ...row, needsYouCount: c?.needsYou ?? 0, blockedCount: c?.blocked ?? 0, children: [] })
+  }
 
   const roots: OkrNode[] = []
   for (const row of rows) {
