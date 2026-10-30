@@ -10,6 +10,7 @@ import { SubGoalPanel } from '@/components/workspace/sub-goal-panel'
 import { ProgressBar } from '@/components/workspace/ui/primitives'
 import { OkrCascade, pathTo } from '@/components/workspace/work/okr-cascade'
 import { departmentTint } from '@/components/workspace/agents/agent-status'
+import { HEALTH_LABELS, HEALTH_ORDER, healthOf, type Health } from '@/lib/okr-health'
 import { ChevronRight, X } from 'lucide-react'
 import { useEffect } from 'react'
 import useSWR from 'swr'
@@ -29,6 +30,38 @@ function filterByOwner(nodes: OkrNode[], botId: string): OkrNode[] {
     const children = filterByOwner(node.children, botId)
     return node.ownerBotId === botId || children.length > 0 ? [{ ...node, children }] : []
   })
+}
+
+function countHealth(nodes: OkrNode[], counts: Record<Health, number> = { needs_you: 0, on_track: 0, at_risk: 0, blocked: 0 }) {
+  for (const node of nodes) {
+    counts[healthOf(node)] += 1
+    countHealth(node.children, counts)
+  }
+  return counts
+}
+
+const CHIP_DOT: Record<Health, string> = {
+  needs_you: 'bg-seal',
+  on_track: 'bg-status-approved',
+  at_risk: 'bg-status-review',
+  blocked: 'bg-destructive',
+}
+
+function HealthChips({ counts }: { counts: Record<Health, number> }) {
+  return (
+    <ul className="flex flex-wrap gap-2" aria-label="Goal health">
+      {HEALTH_ORDER.map((health) => (
+        <li
+          key={health}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm text-foreground"
+        >
+          <span className={`size-2 rounded-full ${CHIP_DOT[health]}`} aria-hidden="true" />
+          {HEALTH_LABELS[health]}
+          <span className="font-semibold tabular-nums">{counts[health]}</span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /**
@@ -59,6 +92,9 @@ export function WorkTab({
     botId
       ? (workspace?.bots.find((bot) => bot.id === botId)?.displayName ?? labels.unassigned)
       : labels.unassigned
+
+  const nodeHealth = (node: OkrNode) => healthOf(node)
+  const healthCounts = countHealth(nodes)
 
   const ownerTint = (botId: string | null) => {
     const bots = workspace?.bots ?? []
@@ -93,6 +129,7 @@ export function WorkTab({
       ) : (
         <div className="mt-6 flex flex-col gap-6">
           {root && <GoalSummary node={root} />}
+          <HealthChips counts={healthCounts} />
           <OkrCascade
             nodes={nodes}
             selectedId={selected?.id ?? null}
@@ -100,7 +137,14 @@ export function WorkTab({
             ownerName={ownerName}
             ownerTint={ownerTint}
             label={t.nav.work}
-            labels={{ objective: 'Objective', owner: labels.owner, progress: 'Progress', timeframe: labels.timeframe }}
+            healthOf={nodeHealth}
+            labels={{
+              objective: 'Objective',
+              owner: labels.owner,
+              health: 'Health',
+              progress: 'Progress',
+              timeframe: labels.timeframe,
+            }}
           />
         </div>
       )}

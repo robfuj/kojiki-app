@@ -30,6 +30,7 @@ Read this first when continuing. Reference: orbit-agent-workspace.vercel.app (Ho
 - [x] `import 'server-only'` guard: added to `lib/db/index.ts` and `lib/auth.ts` (no scripts import them; covers providers/kaizen/engine/actions transitively). `generated.ts` still unguarded — node scripts import it.
 - [x] Sign-in form: `minLength={8}` now applies to sign-up only (it silently blocked short existing passwords, e.g. test account `tester-10270015@kojiki.dev` / `12345`). Verified in browser.
 - [ ] Step 5b-iii: mood poses (sleeping / laptop / overloaded / waiting-on-you) once mascot images exist (`docs/brand/kojiki-mascots.png`).
+- [x] Work redesign (core + check, `v0_plans/practical-design.md`): `lib/okr-health.ts` derives Health (blocked > needs you > at risk vs timeframe elapsed with 15pt slack > on track); `getOkrTree` adds `needsYouCount`/`blockedCount` per objective; table has a Health column + inline needs-you badge; Work header shows health count chips. Rule unit-checked (9 cases), types pass; not screenshotted (test account `12345` has no project yet).
 - [x] Optional: "thinking…" chip — Overview lineup shows a pulsing primary chip (localized `statusLabel.working` + "…") for working agents. Types pass; not screenshotted (needs a project with a working agent).
 
 ## Future: department mascots (not started)
